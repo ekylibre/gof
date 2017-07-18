@@ -1,11 +1,17 @@
 'use strict';
 
 function User() {
+    this.Clear();
+}
 
-    this.id = null;
+function Clear() {
+    this._id = null;
     this.firstName = "";
     this.lastName = "";
     this.email = "";
     this.password = "";
 }
 
+User.prototype.Clear = Clear;
+
+module.exports = User;

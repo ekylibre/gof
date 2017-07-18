@@ -9,6 +9,7 @@
     "hapi-mongo-models": "^6.0.0",
     "hapi-mongodb": "^6.2.1",
     "hoek": "^4.1.1",
+    "inert": "^4.2.0",
     "mongodb": "^2.2.30",
     "nodemon": "^1.11.0",
     "path": "^0.12.7",

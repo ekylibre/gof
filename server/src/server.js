@@ -7,8 +7,7 @@ const Hoek = require('hoek');
 const server = new Hapi.Server();
 const routes = require('./routes/index')
 
-register_mongo(server);
-register_views(server);
+register_plugins(server);
 
 server.connection({port: 3000, host: 'localhost'});
 
@@ -18,16 +17,7 @@ server.route({
     handler : routes.get_index
 });
 
-server.start((error) => {
-    if(error)
-    {
-        throw error;
-    }
-
-    console.log(`Server running at: ${server.info.uri}`);
-});
-
-function register_mongo(server)
+function register_plugins(server)
 {
     const dbOptions = 
     {
@@ -38,31 +28,58 @@ function register_mongo(server)
         decorate: true
     };
 
-    server.register({
-        register: require('hapi-mongodb'),
-        options: dbOptions
-    },
+    server.register([
+        {
+            register: require('hapi-mongodb'),
+            options: dbOptions
+        }
+        ,
+        require('vision'),
+        require('inert')
+    ],
     (error) => {
         Hoek.assert(!error, error);
 
-    });
-}
+        server.route({
+            method: 'GET',
+            path : '/data/{file*}',
+            handler: {
+                directory: {
+                    path: 'data',
+                    listing: true
+                }
+            }
+        });
 
-function register_views(server)
-{
-    //template engine
-    server.register(require('vision'), (error) =>
-    {
-        Hoek.assert(!error, error);
+        server.route({
+            method: 'GET',
+            path: '/newuser',
+            handler: routes.new_user
+        });
 
         server.views({
             engines: {
                 html: require('handlebars')
             },
+            layout: true,
             relativeTo: __dirname,
-            path: './templates',
-            layoutPath: './templates/layout',
-            helpersPath: './templates/helpers'
+            path: './data',
+            layoutPath: './data/layout',
+            helpersPath: './data/helpers'
         });
+
+        start_server(server);
+    });
+}
+
+function start_server(server)
+{
+    server.start((error) => {
+        if(error)
+        {
+            throw error;
+        }
+
+        console.log(`Server running at: ${server.info.uri}`);
     });
 }
