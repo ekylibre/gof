@@ -4,8 +4,10 @@ const Hapi = require('hapi');
 const Path = require('path');
 const Hoek = require('hoek');
 
+
 const server = new Hapi.Server();
-const routes = require('./routes/index')
+const index = require('./routes/index')
+const Auth = require('./routes/auth')
 
 register_plugins(server);
 
@@ -14,7 +16,7 @@ server.connection({port: 3000, host: 'localhost'});
 server.route({
     method: 'GET',
     path:  '/',
-    handler : routes.get_index
+    handler : index.get_index
 });
 
 function register_plugins(server)
@@ -39,7 +41,6 @@ function register_plugins(server)
     ],
     (error) => {
         Hoek.assert(!error, error);
-
         server.route({
             method: 'GET',
             path : '/data/{file*}',
@@ -52,9 +53,9 @@ function register_plugins(server)
         });
 
         server.route({
-            method: 'GET',
-            path: '/newuser',
-            handler: routes.new_user
+            method: ['GET', 'POST'],
+            path: '/newuser/{firstName}/{lastName}/{email}/{password}',
+            handler: index.new_user
         });
 
         server.views({
@@ -68,6 +69,7 @@ function register_plugins(server)
             helpersPath: './data/helpers'
         });
 
+        new Auth(server);
         start_server(server);
     });
 }
