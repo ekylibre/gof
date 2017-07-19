@@ -72,9 +72,9 @@ function register_plugins(server)
             },
             layout: true,
             relativeTo: __dirname,
-            path: './data',
-            layoutPath: './data/layout',
-            helpersPath: './data/helpers'
+            path: './templates',
+            layoutPath: './templates/layout',
+            helpersPath: './templates/helpers'
         });
 
         new AuthRoute(server);
@@ -91,7 +91,7 @@ function setup_inert_routes(server) {
             path : '/{file*}',
             handler: {
                 directory: {
-                    path: __dirname + '/data',
+                    path: __dirname + '/public',
                     listing: false,
                     index: false,
                 }
@@ -103,7 +103,7 @@ function setup_inert_routes(server) {
             path : '/game/{file*}',
             handler: {
                 directory: {
-                    path: __dirname + '/data',
+                    path: __dirname + '/public',
                     listing: false,
                     index: false,
                 }
