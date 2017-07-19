@@ -1,53 +1,63 @@
 'use strict';
 
+const Constants = require('./constants');
 const Hapi = require('hapi');
 const Path = require('path');
 const Hoek = require('hoek');
-
-
-const server = new Hapi.Server();
+const mongoose = require('mongoose');
 const index = require('./routes/index')
 const Auth = require('./routes/auth')
 
-register_plugins(server);
+const server = new Hapi.Server();
 
-server.connection({port: 3000, host: 'localhost'});
+var dbUrl = 'mongodb://localhost:27017/gof'; 
+var dbOptions = 
+{
+   useMongoClient: true,
+};
 
-server.route({
-    method: 'GET',
-    path:  '/',
-    handler : index.get_index
-});
+mongoose.connect(dbUrl, dbOptions, 
+    (error) => {
+        Hoek.assert(!error, error);
+
+        server.connection({port: 3000});
+        register_plugins(server);
+
+        server.route({
+            method: 'GET',
+            path:  '/',
+            handler : index.get_index
+        });
+
+    }
+);
+
 
 function register_plugins(server)
 {
-    const dbOptions = 
-    {
-        url: "mongodb://localhost:27017/gof",
-        settings: {
-            poolSize: 10
-        },
-        decorate: true
-    };
-
     server.register([
-        {
-            register: require('hapi-mongodb'),
-            options: dbOptions
-        }
-        ,
         require('vision'),
-        require('inert')
+        require('inert'),
+        require('hapi-auth-jwt')
     ],
     (error) => {
+        
         Hoek.assert(!error, error);
+
+        server.auth.strategy('token', 'jwt', {
+            key: Constants.JWT_KEY,
+            verifyOptions: {
+                algorithms: [ 'HS256' ],
+            }
+        });
+
         server.route({
             method: 'GET',
             path : '/data/{file*}',
             handler: {
                 directory: {
                     path: 'data',
-                    listing: true
+                    //listing: true
                 }
             }
         });
@@ -81,7 +91,6 @@ function start_server(server)
         {
             throw error;
         }
-
         console.log(`Server running at: ${server.info.uri}`);
     });
 }
