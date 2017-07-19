@@ -1,17 +1,12 @@
 'use strict';
 
-function User() {
-    this.Clear();
-}
+var mongoose = require ('mongoose');
 
-function Clear() {
-    this._id = null;
-    this.firstName = "";
-    this.lastName = "";
-    this.email = "";
-    this.password = "";
-}
+var UserSchema = new mongoose.Schema({
+    firstName: String,
+    lastName: String,
+    email: {type: String, index: true, unique: true},
+    password: String,
+});
 
-User.prototype.Clear = Clear;
-
-module.exports = User;
+module.exports = mongoose.model('User', UserSchema);
