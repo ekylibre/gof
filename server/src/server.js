@@ -6,8 +6,11 @@ const Path = require('path');
 const Hoek = require('hoek');
 const mongoose = require('mongoose');
 const index = require('./routes/index');
+
 const AuthRoute = require('./routes/auth');
 const PlantsRoute = require('./routes/plants');
+const GameRoute = require('./routes/game');
+
 const DbManager = require('./dbmanager');
 
 const server = new Hapi.Server();
@@ -55,16 +58,7 @@ function register_plugins(server)
             }
         });
 
-        server.route({
-            method: 'GET',
-            path : '/data/{file*}',
-            handler: {
-                directory: {
-                    path: 'data',
-                    //listing: true
-                }
-            }
-        });
+        setup_inert_routes(server);
 
         server.route({
             method: ['GET', 'POST'],
@@ -85,12 +79,39 @@ function register_plugins(server)
 
         new AuthRoute(server);
         new PlantsRoute(server);
+        new GameRoute(server);
+
         start_server(server);
     });
 }
 
-function start_server(server)
-{
+function setup_inert_routes(server) {
+    server.route({
+            method: 'GET',
+            path : '/{file*}',
+            handler: {
+                directory: {
+                    path: __dirname + '/data',
+                    listing: false,
+                    index: false,
+                }
+            }
+        });
+
+        server.route({
+            method: 'GET',
+            path : '/game/{file*}',
+            handler: {
+                directory: {
+                    path: __dirname + '/data',
+                    listing: false,
+                    index: false,
+                }
+            }
+        });
+}
+
+function start_server(server){
     server.start((error) => {
         if(error)
         {
