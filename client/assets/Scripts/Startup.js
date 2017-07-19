@@ -1,5 +1,8 @@
-const Game=require('Game')
+//const Game=require('Game');
 const i18n = require('LanguageData');
+
+import CGame from 'Game';
+const game = new CGame();
 
 
 cc.Class({
@@ -21,7 +24,8 @@ cc.Class({
     // use this for initialization
     onLoad: function ()
     {
-        Game.getInstance().init();
+        //Game.getInstance().init();
+        game.init();
     },
 
     // called every frame, uncomment this function to activate update callback
