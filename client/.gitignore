@@ -4,8 +4,15 @@
 
 library/
 temp/
-local/
+#local/
 build/
+
+local/assets*
+local/hierarchy*
+local/layout*
+local/local*
+local/node*
+
 
 #/////////////////////////////////////////////////////////////////////////////
 # Logs and databases
