@@ -62,14 +62,17 @@
         "__id__": 11
       },
       {
-        "__id__": 13
+        "__id__": 14
       }
     ],
     "_tag": -1,
     "_active": true,
     "_components": [
       {
-        "__id__": 16
+        "__id__": 17
+      },
+      {
+        "__id__": 18
       }
     ],
     "_prefab": null,
@@ -379,6 +382,9 @@
     "_components": [
       {
         "__id__": 12
+      },
+      {
+        "__id__": 13
       }
     ],
     "_prefab": null,
@@ -426,13 +432,23 @@
       "__id__": 11
     },
     "_enabled": true,
-    "_N$string": "<color=#00ff00>Game of </c><color=#0fffff>Farms</color>",
+    "_N$string": "Game of Farms",
     "_N$horizontalAlign": 0,
     "_N$fontSize": 40,
     "_N$font": null,
     "_N$maxWidth": 0,
     "_N$lineHeight": 50,
     "_N$imageAtlas": null
+  },
+  {
+    "__type__": "7eb01WD8EJDeZNKJNi9e5fa",
+    "_name": "",
+    "_objFlags": 0,
+    "node": {
+      "__id__": 11
+    },
+    "_enabled": true,
+    "_dataID": "game_title"
   },
   {
     "__type__": "cc.Node",
@@ -446,14 +462,14 @@
     "_active": true,
     "_components": [
       {
-        "__id__": 14
+        "__id__": 15
       },
       {
-        "__id__": 15
+        "__id__": 16
       }
     ],
     "_prefab": null,
-    "_id": "1116eS6NIlCj6Apntu0CD/p",
+    "_id": "4d782pNcqBJ865HaMtRaCr1",
     "_opacity": 255,
     "_color": {
       "__type__": "cc.Color",
@@ -470,7 +486,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 277.83,
+      "width": 97.87,
       "height": 40
     },
     "_rotationX": 0,
@@ -480,7 +496,7 @@
     "_position": {
       "__type__": "cc.Vec2",
       "x": 0,
-      "y": -498
+      "y": -532
     },
     "_skewX": 0,
     "_skewY": 0,
@@ -494,7 +510,7 @@
     "_name": "",
     "_objFlags": 0,
     "node": {
-      "__id__": 13
+      "__id__": 14
     },
     "_enabled": true,
     "_useOriginalSize": false,
@@ -505,21 +521,20 @@
     "_N$file": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
-    "_N$string": "Game of Farms",
+    "_N$string": "Label",
     "_N$horizontalAlign": 1,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
     "_N$overflow": 0
   },
   {
-    "__type__": "744dcs4DCdNprNhG0xwq6FK",
+    "__type__": "18ea2AjTFtAb7SJWmEwfDmn",
     "_name": "",
     "_objFlags": 0,
     "node": {
-      "__id__": 13
+      "__id__": 14
     },
-    "_enabled": true,
-    "_dataID": "game_title"
+    "_enabled": true
   },
   {
     "__type__": "cc.Canvas",
@@ -536,5 +551,14 @@
     },
     "_fitWidth": false,
     "_fitHeight": true
+  },
+  {
+    "__type__": "ae2f9bQf21IhJYFeGxAPR6E",
+    "_name": "",
+    "_objFlags": 0,
+    "node": {
+      "__id__": 2
+    },
+    "_enabled": true
   }
 ]
