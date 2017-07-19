@@ -1,4 +1,5 @@
-const Game=require('Game');
+import CGame from 'Game';
+const game = new CGame();
 
 cc.Class({
     extends: cc.Component,
@@ -20,8 +21,8 @@ cc.Class({
     onLoad: function ()
     {
         let label = this.getComponent(cc.Label);
-        label.string = Game.getInstance().initialized;
-
+        //let game = UserStore;
+        label.string = game.initialized+'\n isDebug='+game.isDebug+'\n'+game.config.SERVICES_URL;
     },
 
     // called every frame, uncomment this function to activate update callback
