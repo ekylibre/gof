@@ -5,8 +5,10 @@ const Hapi = require('hapi');
 const Path = require('path');
 const Hoek = require('hoek');
 const mongoose = require('mongoose');
-const index = require('./routes/index')
-const Auth = require('./routes/auth')
+const index = require('./routes/index');
+const AuthRoute = require('./routes/auth');
+const PlantsRoute = require('./routes/plants');
+const DbManager = require('./dbmanager');
 
 const server = new Hapi.Server();
 
@@ -19,6 +21,8 @@ var dbOptions =
 mongoose.connect(dbUrl, dbOptions, 
     (error) => {
         Hoek.assert(!error, error);
+
+        DbManager.initiliaze(true);
 
         server.connection({port: 3000});
         register_plugins(server);
@@ -79,7 +83,8 @@ function register_plugins(server)
             helpersPath: './data/helpers'
         });
 
-        new Auth(server);
+        new AuthRoute(server);
+        new PlantsRoute(server);
         start_server(server);
     });
 }
