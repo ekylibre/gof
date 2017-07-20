@@ -1,3 +1,9 @@
+// MapCtrl component
+
+// Add this on the TiledMap to manage touch events
+// Call scrollEvent(null, 0) to disable touch (e.g.: when scrolling map)
+
+
 import CGame from 'Game';
 const game = new CGame();
 
@@ -6,7 +12,8 @@ cc.Class({
     extends: cc.Component,
     editor:
     {
-        requireComponent: cc.TiledMap
+        requireComponent: cc.TiledMap,
+        menu: 'gof/MapCtrl'
     },
 
     properties: {
@@ -14,16 +21,6 @@ cc.Class({
             default: null,
             type: cc.Prefab
         },
-        // foo: {
-        //    default: null,      // The default value will be used only when the component attaching
-        //                           to a node for the first time
-        //    url: cc.Texture2D,  // optional, default is typeof default
-        //    serializable: true, // optional, default is true
-        //    visible: true,      // optional, default is true
-        //    displayName: 'Foo', // optional
-        //    readonly: false,    // optional, default is false
-        // },
-        // ...
     },
 
     // use this for initialization
@@ -58,20 +55,26 @@ cc.Class({
                     
                     game.touchLog = ''+touch.getLocationX()+','+touch.getLocationY()+' => '+loc;
 
-                    //var groups = tiledMap.getObjectGroups();
-                    // for (var i= groups.length-1; i>=0; i--)
-                    // {
-                    //     var group = groups[i];
-                    //     var objs = group.getObjects();
+                    var groups = tiledMap.getObjectGroups();
+                    for (var i= groups.length-1; i>=0; i--)
+                    {
+                        var group = groups[i];
+                        var objs = group.getObjects();
 
-                    //     for (var j=0; j<objs.length; j++)
-                    //     {
-                    //         var obj = objs[j];
+                        for (var j=0; j<objs.length; j++)
+                        {
+                            var obj = objs[j];
 
-                    //         cc.log(obj.name+': '+(obj.sgNode.x)+','+(obj.sgNode.y) );
-                    //         //cc.log('Clicked on objectGroup '+group.getGroupName()+': '+obj.name);
-                    //     }
-                    // }
+                            var rect = new cc.rect(obj.sgNode.x - obj.sgNode.width/2, obj.sgNode.y,
+                            obj.sgNode.width, obj.sgNode.height);
+
+                            if (rect.contains(loc))
+                            {
+                                game.debugLog = 'Clicked on object '+obj.name;
+                                return;
+                            }
+                        }
+                    }
 
                     for (var i = layers.length-1; i >=0; i--)
                     {
@@ -100,7 +103,7 @@ cc.Class({
                                 // a tile is clicked!
                                 var tileGid = layer.getTileGIDAt(cc.v2(isox,isoy));
                                 game.debugLog = 'Clicked on layer '+layer.getLayerName()+' tile at '+isox+','+isoy+' GID='+tileGid;
-                                break;
+                                return;
                             }
                         }
                         
@@ -129,7 +132,7 @@ cc.Class({
                 {
                     var obj = objs[j];
 
-                    var pos = this.node.convertToWorldSpace(new cc.Point(obj.sgNode.x, obj.sgNode.y));
+                    var pos = this.node.convertToWorldSpace(new cc.Vec2(obj.sgNode.x, obj.sgNode.y));
 
                     var dbg = cc.instantiate(this.debugLabelPrefab);
 

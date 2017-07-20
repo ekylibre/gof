@@ -1,8 +1,13 @@
 import CGame from 'Game';
+
 const game = new CGame();
 
 cc.Class({
     extends: cc.Component,
+    editor:
+    {
+        menu: 'gof/UIDebug'
+    },
 
     properties: {
         debugLabel:
@@ -15,21 +20,12 @@ cc.Class({
             default: null,
             type: cc.Label
         },        
-        // foo: {
-        //    default: null,      // The default value will be used only when the component attaching
-        //                           to a node for the first time
-        //    url: cc.Texture2D,  // optional, default is typeof default
-        //    serializable: true, // optional, default is true
-        //    visible: true,      // optional, default is true
-        //    displayName: 'Foo', // optional
-        //    readonly: false,    // optional, default is false
-        // },
-        // ...
     },
 
     // use this for initialization
     onLoad: function ()
     {
+        this.debugLabel.string = game.initialized+'\n isDebug='+game.isDebug+'\n'+game.config.SERVICES_URL;                            
     },
 
     start: function(err)
@@ -43,10 +39,6 @@ cc.Class({
             if (game.debugLog != null)
             {
                 this.debugLabel.string = game.debugLog;
-            }
-            else
-            {
-                this.debugLabel.string = game.initialized+'\n isDebug='+game.isDebug+'\n'+game.config.SERVICES_URL;                            
             }
         }
         if (this.touchLabel != null)

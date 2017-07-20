@@ -1,20 +1,10 @@
-// Startup component, used to initialize the game
-//
-// Must be started before every other "GoF" components
 
-const i18n = require('LanguageData');
-
-import CGame from 'Game';
-const game = new CGame();
-
-
-cc.Class({
+var UIOffice = cc.Class({
     extends: cc.Component,
     editor:
     {
-        menu: 'gof/Startup'
+        menu: 'gof/UIOffice'
     },
-
     properties: {
         // foo: {
         //    default: null,      // The default value will be used only when the component attaching
@@ -28,11 +18,15 @@ cc.Class({
         // ...
     },
 
-    // use this for initialization
-    onLoad: function ()
+    statics:
     {
-        //Game.getInstance().init();
-        game.init();
+        instance: null
+    },
+
+    // use this for initialization
+    onLoad: function () {
+        UIOffice.instance = this;
+        this.node.active = false;
     },
 
     // called every frame, uncomment this function to activate update callback
