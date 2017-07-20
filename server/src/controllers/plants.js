@@ -3,11 +3,11 @@
 const Plant = require('../models/plant');
 const Boom = require('boom');
 
-function PlantsRoute(server){
+function PlantsController(server){
     server.route({
         method: 'GET',
         path: '/plants',
-        handler: PlantsRoute.getAll,
+        handler: PlantsController.getAll,
         config: {
             auth: {
                 strategy: 'token'
@@ -16,18 +16,16 @@ function PlantsRoute(server){
     });
 }
 
-PlantsRoute.getAll = function(request, reply) {
-
+PlantsController.getAll = function(request, reply) {
     Plant.find(
         (error, results) => {
             if(error) {
                 reply(Boom.serverUnavailable('Database error!', error));
                 return;
             }
-
             reply(results);
         }
     );
 }
 
-module.exports = PlantsRoute;
+module.exports = PlantsController;

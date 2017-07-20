@@ -5,12 +5,11 @@ const Hapi = require('hapi');
 const Path = require('path');
 const Hoek = require('hoek');
 const mongoose = require('mongoose');
-const index = require('./routes/index');
 
-const IndexController = require('./routes/index')
-const AuthController = require('./routes/auth');
-const PlantsController = require('./routes/plants');
-const GameController = require('./routes/game');
+const IndexController = require('./controllers/index')
+const AuthController = require('./controllers/auth');
+const PlantsController = require('./controllers/plants');
+const GameController = require('./controllers/game');
 
 const DbManager = require('./dbmanager');
 
