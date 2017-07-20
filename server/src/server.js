@@ -5,18 +5,19 @@ const Hapi = require('hapi');
 const Path = require('path');
 const Hoek = require('hoek');
 const mongoose = require('mongoose');
-const index = require('./routes/index');
-const AuthRoute = require('./routes/auth');
-const PlantsRoute = require('./routes/plants');
+
+const IndexController = require('./controllers/index')
+const AuthController = require('./controllers/auth');
+const PlantsController = require('./controllers/plants');
+const GameController = require('./controllers/game');
 const DbManager = require('./dbmanager');
+const config = require('config');
+
 
 const server = new Hapi.Server();
 
-var dbUrl = 'mongodb://localhost:27017/gof'; 
-var dbOptions = 
-{
-   useMongoClient: true,
-};
+var dbUrl = config.get('Database.connectionUrl');
+var dbOptions = config.get('Database.options');
 
 mongoose.connect(dbUrl, dbOptions, 
     (error) => {
@@ -24,15 +25,9 @@ mongoose.connect(dbUrl, dbOptions,
 
         DbManager.initiliaze(true);
 
-        server.connection({port: 3000});
+        var options = config.get('Server.connectionOptions');
+        server.connection(options);
         register_plugins(server);
-
-        server.route({
-            method: 'GET',
-            path:  '/',
-            handler : index.get_index
-        });
-
     }
 );
 
@@ -49,27 +44,10 @@ function register_plugins(server)
         Hoek.assert(!error, error);
 
         server.auth.strategy('token', 'jwt', {
-            key: Constants.JWT_KEY,
+            key: config.get('Jwt.key'),
             verifyOptions: {
                 algorithms: [ 'HS256' ],
             }
-        });
-
-        server.route({
-            method: 'GET',
-            path : '/data/{file*}',
-            handler: {
-                directory: {
-                    path: 'data',
-                    //listing: true
-                }
-            }
-        });
-
-        server.route({
-            method: ['GET', 'POST'],
-            path: '/newuser/{firstName}/{lastName}/{email}/{password}',
-            handler: index.new_user
         });
 
         server.views({
@@ -78,19 +56,25 @@ function register_plugins(server)
             },
             layout: true,
             relativeTo: __dirname,
-            path: './data',
-            layoutPath: './data/layout',
-            helpersPath: './data/helpers'
+            path: './templates',
+            layoutPath: './templates/layout',
+            helpersPath: './templates/helpers'
         });
 
-        new AuthRoute(server);
-        new PlantsRoute(server);
+        setup_routes(server);
         start_server(server);
     });
 }
 
-function start_server(server)
-{
+function setup_routes(server) {
+ 
+    new IndexController(server);
+    new AuthController(server);
+    new PlantsController(server);
+    new GameController(server);
+}
+
+function start_server(server){
     server.start((error) => {
         if(error)
         {

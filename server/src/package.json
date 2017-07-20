@@ -6,6 +6,7 @@
   "dependencies": {
     "bcrypt": "^1.0.2",
     "boom": "^5.2.0",
+    "config": "^1.26.1",
     "handlebars": "^4.0.10",
     "hapi": "^16.4.3",
     "hapi-auth-jwt": "^4.0.0",
@@ -17,6 +18,7 @@
     "jsonwebtoken": "^7.4.1",
     "mongodb": "^2.2.30",
     "mongoose": "^4.11.3",
+    "nodemailer": "^4.0.1",
     "nodemon": "^1.11.0",
     "path": "^0.12.7",
     "vision": "^4.1.1"

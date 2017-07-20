@@ -11,7 +11,7 @@ var PlantSchema = new mongoose.Schema({
         enum: [
             Constants.CultureModeEnum.NORMAL, 
             Constants.CultureModeEnum.BIO, 
-            Constants.CultureModeEnum.PERMACULTURE, 
+            Constants.CultureModeEnum.PERMACULTURE,
         ],
         required: true,
         default: 'normal'
