@@ -219,7 +219,7 @@ AuthController.resetpassword = function(request, reply) {
                 reply(Boom.badRequest('reset password token not found!', error));
                 return;
             }
-            reply.view('views/resetpassword', {token:token});
+            reply.view('views/resetpassword', {token:token, reset_password_panel_title: 'Saissisez votre nouveau mot de passe'});
         }
     );
 }
