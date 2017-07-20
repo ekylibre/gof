@@ -6,6 +6,8 @@ const jwt = require('jsonwebtoken');
 const Joi = require('joi');
 const User = require('../models/user');
 const Bcrypt = require('bcrypt');
+const crypto = require('crypto');
+const Mailer = require('../helpers/mailer');
 
 function AuthController(server) {
     server.route({
@@ -29,6 +31,24 @@ function AuthController(server) {
         method: 'POST',
         path: '/auth/register',
         handler: AuthController.register
+    });
+
+    server.route({
+        method: 'POST',
+        path: '/auth/lostpassword',
+        handler: AuthController.lostpassword
+    });
+
+    server.route({
+        method: 'GET',
+        path: '/auth/resetpassword/{token}',
+        handler: AuthController.resetpassword,
+    });
+
+    server.route({
+        method: 'POST',
+        path: '/auth/resetpassword',
+        handler: AuthController.resetpasswordpost,
     });
 }
 
@@ -132,11 +152,114 @@ AuthController.register = function(request, reply) {
                                 return;
                             }
                             
-                            reply().code(200);
+                            var mailer = new Mailer();
+                            request.server.render('mails/welcome', {user: u},
+                                (error, rendered, config) => {
+                                    if(!error) {
+                                        mailer.sendMail(u.email, "Game Of Farms", "Welcome to Game Of Farms", rendered);
+                                        mailer.destroy();
+                                    }
+                                    reply().code(200);
+                                }
+                            );
+                            
                     });
                 }
             );
 
+        }
+    );
+}
+
+AuthController.lostpassword = function(request, reply) {
+    var email = request.payload.email;
+
+    User.findOne({email: email},
+        (error, result) => {
+            if(error || !result) {
+                reply(Boom.badRequest('Email not found', error));
+                return;
+            }
+
+            crypto.randomBytes(20,
+                (error, buffer) => {
+                    if(error){
+                        reply(Boom.badRequest('Email not found', error));
+                        return;
+                    }
+                    var token = buffer.toString('hex');
+                    result.resetpassordtoken = token;
+                    result.save(
+                        (error, user) => {
+                            if(error) {
+                                reply(Boom.badRequest());
+                                return;
+                            }
+
+                            var mailer = new Mailer();
+                            var url = request.server.info.uri + "/auth/resetpassword/" + token;
+                            mailer.sendMail(email, "Game Of Farms - Password reset", url, url);
+                            mailer.destroy();
+
+                            reply().code(200);
+                        }
+                    );
+                }
+            )
+        }
+    );
+}
+
+AuthController.resetpassword = function(request, reply) {
+    var token = request.params.token;
+    User.findOne({resetpassordtoken: token},
+        (error, result) => {
+            if(error || !result) {
+                reply(Boom.badRequest('reset password token not found!', error));
+                return;
+            }
+            reply.view('views/resetpassword', {token:token});
+        }
+    );
+}
+
+AuthController.resetpasswordpost = function(request, reply) {
+    var token = request.payload.token;
+    var p1 = request.payload.password1;
+    var p2 = request.payload.password2;
+
+    if(p1 != p2) {
+        reply(Boom.badData('passwords are different'));
+        return;
+    }
+
+    User.findOne({resetpassordtoken: token},
+        (error, result) => {
+            if(error || !result) {
+                reply(Boom.badRequest('reset password token not found!', error));
+                return;
+            }
+            
+            Bcrypt.hash(p1, 10,
+                (err, encrypted) => {
+                    if(err) {
+                        reply(Boom.badRequest('unable to hash new password', error));
+                        return;
+                    }
+
+                    result.resetpassordtoken = null;
+                    result.password = encrypted;
+                    result.save(
+                        (error, user) => {
+                            if(error) {
+                                reply(Boom.badRequest());
+                                return;
+                            }
+                            
+                            reply.view('views/passwordchanged')
+                    });
+                }
+            );
         }
     );
 }
