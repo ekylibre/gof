@@ -6,6 +6,8 @@
 // the singleton also initializes i18n
 // TODO: check language provided by the environment
 
+import CGamePhase from 'GamePhase';
+
 const i18n = require('LanguageData');
 
 const DEBUG = true;
@@ -40,6 +42,8 @@ export default class CGame
     debugLog = null;
     touchLog = '';
 
+    gamePhase = null;
+
     constructor()
     {
         if (instance)
@@ -57,6 +61,8 @@ export default class CGame
         {
             this.config = ConfigMaster;
         }
+
+        this.gamePhase = new CGamePhase();
 
         i18n.init(this.config.LANGUAGE_DEFAULT);
     }
