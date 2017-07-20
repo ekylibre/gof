@@ -10,16 +10,14 @@ const IndexController = require('./controllers/index')
 const AuthController = require('./controllers/auth');
 const PlantsController = require('./controllers/plants');
 const GameController = require('./controllers/game');
-
 const DbManager = require('./dbmanager');
+const config = require('config');
+
 
 const server = new Hapi.Server();
 
-var dbUrl = 'mongodb://localhost:27017/gof'; 
-var dbOptions = 
-{
-   useMongoClient: true,
-};
+var dbUrl = config.get('Database.connectionUrl');
+var dbOptions = config.get('Database.options');
 
 mongoose.connect(dbUrl, dbOptions, 
     (error) => {
@@ -27,7 +25,8 @@ mongoose.connect(dbUrl, dbOptions,
 
         DbManager.initiliaze(true);
 
-        server.connection({port: 3000});
+        var options = config.get('Server.connectionOptions');
+        server.connection(options);
         register_plugins(server);
     }
 );
@@ -45,7 +44,7 @@ function register_plugins(server)
         Hoek.assert(!error, error);
 
         server.auth.strategy('token', 'jwt', {
-            key: Constants.JWT_KEY,
+            key: config.get('Jwt.key'),
             verifyOptions: {
                 algorithms: [ 'HS256' ],
             }

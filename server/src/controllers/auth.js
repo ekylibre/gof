@@ -8,6 +8,7 @@ const User = require('../models/user');
 const Bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const Mailer = require('../helpers/mailer');
+const config = require('config');
 
 function AuthController(server) {
     server.route({
@@ -81,7 +82,7 @@ AuthController.login = function (request, reply) {
                     const token = jwt.sign({
                             email: user.email
                         }, 
-                        Constants.JWT_KEY,
+                        config.get('Jwt.key'),
                         {
                             algorithm: 'HS256',
                             expiresIn: '12h',

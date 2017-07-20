@@ -6,6 +6,7 @@
   "dependencies": {
     "bcrypt": "^1.0.2",
     "boom": "^5.2.0",
+    "config": "^1.26.1",
     "handlebars": "^4.0.10",
     "hapi": "^16.4.3",
     "hapi-auth-jwt": "^4.0.0",
