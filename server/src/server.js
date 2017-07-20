@@ -1,50 +1,38 @@
 'use strict';
 
-const Constants = require('./constants');
+
 const Hapi = require('hapi');
 const Path = require('path');
 const Hoek = require('hoek');
-const mongoose = require('mongoose');
+const Mongoose = require('mongoose');
+const Config = require('config');
 
+const Constants = require('./constants');
 const IndexController = require('./controllers/index')
 const AuthController = require('./controllers/auth');
 const PlantsController = require('./controllers/plants');
 const GameController = require('./controllers/game');
 const DbManager = require('./dbmanager');
-const config = require('config');
-
-
-const server = new Hapi.Server();
-
-var dbUrl = config.get('Database.connectionUrl');
-var dbOptions = config.get('Database.options');
-
-mongoose.connect(dbUrl, dbOptions, 
-    (error) => {
-        Hoek.assert(!error, error);
-
-        DbManager.initiliaze(true);
-
-        var options = config.get('Server.connectionOptions');
-        server.connection(options);
-        register_plugins(server);
-    }
-);
-
 
 function register_plugins(server)
 {
     server.register([
         require('vision'),
         require('inert'),
-        require('hapi-auth-jwt')
+        require('hapi-auth-jwt'),
+        {
+            register: require('hapi-graceful-pm2'),
+            options: {
+                timeout: 4000
+            }
+        }
     ],
     (error) => {
         
         Hoek.assert(!error, error);
 
         server.auth.strategy('token', 'jwt', {
-            key: config.get('Jwt.key'),
+            key: Config.get('Jwt.key'),
             verifyOptions: {
                 algorithms: [ 'HS256' ],
             }
@@ -83,3 +71,26 @@ function start_server(server){
         console.log(`Server running at: ${server.info.uri}`);
     });
 }
+
+//entry point
+function main() {
+    const server = new Hapi.Server();
+
+    var dbUrl = Config.get('Database.connectionUrl');
+    var dbOptions = Config.get('Database.options');
+
+    Mongoose.connect(dbUrl, dbOptions, 
+        (error) => {
+            Hoek.assert(!error, error);
+
+            DbManager.initiliaze(true);
+
+            var options = Config.get('Server.connectionOptions');
+            server.connection(options);
+            register_plugins(server);
+        }
+    );
+}
+
+
+main();
