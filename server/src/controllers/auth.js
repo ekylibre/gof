@@ -7,17 +7,17 @@ const Joi = require('joi');
 const User = require('../models/user');
 const Bcrypt = require('bcrypt');
 
-function AuthRoute(server) {
+function AuthController(server) {
     server.route({
         method: 'POST',
         path: '/auth/login',
-        handler: AuthRoute.login
+        handler: AuthController.login
     });
 
     server.route({
         method: 'GET',
         path: '/auth/check',
-        handler: AuthRoute.check,
+        handler: AuthController.check,
         config: {
             auth: {
                 strategy: 'token'
@@ -28,11 +28,11 @@ function AuthRoute(server) {
     server.route({
         method: 'POST',
         path: '/auth/register',
-        handler: AuthRoute.register
+        handler: AuthController.register
     });
 }
 
-AuthRoute.login = function (request, reply) {
+AuthController.login = function (request, reply) {
 
     var email = request.payload.email;
     var password = request.payload.password;
@@ -73,7 +73,7 @@ AuthRoute.login = function (request, reply) {
     );
 }
 
-AuthRoute.check = function (request, reply) {
+AuthController.check = function (request, reply) {
 
     var email = request.auth.credentials.email;
 
@@ -94,7 +94,7 @@ AuthRoute.check = function (request, reply) {
     );
 }
 
-AuthRoute.register = function(request, reply) {
+AuthController.register = function(request, reply) {
 
     var first = request.payload.firstName;
     var last = request.payload.lastName;
@@ -141,5 +141,5 @@ AuthRoute.register = function(request, reply) {
     );
 }
 
-module.exports = AuthRoute;
+module.exports = AuthController;
 

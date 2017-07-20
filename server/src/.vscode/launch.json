@@ -4,39 +4,21 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Node",
-            "cwd": "${workspaceRoot}",
-            "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/nodemon",
-            "runtimeArgs": [
-                "--inspect=5858"
-            ],
-            "program": "${workspaceRoot}/server.js",
-            "restart":true,
-            "port": 5858,
-            "console": "integratedTerminal",
-            "internalConsoleOptions": "neverOpen",
-            "protocol": "inspector"
+            "name": "server",
+            "program": "${workspaceRoot}/server.js"
         },
-
         {
             "type": "chrome",
             "request": "launch",
-            "name": "Chrome",
+            "name": "client",
             "url": "http://localhost:3000",
-            "webRoot": "${workspaceRoot}"
-        },
-        {
-            "type": "chrome",
-            "request": "attach",
-            "name": "Attach to Chrome",
-            "port": 9222,
             "webRoot": "${workspaceRoot}"
         }
     ],
     "compounds": [
         { 
-            "name": "DEBUG ALL",
-            "configurations": ["Node", "Chrome"]
+            "name": "debug_all",
+            "configurations": ["server", "client"]
         }
     ]    
 }

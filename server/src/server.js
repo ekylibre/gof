@@ -7,9 +7,10 @@ const Hoek = require('hoek');
 const mongoose = require('mongoose');
 const index = require('./routes/index');
 
-const AuthRoute = require('./routes/auth');
-const PlantsRoute = require('./routes/plants');
-const GameRoute = require('./routes/game');
+const IndexController = require('./routes/index')
+const AuthController = require('./routes/auth');
+const PlantsController = require('./routes/plants');
+const GameController = require('./routes/game');
 
 const DbManager = require('./dbmanager');
 
@@ -29,13 +30,6 @@ mongoose.connect(dbUrl, dbOptions,
 
         server.connection({port: 3000});
         register_plugins(server);
-
-        server.route({
-            method: 'GET',
-            path:  '/',
-            handler : index.get_index
-        });
-
     }
 );
 
@@ -58,14 +52,6 @@ function register_plugins(server)
             }
         });
 
-        setup_inert_routes(server);
-
-        server.route({
-            method: ['GET', 'POST'],
-            path: '/newuser/{firstName}/{lastName}/{email}/{password}',
-            handler: index.new_user
-        });
-
         server.views({
             engines: {
                 html: require('handlebars')
@@ -77,38 +63,17 @@ function register_plugins(server)
             helpersPath: './templates/helpers'
         });
 
-        new AuthRoute(server);
-        new PlantsRoute(server);
-        new GameRoute(server);
-
+        setup_routes(server);
         start_server(server);
     });
 }
 
-function setup_inert_routes(server) {
-    server.route({
-            method: 'GET',
-            path : '/{file*}',
-            handler: {
-                directory: {
-                    path: __dirname + '/public',
-                    listing: false,
-                    index: false,
-                }
-            }
-        });
-
-        server.route({
-            method: 'GET',
-            path : '/game/{file*}',
-            handler: {
-                directory: {
-                    path: __dirname + '/public',
-                    listing: false,
-                    index: false,
-                }
-            }
-        });
+function setup_routes(server) {
+ 
+    new IndexController(server);
+    new AuthController(server);
+    new PlantsController(server);
+    new GameController(server);
 }
 
 function start_server(server){
