@@ -37,6 +37,9 @@ export default class CGame
   
     initialized='';
 
+    debugLog = null;
+    touchLog = '';
+
     constructor()
     {
         if (instance)

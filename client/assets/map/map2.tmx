@@ -117,7 +117,7 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
- <objectgroup name="Calque d'objets 1" offsetx="784" offsety="-400">
-  <object id="2" gid="18" x="2108.5" y="2941.5" width="562" height="602"/>
+ <objectgroup name="Calque d'objets 1">
+  <object id="2" name="entry" gid="18" x="2108.5" y="2941.5" width="562" height="602"/>
  </objectgroup>
 </map>
