@@ -7,8 +7,9 @@ const Joi = require('joi');
 const User = require('../models/user');
 const Bcrypt = require('bcrypt');
 const crypto = require('crypto');
-const Mailer = require('../helpers/mailer');
+const Mailer = require('../utils/mailer');
 const config = require('config');
+const Hoek = require('hoek');
 
 function AuthController(server) {
     server.route({
@@ -154,10 +155,18 @@ AuthController.register = function(request, reply) {
                             }
                             
                             var mailer = new Mailer();
-                            request.server.render('mails/welcome', {user: u},
-                                (error, rendered, config) => {
+                            var ctx = request.i18n;
+                            ctx.user = u;
+                            
+                            request.server.render('mails/welcome', ctx, { layoutPath: './templates/mails/layout', }, 
+                                (error, html, config) => {
+                                    Hoek.assert(!error, error);
+
                                     if(!error) {
-                                        mailer.sendMail(u.email, "Game Of Farms", "Welcome to Game Of Farms", rendered);
+                                        var subject = request.i18n.__("game_title");
+                                        var text = request.i18n.__("welcome_new_user");
+
+                                        mailer.sendMail(u.email, subject, text, html);
                                         mailer.destroy();
                                     }
                                     reply().code(200);
@@ -257,7 +266,7 @@ AuthController.resetpasswordpost = function(request, reply) {
                                 return;
                             }
                             
-                            reply.view('views/passwordchanged')
+                            reply.view('views/passwordchanged', {user: result});
                     });
                 }
             );
