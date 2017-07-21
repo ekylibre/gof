@@ -2,7 +2,7 @@ import CGame from 'Game';
 
 const game = new CGame();
 
-cc.Class({
+var UIDebug = cc.Class({
     extends: cc.Component,
     editor:
     {
@@ -19,13 +19,45 @@ cc.Class({
         {
             default: null,
             type: cc.Label
-        },        
+        },
+
+        mapScrollView:
+        {
+            default: null,
+            type: cc.ScrollView
+        },
+    },
+
+    statics:
+    {
+        instance: null,
+        _log: [],
+        log: function(line)
+        {
+            var l = UIDebug._log.length;
+            if (l == 5)
+            {
+                l = 4;
+            }
+            for (var i=l; i>0; i--)
+            {
+                UIDebug._log[i] = UIDebug._log[i-1];
+            }
+
+            UIDebug._log[0]=line;
+        },
+        touchLog: '',
     },
 
     // use this for initialization
     onLoad: function ()
     {
-        this.debugLabel.string = game.initialized+'\n isDebug='+game.isDebug+'\n'+game.config.SERVICES_URL;                            
+        if (UIDebug.instance != null)
+        {
+            cc.error('UIDebug instance already loaded');
+        }
+        UIDebug.instance = this;
+        UIDebug.log(game.initialized+'\n isDebug='+game.isDebug+'\n'+game.config.SERVICES_URL);
     },
 
     start: function(err)
@@ -36,14 +68,21 @@ cc.Class({
     {
         if (this.debugLabel != null)
         {
-            if (game.debugLog != null)
+            this.debugLabel.string = '';
+            for (var i=0; i<UIDebug._log.length; i++)
             {
-                this.debugLabel.string = game.debugLog;
+                this.debugLabel.string += UIDebug._log[i] + '\n';
             }
         }
+
         if (this.touchLabel != null)
         {
-            this.touchLabel.string = game.touchLog;
+            this.touchLabel.string = UIDebug.touchLog;
+
+            if (this.mapScrollView != null)
+            {
+                this.touchLabel.string += ' scrollOffset='+this.mapScrollView.getScrollOffset();
+            }
         }
     },
 });
