@@ -17,20 +17,32 @@ const DbManager = require('./dbmanager');
 function register_plugins(server)
 {
     server.register([
-        require('vision'),
         require('inert'),
         require('hapi-auth-jwt'),
+        {
+            //localization plugin will set language from header field 'language'
+            register: require('hapi-i18n'),
+            options: {
+                locales: ['fr'],
+                directory: __dirname + '/locales',
+                queryParameter: 'lang',
+                //languageHeaderField: 'language',
+                defaultLocale: 'fr' // default to first element in locales array if not specified
+            }
+        },
         {
             register: require('hapi-graceful-pm2'),
             options: {
                 timeout: 4000
             }
-        }
+        },
+        require('vision'),
     ],
     (error) => {
         
         Hoek.assert(!error, error);
 
+        //setup authentication
         server.auth.strategy('token', 'jwt', {
             key: Config.get('Jwt.key'),
             verifyOptions: {
@@ -38,9 +50,14 @@ function register_plugins(server)
             }
         });
 
+        //register helper to handle bars to allow {{i18n "text_tag_to_localize"}} in templates
+        var Handlebars = require('handlebars');
+        Handlebars.registerHelper('i18n', require('./utils/handlebarshelpers').i18n_helper);
+
+        //setup view templates
         server.views({
             engines: {
-                html: require('handlebars')
+                html: Handlebars
             },
             layout: true,
             relativeTo: __dirname,
@@ -55,7 +72,6 @@ function register_plugins(server)
 }
 
 function setup_routes(server) {
- 
     new IndexController(server);
     new AuthController(server);
     new PlantsController(server);

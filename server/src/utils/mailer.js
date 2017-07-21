@@ -27,7 +27,6 @@ Mailer.prototype.sendMail = function (recipient, subject, text, html) {
 
 Mailer.prototype.destroy = function() {
     this.transport.close();
-    this.transport = null;
 } 
 
 module.exports = Mailer;

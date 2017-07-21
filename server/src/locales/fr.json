@@ -1,0 +1,8 @@
+{
+	"game_title": "Game Of Farms",
+	"reset_password_panel_title": "Saisissez ici votre nouveau mot de passe",
+	"password_input": "Mot de passe",
+	"password_confirmation_input" : "Confirmation",
+	"reset_password_success" : "Votre mot de passe a été changé avec succès",
+	"welcome_new_user": "Bienvenue dans Game Of Farms {{user.firstName}} {{user.lastName}}"
+}
