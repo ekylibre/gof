@@ -18,13 +18,25 @@ function IndexController(server) {
     server.route({
         method: 'GET',
         path: '/',
-        handler: IndexController.root
-
+        handler: IndexController.root,
+        config: {
+            auth: {
+                strategy: 'token',
+                mode: 'optional'
+            }
+        }
     });
 }
 
 IndexController.root = function(request, reply) {
-    reply.view('views/index', {title: "Game Of Farms"});
+
+    if(request.auth.isAuthenticated) {
+        reply.redirect('/game/start');
+        return;
+    }
+
+    var ctx = request.i18n;
+    reply.view('views/index', ctx);
 }
 
 module.exports = IndexController;

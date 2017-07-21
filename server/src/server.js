@@ -16,9 +16,13 @@ const DbManager = require('./dbmanager');
 
 function register_plugins(server)
 {
+    //register helper to handle bars to allow {{i18n "text_tag_to_localize"}} in templates
+    var Handlebars = require('handlebars');
+    Handlebars.registerHelper('i18n', require('./utils/handlebarshelpers').i18n_helper);
+
     server.register([
         require('inert'),
-        require('hapi-auth-jwt'),
+        require('hapi-auth-cookie-jwt'),
         {
             //localization plugin will set language from header field 'language'
             register: require('hapi-i18n'),
@@ -43,16 +47,15 @@ function register_plugins(server)
         Hoek.assert(!error, error);
 
         //setup authentication
-        server.auth.strategy('token', 'jwt', {
+        //server.auth.strategy('token', 'jwt', {
+        server.auth.strategy('token', 'jwt-cookie', {
             key: Config.get('Jwt.key'),
             verifyOptions: {
                 algorithms: [ 'HS256' ],
             }
         });
 
-        //register helper to handle bars to allow {{i18n "text_tag_to_localize"}} in templates
-        var Handlebars = require('handlebars');
-        Handlebars.registerHelper('i18n', require('./utils/handlebarshelpers').i18n_helper);
+        
 
         //setup view templates
         server.views({
@@ -80,8 +83,7 @@ function setup_routes(server) {
 
 function start_server(server){
     server.start((error) => {
-        if(error)
-        {
+        if(error) {
             throw error;
         }
         console.log(`Server running at: ${server.info.uri}`);

@@ -18,7 +18,10 @@ function GameController(server) {
     server.route({
         method: 'GET',
         path: '/game/start',
-        handler: GameController.startGame
+        handler: GameController.startGame,
+        config: {
+            auth: 'token'
+        }
     });
 
     
