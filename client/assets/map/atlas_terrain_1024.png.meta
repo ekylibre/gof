@@ -1,0 +1,30 @@
+{
+  "ver": "1.0.0",
+  "uuid": "2792a823-a3e6-44f7-bddb-8741ba7dc4ef",
+  "type": "sprite",
+  "wrapMode": "clamp",
+  "filterMode": "bilinear",
+  "subMetas": {
+    "atlas_terrain_1024": {
+      "ver": "1.0.3",
+      "uuid": "38f80b84-4c5a-4c5c-9165-84076eb73af8",
+      "rawTextureUuid": "2792a823-a3e6-44f7-bddb-8741ba7dc4ef",
+      "trimType": "auto",
+      "trimThreshold": 1,
+      "rotated": false,
+      "offsetX": -32,
+      "offsetY": 32,
+      "trimX": 0,
+      "trimY": 0,
+      "width": 960,
+      "height": 960,
+      "rawWidth": 1024,
+      "rawHeight": 1024,
+      "borderTop": 0,
+      "borderBottom": 0,
+      "borderLeft": 0,
+      "borderRight": 0,
+      "subMetas": {}
+    }
+  }
+}
