@@ -1,11 +1,15 @@
 
+import UIPopupBase from 'UIPopupBase'
+
+
 var UIOffice = cc.Class({
-    extends: cc.Component,
+    extends: UIPopupBase,
     editor:
     {
         menu: 'gof/UIOffice'
     },
     properties: {
+
         // foo: {
         //    default: null,      // The default value will be used only when the component attaching
         //                           to a node for the first time
@@ -20,17 +24,24 @@ var UIOffice = cc.Class({
 
     statics:
     {
-        instance: null
+        instance: null,
     },
 
     // use this for initialization
     onLoad: function () {
+
         UIOffice.instance = this;
-        this.node.active = false;
+        this.init();
     },
 
     // called every frame, uncomment this function to activate update callback
     // update: function (dt) {
 
     // },
+
+    onBtClose: function()
+    {
+        this.hide();
+    }
+
 });

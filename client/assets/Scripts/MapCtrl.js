@@ -4,9 +4,11 @@
 // Call scrollEvent(null, 0) to disable touch (e.g.: when scrolling map)
 
 
-import CGame from 'Game';
-const game = new CGame();
+//import CGame from 'Game';
+//const game = new CGame();
 
+const UIOffice = require('UIOffice');
+const UIDebug = require('UIDebug');
 
 cc.Class({
     extends: cc.Component,
@@ -17,6 +19,20 @@ cc.Class({
     },
 
     properties: {
+        // the ScrollView containing the map
+        mapScrollView:
+        {
+            default: null,
+            type: cc.ScrollView
+        },
+
+        // starting ScrollView offset
+        startOffset:
+        {
+            default: new cc.Vec2(0,0),
+        },
+
+        // a debug prefab
         debugLabelPrefab: {
             default: null,
             type: cc.Prefab
@@ -44,7 +60,7 @@ cc.Class({
                 }
 
                 var touch = event.touch;
-                var tiledMap = this.node.getComponent('cc.TiledMap');
+                var tiledMap = this._tiledMap; //this.node.getComponent('cc.TiledMap');
                 if (tiledMap)
                 {
                     var mapSize = tiledMap.getMapSize();
@@ -53,7 +69,7 @@ cc.Class({
                     // convert touch position to node position (i.e. map position)
                     var loc = tiledMap.node.convertToNodeSpace(touch.getLocation());
                     
-                    game.touchLog = ''+touch.getLocationX()+','+touch.getLocationY()+' => '+loc;
+                    UIDebug.touchLog = ''+touch.getLocationX()+','+touch.getLocationY()+' => '+loc;
 
                     var groups = tiledMap.getObjectGroups();
                     for (var i= groups.length-1; i>=0; i--)
@@ -70,7 +86,9 @@ cc.Class({
 
                             if (rect.contains(loc))
                             {
-                                game.debugLog = 'Clicked on object '+obj.name;
+                                UIDebug.log('Clicked on object '+obj.name);
+
+                                UIOffice.instance.show();
                                 return;
                             }
                         }
@@ -102,7 +120,7 @@ cc.Class({
                             {
                                 // a tile is clicked!
                                 var tileGid = layer.getTileGIDAt(cc.v2(isox,isoy));
-                                game.debugLog = 'Clicked on layer '+layer.getLayerName()+' tile at '+isox+','+isoy+' GID='+tileGid;
+                                UIDebug.log('Clicked on layer '+layer.getLayerName()+' tile at '+isox+','+isoy+' GID='+tileGid);
                                 return;
                             }
                         }
@@ -117,6 +135,10 @@ cc.Class({
     {
         if (err) return;
 
+        // Scroll map to starting offset
+        this.mapScrollView.scrollToOffset(this.startOffset);
+
+        // Get tileMap component
         this._tiledMap = this.node.getComponent('cc.TiledMap');
 
         // display debug info on map "objects"

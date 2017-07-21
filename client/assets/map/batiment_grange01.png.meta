@@ -1,0 +1,30 @@
+{
+  "ver": "1.0.0",
+  "uuid": "585ff201-6f29-426a-8a0c-b33d63525d3f",
+  "type": "sprite",
+  "wrapMode": "clamp",
+  "filterMode": "bilinear",
+  "subMetas": {
+    "batiment_grange01": {
+      "ver": "1.0.3",
+      "uuid": "5298fc8a-2ee4-4069-a2f4-6fea89ebde6b",
+      "rawTextureUuid": "585ff201-6f29-426a-8a0c-b33d63525d3f",
+      "trimType": "auto",
+      "trimThreshold": 1,
+      "rotated": false,
+      "offsetX": 0,
+      "offsetY": 0,
+      "trimX": 0,
+      "trimY": 0,
+      "width": 466,
+      "height": 365,
+      "rawWidth": 466,
+      "rawHeight": 365,
+      "borderTop": 0,
+      "borderBottom": 0,
+      "borderLeft": 0,
+      "borderRight": 0,
+      "subMetas": {}
+    }
+  }
+}
