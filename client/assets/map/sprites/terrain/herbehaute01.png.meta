@@ -1,0 +1,30 @@
+{
+  "ver": "1.0.0",
+  "uuid": "f3efe3b0-82ab-4720-87fc-7e6f42e331f6",
+  "type": "sprite",
+  "wrapMode": "clamp",
+  "filterMode": "bilinear",
+  "subMetas": {
+    "herbehaute01": {
+      "ver": "1.0.3",
+      "uuid": "fe375fe1-67ff-4b85-a27f-994d9b3c7b02",
+      "rawTextureUuid": "f3efe3b0-82ab-4720-87fc-7e6f42e331f6",
+      "trimType": "auto",
+      "trimThreshold": 1,
+      "rotated": false,
+      "offsetX": 2,
+      "offsetY": 3,
+      "trimX": 7,
+      "trimY": 3,
+      "width": 922,
+      "height": 354,
+      "rawWidth": 932,
+      "rawHeight": 366,
+      "borderTop": 0,
+      "borderBottom": 0,
+      "borderLeft": 0,
+      "borderRight": 0,
+      "subMetas": {}
+    }
+  }
+}
