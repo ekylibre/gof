@@ -4,5 +4,11 @@
 	"password_input": "Mot de passe",
 	"password_confirmation_input" : "Confirmation",
 	"reset_password_success" : "Votre mot de passe a été changé avec succès",
-	"welcome_new_user": "Bienvenue dans Game Of Farms {{user.firstName}} {{user.lastName}}"
+	"welcome_new_user": "Bienvenue dans Game Of Farms {{user.firstName}} {{user.lastName}}",
+	"lost_password_message": "Vous avez demandé à récupérer votre de mot de passe. Veuillez cliquer ci-dessous pour choisir un nouveau mot de passe",
+	"click_here" : "Cliquez ici",
+	"index_welcome" : "Bienvenue dans Game Of Farms !",
+	"login": "Se connecter",
+	"register": "Créer un compte",
+	"email_input": "Email"
 }

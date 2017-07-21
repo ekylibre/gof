@@ -11,6 +11,16 @@ const Mailer = require('../utils/mailer');
 const config = require('config');
 const Hoek = require('hoek');
 
+var cookie_options = {
+    ttl: 12 * 3600 * 1000, // expires in 12h
+    encoding: 'none',    // we already used JWT to encode
+    isSecure: false,     
+    isHttpOnly: true,    // prevent client alteration
+    clearInvalid: false, // remove invalid cookies
+    strictHeader: true,  // don't allow violations of RFC 6265
+    path: '/'            // set the cookie for all routes
+};
+
 function AuthController(server) {
     server.route({
         method: 'POST',
@@ -89,7 +99,8 @@ AuthController.login = function (request, reply) {
                             expiresIn: '12h',
                         }
                     );
-                    reply({token: token, user: user});
+                    reply().state('access_token', token, cookie_options);
+                    //reply.redirect('/game/start');
             });
         }
     );
@@ -172,11 +183,9 @@ AuthController.register = function(request, reply) {
                                     reply().code(200);
                                 }
                             );
-                            
                     });
                 }
             );
-
         }
     );
 }
@@ -185,8 +194,8 @@ AuthController.lostpassword = function(request, reply) {
     var email = request.payload.email;
 
     User.findOne({email: email},
-        (error, result) => {
-            if(error || !result) {
+        (error, user) => {
+            if(error || !user) {
                 reply(Boom.badRequest('Email not found', error));
                 return;
             }
@@ -198,20 +207,36 @@ AuthController.lostpassword = function(request, reply) {
                         return;
                     }
                     var token = buffer.toString('hex');
-                    result.resetpassordtoken = token;
-                    result.save(
+                    user.resetpassordtoken = token;
+                    user.save(
                         (error, user) => {
                             if(error) {
                                 reply(Boom.badRequest());
                                 return;
                             }
 
-                            var mailer = new Mailer();
                             var url = request.server.info.uri + "/auth/resetpassword/" + token;
-                            mailer.sendMail(email, "Game Of Farms - Password reset", url, url);
-                            mailer.destroy();
 
-                            reply().code(200);
+                            var subject = request.i18n.__("game_title");
+                            var text = request.i18n.__("lost_password_message");
+
+                            var mailer = new Mailer();
+                            var ctx = request.i18n;
+                            ctx.user = user;
+                            ctx.url = url;
+                            ctx.preheader_text = text;
+
+                            request.server.render('mails/lostpassword', ctx, { layoutPath: './templates/mails/layout', }, 
+                                (error, html, config) => {
+                                    Hoek.assert(!error, error);
+                                    
+
+                                    mailer.sendMail(user.email, subject, text, html);
+                                    mailer.destroy();
+
+                                    reply().code(200);
+                                }
+                            );
                         }
                     );
                 }
