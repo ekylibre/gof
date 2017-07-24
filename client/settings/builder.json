@@ -20,8 +20,5 @@
   "renderMode": "1",
   "startScene": "b43f2ff1-2473-4a89-a0e7-9f46634d7a41",
   "title": "gof",
-  "webOrientation": "auto",
-  "includeSDKBox": false,
-  "inlineSpriteFrames_native": true,
-  "optimizeHotUpdate": false
+  "webOrientation": "auto"
 }

@@ -15,6 +15,7 @@
     "hapi-i18n": "^1.0.5",
     "hapi-mongo-models": "^6.0.0",
     "hapi-mongodb": "^6.2.1",
+    "hapi-recaptcha": "^0.2.0",
     "hoek": "^4.1.1",
     "inert": "^4.2.0",
     "joi": "^10.6.0",
