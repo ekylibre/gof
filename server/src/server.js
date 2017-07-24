@@ -41,6 +41,7 @@ function register_plugins(server)
             }
         },
         require('vision'),
+        require('hapi-recaptcha')
     ],
     (error) => {
         

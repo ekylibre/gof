@@ -2,7 +2,7 @@
   "androidStudio": true,
   "apiLevel": "",
   "appABIs": [],
-  "buildPath": "..\\server\\src\\data\\game",
+  "buildPath": "D:\\work\\git\\ekylibre\\gof\\server\\src\\public",
   "debug": false,
   "keystoreAlias": "",
   "keystoreAliasPassword": "",
