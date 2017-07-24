@@ -14,7 +14,7 @@ cc.Class({
     extends: cc.Component,
     editor:
     {
-        requireComponent: cc.TiledMap,
+        //requireComponent: cc.TiledMap,
         menu: 'gof/MapCtrl'
     },
 
@@ -23,26 +23,58 @@ cc.Class({
         mapScrollView:
         {
             default: null,
-            type: cc.ScrollView
+            type: cc.ScrollView,
+            displayName: 'MapScrollView'
         },
-
+        
         // starting ScrollView offset
         startOffset:
         {
             default: new cc.Vec2(0,0),
+            displayName: 'Scroll starting pos'
+        },
+        
+        // List of parcels TiledMaps
+        mapParcels:
+        {
+            default: [],
+            type: [cc.TiledMap],
+            displayName: 'Parcels maps'
+        },
+
+        // List of sprouts TiledMaps
+        mapSprouts:
+        {
+            default: [],
+            type: [cc.TiledMap],
+            displayName: 'Sprouts maps'
+        },
+
+        // List of objects TiledMaps
+        mapObjects:
+        {
+            default: [],
+            type: [cc.TiledMap],
+            displayName: 'Objects maps'
         },
 
         // a debug prefab
-        debugLabelPrefab: {
-            default: null,
-            type: cc.Prefab
-        },
+        // debugLabelPrefab: {
+        //     default: null,
+        //     type: cc.Prefab
+        // },
     },
 
     // use this for initialization
     onLoad: function()
     {
         // Setting touch events
+
+        this.initTouch();
+    },
+
+    initTouch: function()
+    {
         this.node.on(cc.Node.EventType.TOUCH_START,
             (event) =>
             {
@@ -50,6 +82,8 @@ cc.Class({
             },
             this.node
         );
+
+
         this.node.on(cc.Node.EventType.TOUCH_END,
             (event) =>
             {
@@ -60,6 +94,11 @@ cc.Class({
                 }
 
                 var touch = event.touch;
+
+                if (this.mapParcels && this.mapParcels.length>0)
+                {
+                    
+                }
                 var tiledMap = this._tiledMap; //this.node.getComponent('cc.TiledMap');
                 if (tiledMap)
                 {
@@ -129,6 +168,12 @@ cc.Class({
                 }
             },
             this.node);
+
+    },
+
+    touchOnMap: function(_Map)
+    {
+
     },
 
     start: function(err)
@@ -138,35 +183,32 @@ cc.Class({
         // Scroll map to starting offset
         this.mapScrollView.scrollToOffset(this.startOffset);
 
-        // Get tileMap component
-        this._tiledMap = this.node.getComponent('cc.TiledMap');
+        // // display debug info on map "objects"
+        // if (this._tiledMap)
+        // {
+        //     var groups = this._tiledMap.getObjectGroups();
+        //     for (var i= groups.length-1; i>=0; i--)
+        //     {
+        //         var group = groups[i];
+        //         var objs = group.getObjects();
 
-        // display debug info on map "objects"
-        if (this._tiledMap)
-        {
-            var groups = this._tiledMap.getObjectGroups();
-            for (var i= groups.length-1; i>=0; i--)
-            {
-                var group = groups[i];
-                var objs = group.getObjects();
+        //         for (var j=0; j<objs.length; j++)
+        //         {
+        //             var obj = objs[j];
 
-                for (var j=0; j<objs.length; j++)
-                {
-                    var obj = objs[j];
+        //             var pos = this.node.convertToWorldSpace(new cc.Vec2(obj.sgNode.x, obj.sgNode.y));
 
-                    var pos = this.node.convertToWorldSpace(new cc.Vec2(obj.sgNode.x, obj.sgNode.y));
+        //             var dbg = cc.instantiate(this.debugLabelPrefab);
 
-                    var dbg = cc.instantiate(this.debugLabelPrefab);
+        //             dbg.setPosition(pos);
+        //             dbg.setParent(this.node);
 
-                    dbg.setPosition(pos);
-                    dbg.setParent(this.node);
-
-                    var label = dbg.getComponentInChildren(cc.Label);                   
+        //             var label = dbg.getComponentInChildren(cc.Label);                   
                     
-                    label.string = obj.name+': '+Math.floor(obj.sgNode.x)+','+Math.floor(obj.sgNode.y);
-                }
-            }
-        }
+        //             label.string = obj.name+': '+Math.floor(obj.sgNode.x)+','+Math.floor(obj.sgNode.y);
+        //         }
+        //     }
+        // }
         
     },
 
