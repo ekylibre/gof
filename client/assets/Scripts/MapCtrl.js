@@ -59,10 +59,10 @@ cc.Class({
         },
 
         // a debug prefab
-        // debugLabelPrefab: {
-        //     default: null,
-        //     type: cc.Prefab
-        // },
+        debugLabelPrefab: {
+            default: null,
+            type: cc.Prefab
+        },
     },
 
     // use this for initialization
@@ -70,7 +70,7 @@ cc.Class({
     {
         // Setting touch events
 
-        this.initTouch();
+        //this.initTouch();
     },
 
     initTouch: function()
@@ -94,86 +94,183 @@ cc.Class({
                 }
 
                 var touch = event.touch;
+                // get 
 
+                if (this.mapObjects && this.mapObjects.length>0)
+                {
+                    for (var i=0; i<this.mapObjects.length; i++)
+                    {
+                        var loc = this.mapObjects[i].node.convertToNodeSpace(touch.getLocation());
+                        if (this.touchOnMap(this.mapObjects[i], loc))
+                        {
+                            return;
+                        }
+                    }
+                }
+
+                if (this.mapSprouts && this.mapSprouts.length>0)
+                {
+                    for (var i=0; i<this.mapSprouts.length; i++)
+                    {
+                        var loc = this.mapSprouts[i].node.convertToNodeSpace(touch.getLocation());
+                        if (this.touchOnMap(this.mapSprouts[i], loc))
+                        {
+                            return;
+                        }
+                    }
+                }
+                
                 if (this.mapParcels && this.mapParcels.length>0)
                 {
-                    
-                }
-                var tiledMap = this._tiledMap; //this.node.getComponent('cc.TiledMap');
-                if (tiledMap)
-                {
-                    var mapSize = tiledMap.getMapSize();
-                    var layers = tiledMap.allLayers();
+                    UIDebug.touchLog = ''+touch.getLocationX()+','+touch.getLocationY()+' => '+this.mapParcels[0].node.convertToNodeSpace(touch.getLocation());                    
 
-                    // convert touch position to node position (i.e. map position)
-                    var loc = tiledMap.node.convertToNodeSpace(touch.getLocation());
-                    
-                    UIDebug.touchLog = ''+touch.getLocationX()+','+touch.getLocationY()+' => '+loc;
-
-                    var groups = tiledMap.getObjectGroups();
-                    for (var i= groups.length-1; i>=0; i--)
+                    for (var i=0; i<this.mapParcels.length; i++)
                     {
-                        var group = groups[i];
-                        var objs = group.getObjects();
-
-                        for (var j=0; j<objs.length; j++)
+                        var loc = this.mapParcels[i].node.convertToNodeSpace(touch.getLocation());
+                        if (this.touchOnMap(this.mapParcels[i], loc))
                         {
-                            var obj = objs[j];
-
-                            var rect = new cc.rect(obj.sgNode.x - obj.sgNode.width/2, obj.sgNode.y,
-                            obj.sgNode.width, obj.sgNode.height);
-
-                            if (rect.contains(loc))
-                            {
-                                UIDebug.log('Clicked on object '+obj.name);
-
-                                UIOffice.instance.show();
-                                return;
-                            }
+                            return;
                         }
                     }
-
-                    for (var i = layers.length-1; i >=0; i--)
-                    {
-                        var layer = layers[i];
-
-                        var TILE_WIDTH_HALF = layer.getMapTileSize().width;
-                        var TILE_HEIGHT_HALF = layer.getMapTileSize().height;
-
-                        var tw = layer.getMapTileSize().width;
-                        var th = layer.getMapTileSize().height;
-                        var mw = layer.getLayerSize().width;
-                        var mh = layer.getLayerSize().height;
-
-                        var x = (loc.x) * 1;
-                        var y = (loc.y) * 1;
-
-                        var isox = Math.floor(mh - y/th + x/tw - mw/2);
-                        var isoy = Math.floor(mh - y/th - x/tw + mw/2);
-
-                        // true only if the coords is with in the map
-                        if(isox < mapSize.width && isoy < mapSize.height)
-                        {
-                            var tile = layer.getTileAt(cc.v2(isox,isoy));
-                            if(tile)
-                            {
-                                // a tile is clicked!
-                                var tileGid = layer.getTileGIDAt(cc.v2(isox,isoy));
-                                UIDebug.log('Clicked on layer '+layer.getLayerName()+' tile at '+isox+','+isoy+' GID='+tileGid);
-                                return;
-                            }
-                        }
-                        
-                    }
                 }
+
+
+                // var tiledMap = this._tiledMap; //this.node.getComponent('cc.TiledMap');
+                // if (tiledMap)
+                // {
+                //     var mapSize = tiledMap.getMapSize();
+                //     var layers = tiledMap.allLayers();
+
+                //     // convert touch position to node position (i.e. map position)
+                //     var loc = tiledMap.node.convertToNodeSpace(touch.getLocation());
+                    
+                //     UIDebug.touchLog = ''+touch.getLocationX()+','+touch.getLocationY()+' => '+loc;
+
+                //     var groups = tiledMap.getObjectGroups();
+                //     for (var i= groups.length-1; i>=0; i--)
+                //     {
+                //         var group = groups[i];
+                //         var objs = group.getObjects();
+
+                //         for (var j=0; j<objs.length; j++)
+                //         {
+                //             var obj = objs[j];
+
+                //             var rect = new cc.rect(obj.sgNode.x - obj.sgNode.width/2, obj.sgNode.y,
+                //             obj.sgNode.width, obj.sgNode.height);
+
+                //             if (rect.contains(loc))
+                //             {
+                //                 UIDebug.log('Clicked on object '+obj.name);
+
+                //                 UIOffice.instance.show();
+                //                 return;
+                //             }
+                //         }
+                //     }
+
+                //     for (var i = layers.length-1; i >=0; i--)
+                //     {
+                //         var layer = layers[i];
+
+                //         var TILE_WIDTH_HALF = layer.getMapTileSize().width;
+                //         var TILE_HEIGHT_HALF = layer.getMapTileSize().height;
+
+                //         var tw = layer.getMapTileSize().width;
+                //         var th = layer.getMapTileSize().height;
+                //         var mw = layer.getLayerSize().width;
+                //         var mh = layer.getLayerSize().height;
+
+                //         var x = (loc.x) * 1;
+                //         var y = (loc.y) * 1;
+
+                //         var isox = Math.floor(mh - y/th + x/tw - mw/2);
+                //         var isoy = Math.floor(mh - y/th - x/tw + mw/2);
+
+                //         // true only if the coords is with in the map
+                //         if(isox < mapSize.width && isoy < mapSize.height)
+                //         {
+                //             var tile = layer.getTileAt(cc.v2(isox,isoy));
+                //             if(tile)
+                //             {
+                //                 // a tile is clicked!
+                //                 var tileGid = layer.getTileGIDAt(cc.v2(isox,isoy));
+                //                 UIDebug.log('Clicked on layer '+layer.getLayerName()+' tile at '+isox+','+isoy+' GID='+tileGid);
+                //                 return;
+                //             }
+                //         }                        
+                //     }
+                //}
             },
             this.node);
 
     },
 
-    touchOnMap: function(_Map)
+    // Find if there's something on map at specified pos
+    touchOnMap: function(_Map, _Pos)
     {
+        var mapSize = _Map.getMapSize();
+        var layers = _Map.allLayers();
 
+        // Parse objectsgroups
+        var groups = _Map.getObjectGroups();
+        for (var i= groups.length-1; i>=0; i--)
+        {
+            var group = groups[i];
+            var objs = group.getObjects();
+
+            for (var j=0; j<objs.length; j++)
+            {
+                var obj = objs[j];
+
+                var rect = new cc.rect(obj.sgNode.x - obj.sgNode.width/2, obj.sgNode.y,
+                obj.sgNode.width, obj.sgNode.height);
+
+                if (rect.contains(_Pos))
+                {
+                    UIDebug.log('Clicked on object '+obj.name);
+
+                    UIOffice.instance.show();
+                    return true;
+                }
+            }
+        }
+
+        // Parse tiles layers
+        for (var i = layers.length-1; i >=0; i--)
+        {
+            var layer = layers[i];
+
+            var TILE_WIDTH_HALF = layer.getMapTileSize().width;
+            var TILE_HEIGHT_HALF = layer.getMapTileSize().height;
+
+            var tw = layer.getMapTileSize().width;
+            var th = layer.getMapTileSize().height;
+            var mw = layer.getLayerSize().width;
+            var mh = layer.getLayerSize().height;
+
+            var x = (_Pos.x) * 1;
+            var y = (_Pos.y) * 1;
+
+            var isox = Math.floor(mh - y/th + x/tw - mw/2);
+            var isoy = Math.floor(mh - y/th - x/tw + mw/2);
+
+            // true only if the coords is with in the map
+            if(isox < mapSize.width && isoy < mapSize.height)
+            {
+                var tile = layer.getTileAt(cc.v2(isox,isoy));
+                if(tile)
+                {
+                    // a tile is clicked!
+                    var tileGid = layer.getTileGIDAt(cc.v2(isox,isoy));
+                    UIDebug.log('Clicked on layer '+layer.getLayerName()+' tile at '+isox+','+isoy+' GID='+tileGid);
+                    return true;
+                }
+            }
+            
+        }
+
+        return false;
     },
 
     start: function(err)
@@ -184,29 +281,33 @@ cc.Class({
         this.mapScrollView.scrollToOffset(this.startOffset);
 
         // // display debug info on map "objects"
-        // if (this._tiledMap)
+        // if (this.mapObjects && this.mapObjects.length>0)
         // {
-        //     var groups = this._tiledMap.getObjectGroups();
-        //     for (var i= groups.length-1; i>=0; i--)
-        //     {
-        //         var group = groups[i];
-        //         var objs = group.getObjects();
-
-        //         for (var j=0; j<objs.length; j++)
+        //     for (var k=0; k<this.mapObjects.length; k++)
+        //     {            
+        //         var groups = this.mapObjects[k].getObjectGroups();
+        //         for (var i= groups.length-1; i>=0; i--)
         //         {
-        //             var obj = objs[j];
+        //             var group = groups[i];
+        //             var objs = group.getObjects();
 
-        //             var pos = this.node.convertToWorldSpace(new cc.Vec2(obj.sgNode.x, obj.sgNode.y));
+        //             for (var j=0; j<objs.length; j++)
+        //             {
+        //                 var obj = objs[j];
 
-        //             var dbg = cc.instantiate(this.debugLabelPrefab);
+        //                 //var pos = this.mapObjects[k].node.convertToWorldSpace(new cc.Vec2(obj.sgNode.x, obj.sgNode.y));
 
-        //             dbg.setPosition(pos);
-        //             dbg.setParent(this.node);
+        //                 var dbg = cc.instantiate(this.debugLabelPrefab);
 
-        //             var label = dbg.getComponentInChildren(cc.Label);                   
-                    
-        //             label.string = obj.name+': '+Math.floor(obj.sgNode.x)+','+Math.floor(obj.sgNode.y);
+        //                 dbg.setParent(this.mapScrollView.node);
+        //                 dbg.setPosition(new cc.Vec2(obj.sgNode.x, obj.sgNode.y));
+
+        //                 var label = dbg.getComponentInChildren(cc.Label);                   
+                        
+        //                 label.string = obj.name+': '+Math.floor(obj.sgNode.x)+','+Math.floor(obj.sgNode.y);
+        //             }
         //         }
+                
         //     }
         // }
         
