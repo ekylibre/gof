@@ -10,5 +10,6 @@
 	"index_welcome" : "Bienvenue dans Game Of Farms !",
 	"login": "Se connecter",
 	"register": "Créer un compte",
-	"email_input": "Email"
+	"email_input": "Email",
+	"index_lostpassword_link": "Mot de passe perdu"
 }
