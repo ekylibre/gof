@@ -28,7 +28,7 @@ cc.Class({
     },
 
 
-    init: function () {
+    initPopup: function () {
         this._hidden = false;
         this._defaultX = this.node.x;
         this._defaultY = this.node.y;

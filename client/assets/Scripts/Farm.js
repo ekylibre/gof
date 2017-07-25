@@ -5,12 +5,36 @@ import CParcel from 'Parcel';
  * The farm
  * @class CFarm
  * 
- * @property {Array:cc.CParcel}    parcels: array of parcels
+ * @property {String}               name: farm name
+ * @property {Array:cc.CParcel}     parcels: array of parcels
+ * @property {number}               totalSurface: total surface of parcels (hectare)
  */
 export default class CFarm
 {
-    constructor()
+    /**
+     * @constructor
+     * @param {String} _Name name of farm
+     * @param {number} _Surface total parcels surface (hectare)
+     */
+    constructor(_Name, _Surface)
     {
+        if (_Name === undefined)
+        {
+            this.name = 'Farm';
+        }
+        else
+        {
+            this.name = _Name;
+        }
+        if (_Surface === undefined)
+        {
+            this.totalSurface = 0;
+        }
+        else
+        {
+            this.totalSurface = _Surface;
+        }
+
         this.parcels = [];
     }
 

@@ -1,6 +1,8 @@
 
 import UIPopupBase from 'UIPopupBase'
+import CGame from 'Game'
 
+const i18n = require('LanguageData');
 
 var UIOffice = cc.Class({
     extends: UIPopupBase,
@@ -31,13 +33,23 @@ var UIOffice = cc.Class({
     onLoad: function () {
 
         UIOffice.instance = this;
-        this.init();
+        this.initPopup();
+
+        this._label = this.getComponentInChildren(cc.Label);
     },
 
     // called every frame, uncomment this function to activate update callback
-    // update: function (dt) {
+    update: function (dt) {
+        if (!this._hidden)
+        {
+            var game = new CGame();
+            var txt = game.farm.name+'\n'+
+                i18n.t('parcels')+' '+game.farm.parcels.length+'\n'+
+                i18n.t('totalSurface', {'val': game.farm.totalSurface})+'\n';
 
-    // },
+            this._label.string = txt;
+        }
+    },
 
     onBtClose: function()
     {

@@ -286,8 +286,16 @@ cc.Class({
             {
                 var obj = objs[j];
 
-                var rect = cc.rect(obj.sgNode.x - obj.sgNode.width/2, obj.sgNode.y,
-                obj.sgNode.width, obj.sgNode.height);
+                var margin = 0.15;
+                var w = obj.sgNode.width * (1-margin*2);
+                var halfw = w / 2;
+                var ydelta = obj.sgNode.height * margin; 
+                var h = obj.sgNode.height * (1-margin*2);
+                var rect = cc.rect(
+                    obj.sgNode.x - halfw,
+                    obj.sgNode.y + ydelta,
+                    w,
+                    h);
 
                 if (rect.contains(_Pos))
                 {
@@ -400,7 +408,7 @@ cc.Class({
     {
         if (this.mapParcels && this.parcelsGID && this.parcelsGID.length>0)
         {
-            
+            var totalSurface = 0;
             for (var i=0; i<this.mapParcels.length; i++)
             {
                 var mapSize = this.mapParcels[i].getMapSize();
@@ -430,12 +438,15 @@ cc.Class({
                                     game.farm.addParcel(parcel);
                                 }
 
+                                totalSurface++;
                                 //DEBUG
                                 //layer.setTileGID(0, x, y);
                             }
                         }
                     }
                 }
+
+                game.farm.totalSurface = totalSurface;
             }
 
             if (game.isDebug)

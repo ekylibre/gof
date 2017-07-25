@@ -20,9 +20,13 @@ var ParcelState = cc.Enum({
  * @property {Array:cc.Vec2}    tiles: array of tiles positions
  * @property {cc.Rect}          rect: rectangle containg the parcel
  * @property {ParcelState}      state: current parcel state
+ * @property {number}           surface: surface area of parcel (hectare)
+ * @property {Array:number}     rotationHistory: history of crop rotation (most recent first)
+ * @property {Array:number}     rotationPrevision: previsions of crop rotation (next one is first)
  */
 export default class CParcel
 {
+
     /**
      * @constructor
      * @param {string} _Name: parcel name
@@ -40,6 +44,10 @@ export default class CParcel
         this.tiles = [];
         this.rect = cc.rect(0,0,0,0);
         this.state = ParcelState.EMPTY;
+        this.surface = 0;
+
+        this.rotationHistory = [];
+        this.rotationPrevision = [];
     }
 
     /**
@@ -111,5 +119,7 @@ export default class CParcel
         {
             this.rect.height = _Pos.y - this.rect.y;
         }
+
+        this.surface++;
     }
 }
