@@ -1,14 +1,11 @@
 'use strict';
 
 const nodemailer = require('nodemailer');
+const config = require('config');
 
 function Mailer() {
 
-    this.transport = nodemailer.createTransport({
-	sendmail: true,
-	newline: 'unix',
-	path: '/usr/sbin/sendmail'
-    });
+    this.transport = nodemailer.createTransport(config.get('Nodemailer.transport'));
 }
 
 Mailer.prototype.sendMail = function (recipient, subject, text, html) {

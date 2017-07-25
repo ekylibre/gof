@@ -30,6 +30,13 @@ function AuthController(server) {
 
     server.route({
         method: 'GET',
+        path: '/auth/logout',
+        handler: AuthController.logout
+    });
+
+
+    server.route({
+        method: 'GET',
         path: '/auth/check',
         handler: AuthController.check,
         config: {
@@ -46,9 +53,21 @@ function AuthController(server) {
     });
 
     server.route({
+        method: 'GET',
+        path: '/auth/register',
+        handler: AuthController.registerget
+    });
+
+    server.route({
         method: 'POST',
         path: '/auth/lostpassword',
         handler: AuthController.lostpassword
+    });
+
+    server.route({
+        method: 'GET',
+        path: '/auth/lostpassword',
+        handler: AuthController.lostpasswordget
     });
 
     server.route({
@@ -91,7 +110,8 @@ AuthController.login = function (request, reply) {
                     //here the user had successfully entered credentials
                     //let create a token
                     const token = jwt.sign({
-                            email: user.email
+                            email: user.email,
+                            firstname: user.firstName
                         }, 
                         config.get('Jwt.key'),
                         {
@@ -99,11 +119,14 @@ AuthController.login = function (request, reply) {
                             expiresIn: '12h',
                         }
                     );
-                    reply().state('access_token', token, cookie_options);
-                    //reply.redirect('/game/start');
+                    reply().state('access_token', token, cookie_options).redirect('/game/start');
             });
         }
     );
+}
+
+AuthController.logout = function(request, reply) {
+    reply().unstate('access_token', cookie_options).redirect('/');
 }
 
 AuthController.check = function (request, reply) {
@@ -125,6 +148,11 @@ AuthController.check = function (request, reply) {
             reply({user:user});
         }
     );
+}
+
+AuthController.registerget = function(request, reply) {
+
+    reply.view('views/register');
 }
 
 AuthController.register = function(request, reply) {
@@ -190,6 +218,10 @@ AuthController.register = function(request, reply) {
     );
 }
 
+AuthController.lostpasswordget = function(request, reply) {
+    reply.view('views/lostpassword');
+}
+
 AuthController.lostpassword = function(request, reply) {
     var email = request.payload.email;
 
@@ -234,7 +266,7 @@ AuthController.lostpassword = function(request, reply) {
                                     mailer.sendMail(user.email, subject, text, html);
                                     mailer.destroy();
 
-                                    reply().code(200);
+                                    reply.view('views/lostpasswordresult', {user: user});
                                 }
                             );
                         }

@@ -1,0 +1,35 @@
+<div class="row" style="padding: 0 20% 0 20%;">
+    <div class="panel panel-info">
+    <div class="panel-heading">{{i18n "register_panel_title"}}</div>
+    <div class="panel-body">
+        
+        <form method="POST" action="/auth/register" class="form-horizontal">
+            
+            <div class="form-group">
+                <label for="inputEmail" class="col-sm-2 control-label">{{i18n "email_input"}}</label>
+                <div class="col-sm-10">
+                    <input type="email" name="email" required="required" class="form-control" id="inputEmail"/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="inputPassword1" class="col-sm-2 control-label">{{i18n "password_input"}}</label>
+                <div class="col-sm-10">
+                    <input type="password" name="password1" required="required" class="form-control" id="inputPassword1"/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="inputPassword2" class="col-sm-2 control-label">{{i18n "password_confirmation_input"}}</label>
+                <div class="col-sm-10">
+                    <input type="password" name="password2" required="required" class="form-control" id="inputPassword2"/>
+                </div>
+            </div>
+
+           <!-- {{{ captcha_form }}} -->
+
+            <input type="submit" class="btn btn-primary pull-right" />
+        </form>
+    </div>
+    </div>
+</div>

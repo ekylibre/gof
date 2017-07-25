@@ -6,6 +6,7 @@ const Path = require('path');
 const Hoek = require('hoek');
 const Mongoose = require('mongoose');
 const Config = require('config');
+const i18n = require('i18n');
 
 const Constants = require('./constants');
 const IndexController = require('./controllers/index')
@@ -88,7 +89,29 @@ function start_server(server){
             throw error;
         }
         console.log(`Server running at: ${server.info.uri}`);
+        server.ext('onPreResponse', preResponseHandler);
     });
+}
+
+function preResponseHandler(request, reply) {
+    var response = request.response;
+
+    if (!response.isBoom && response.variety === 'view' && request.auth.isAuthenticated) {
+        response.source.context = response.source.context || {};
+        var ctx = request.i18n;
+        ctx.user = {};
+        ctx.user.firstname = request.auth.credentials.firstname;
+        
+        var component = request.server.render('views/userblock', ctx, {layout: false},
+            (err, rendered, config) => {
+                response.source.context['user_block'] = rendered;
+                return reply.continue();
+            });
+        
+    }
+    else {
+        return reply.continue();
+    }
 }
 
 //entry point
