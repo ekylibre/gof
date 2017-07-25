@@ -5,17 +5,15 @@ const nodemailer = require('nodemailer');
 function Mailer() {
 
     this.transport = nodemailer.createTransport({
-        service: 'Gmail',
-        auth: {
-            user: 'shinytext@gmail.com',
-            pass: 'qyr4uco9'
-        }
+	sendmail: true,
+	newline: 'unix',
+	path: '/usr/sbin/sendmail'
     });
 }
 
 Mailer.prototype.sendMail = function (recipient, subject, text, html) {
     var message = {
-        from: 'Game Of Farms',
+        from: 'no-reply@game-of-farms.com',
         to: recipient,
         subject: subject,
         text: text,
