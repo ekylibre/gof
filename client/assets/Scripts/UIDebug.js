@@ -34,17 +34,22 @@ var UIDebug = cc.Class({
         _log: [],
         log: function(line)
         {
-            var l = UIDebug._log.length;
-            if (l == 5)
-            {
-                l = 4;
-            }
-            for (var i=l; i>0; i--)
-            {
-                UIDebug._log[i] = UIDebug._log[i-1];
-            }
+            // var l = UIDebug._log.length;
+            // if (l == 5)
+            // {
+            //     l = 4;
+            // }
+            // for (var i=l; i>0; i--)
+            // {
+            //     UIDebug._log[i] = UIDebug._log[i-1];
+            // }
 
-            UIDebug._log[0]=line;
+            // UIDebug._log[0]=line;
+            UIDebug._log.unshift(line);
+            if (UIDebug._log.length>5)
+            {
+                UIDebug._log.pop();
+            }
         },
         touchLog: '',
     },

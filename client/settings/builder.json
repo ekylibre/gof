@@ -15,10 +15,10 @@
     "portrait": false,
     "upsideDown": false
   },
-  "packageName": "org.cocos2d.helloworld",
+  "packageName": "org.cocos2d.ekylibre.gof",
   "privateKey": "",
   "renderMode": "1",
   "startScene": "b43f2ff1-2473-4a89-a0e7-9f46634d7a41",
-  "title": "gof",
+  "title": "Game of Farms",
   "webOrientation": "auto"
 }

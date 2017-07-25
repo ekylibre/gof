@@ -4,8 +4,11 @@
 // Call scrollEvent(null, 0) to disable touch (e.g.: when scrolling map)
 
 
-//import CGame from 'Game';
-//const game = new CGame();
+import CGame from 'Game';
+import CFarm from 'Farm';
+import CParcel from 'Parcel';
+
+const game = new CGame();
 
 const UIOffice = require('UIOffice');
 const UIDebug = require('UIDebug');
@@ -48,6 +51,14 @@ cc.Class({
             default: [],
             type: [cc.TiledMap],
             displayName: 'Sprouts maps'
+        },
+
+        // List of valid parcel tiles gid
+        parcelsGID:
+        {
+            default: [],
+            type: [cc.Integer],
+            displayName: 'Parcels GID'
         },
 
         // List of objects TiledMaps
@@ -109,7 +120,7 @@ cc.Class({
         //     }
         //     return tile;
         // };
-        
+       
     },
 
     initTouch: function()
@@ -208,7 +219,7 @@ cc.Class({
                 //         {
                 //             var obj = objs[j];
 
-                //             var rect = new cc.rect(obj.sgNode.x - obj.sgNode.width/2, obj.sgNode.y,
+                //             var rect = cc.rect(obj.sgNode.x - obj.sgNode.width/2, obj.sgNode.y,
                 //             obj.sgNode.width, obj.sgNode.height);
 
                 //             if (rect.contains(loc))
@@ -275,12 +286,15 @@ cc.Class({
             {
                 var obj = objs[j];
 
-                var rect = new cc.rect(obj.sgNode.x - obj.sgNode.width/2, obj.sgNode.y,
+                var rect = cc.rect(obj.sgNode.x - obj.sgNode.width/2, obj.sgNode.y,
                 obj.sgNode.width, obj.sgNode.height);
 
                 if (rect.contains(_Pos))
                 {
-                    UIDebug.log('Clicked on object '+obj.name);
+                    if (game.isDebug)
+                    {
+                        UIDebug.log('Clicked on object '+obj.name);
+                    }
 
                     UIOffice.instance.show();
                     return true;
@@ -308,17 +322,29 @@ cc.Class({
             var isoy = Math.floor(mh - y/th - x/tw + mw/2);
 
             // true only if the coords is with in the map
-            if(isox < mapSize.width && isoy < mapSize.height)
+            if(isox>=0 && isoy>=0 && isox < mapSize.width && isoy < mapSize.height)
             {
-                var tileGid = layer.getTileGIDAt(cc.v2(isox,isoy));
+                var tilePos = cc.v2(isox,isoy);
+                var tileGid = layer.getTileGIDAt(tilePos);
                 if(tileGid != 0)
                 {
                     // a tile is clicked!
-                    UIDebug.log('Clicked on layer '+layer.getLayerName()+' tile at '+isox+','+isoy+' GID='+tileGid);
                     // if (tileGid == 104)
                     // {
                     //     layer.setTileGID(102, cc.v2(isox,isoy))                        
                     // }
+                    
+                    if (game.isDebug)
+                    {
+                        var debug = 'Clicked on layer '+layer.getLayerName()+' tile('+isox+','+isoy+') GID='+tileGid;
+                        var parcel = game.farm.findParcelAt(tilePos);
+                        if (parcel != null)
+                        {
+                            debug += ' Parcel: '+parcel.name;
+                        }
+
+                        UIDebug.log(debug);
+                    }
                     return true;
                 }
             }
@@ -334,6 +360,8 @@ cc.Class({
 
         // Scroll map to starting offset
         this.mapScrollView.scrollToOffset(this.startOffset);
+
+        this.findParcels();
 
         // // display debug info on map "objects"
         // if (this.mapObjects && this.mapObjects.length>0)
@@ -368,10 +396,62 @@ cc.Class({
         
     },
 
+    findParcels: function()
+    {
+        if (this.mapParcels && this.parcelsGID && this.parcelsGID.length>0)
+        {
+            
+            for (var i=0; i<this.mapParcels.length; i++)
+            {
+                var mapSize = this.mapParcels[i].getMapSize();
 
+                for (var j=0; j<this.mapParcels[i].allLayers().length; j++)
+                {
+                    var layer = this.mapParcels[i].allLayers()[j];
+                    for (var y=0; y<mapSize.height; y++)
+                    {
+                        for (var x=0; x<mapSize.width; x++)
+                        {
+                            if (this.parcelsGID.includes(layer.getTileGIDAt(x, y)))
+                            {
+                                var pos = new cc.Vec2(x, y);
+                                var parcel = game.farm.findParcelAdjacent(pos);
+                                if (parcel != null)
+                                {
+                                    // adjacent parcel found, add tile to it
+                                    parcel.addTile(pos);
+                                }
+                                else
+                                {
+                                    // create a new parcel
+                                    var name = 'Parcel'+(game.farm.parcels.length+1);
+                                    parcel = new CParcel(name);
+                                    parcel.addTile(pos);
+                                    game.farm.addParcel(parcel);
+                                }
+
+                                //DEBUG
+                                //layer.setTileGID(0, x, y);
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (game.isDebug)
+            {
+                cc.log('NbParcels='+game.farm.parcels.length);
+                for (var k=0; k<game.farm.parcels.length; k++)
+                {
+                    var parcel = game.farm.parcels[k];
+                    cc.log(parcel.name+': '+parcel.tiles.length);
+                }
+            }
+        }
+    },
 
     // called every frame, uncomment this function to activate update callback
-    // update: function (dt) {
+    //update: function (dt) {
 
     // },
 

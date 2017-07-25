@@ -7,6 +7,7 @@
 // TODO: check language provided by the environment
 
 import CGamePhase from 'GamePhase';
+import CFarm from 'Farm';
 
 const i18n = require('LanguageData');
 
@@ -28,19 +29,16 @@ var ConfigMaster=
 
 let instance = null;
 
-// Game "singleton" class
+/**
+ * The Game singleton
+ * @class
+ * @property {Boolean}      isDebug: true if the game is in 'debug' mode
+ * @property {Dictionary}   config: current game config
+ * @property {CFarm}        farm: the farm
+ * @property {CGamePhase}   gamePhase: active game 'phase'
+ */
 export default class CGame
 {
-    //true if game is running with the debug configuration
-    isDebug=DEBUG;
-
-    //contains some constants
-    config=null;
-  
-    initialized='';
-
-    gamePhase = null;
-
     constructor()
     {
         if (instance)
@@ -49,6 +47,9 @@ export default class CGame
         }
 
         instance = this;
+
+        this.isDebug=DEBUG;
+        this.initialized = '';
 
         if (DEBUG)
         {
@@ -59,6 +60,7 @@ export default class CGame
             this.config = ConfigMaster;
         }
 
+        this.farm = new CFarm();
         this.gamePhase = new CGamePhase();
 
         i18n.init(this.config.LANGUAGE_DEFAULT);
@@ -68,6 +70,6 @@ export default class CGame
     {
         // used for debug
         this.initialized = 'Game singleton initialized';
-    };
+    }
 }
 
