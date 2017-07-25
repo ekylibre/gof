@@ -70,7 +70,46 @@ cc.Class({
     {
         // Setting touch events
 
-        //this.initTouch();
+        this.initTouch();
+
+        // DEBUG
+        // _ccsg.TMXLayer.prototype.getTileAt = function(pos, y)
+        // {
+        //     if (void 0 === pos) {
+        //         throw new Error("_ccsg.TMXLayer.getTileAt(): pos should be non-null");
+        //     }
+        //     var x = pos;
+        //     if (void 0 === y) {
+        //         x = pos.x;
+        //         y = pos.y;
+        //     }
+        //     if (x >= this._layerSize.width || y >= this._layerSize.height || x < 0 || y < 0) {
+        //         throw new Error("_ccsg.TMXLayer.getTileAt(): invalid position");
+        //     }
+        //     if (!this.tiles) {
+        //         cc.logID(7204);
+        //         return null;
+        //     }
+        //     var tile = null, gid = this.getTileGIDAt(x, y);
+        //     if (0 === gid) {
+        //         return tile;
+        //     }
+        //     var z = Math.floor(x) + Math.floor(y) * this._layerSize.width;
+        //     tile = this._spriteTiles[z];
+        //     if (!tile) {
+        //         var rect = this._texGrids[gid];
+        //         var tex = this._textures[rect.texId];
+        //         tile = new _ccsg.Sprite(tex, rect);
+        //         tile.setPosition(this.getPositionAt(x, y));
+        //         var vertexZ = this._vertexZForPos(x, y);
+        //         tile.setVertexZ(vertexZ);
+        //         tile.setAnchorPoint(0, 0);
+        //         tile.setOpacity(this._opacity);
+        //         //this.addChild(tile, vertexZ, z);
+        //     }
+        //     return tile;
+        // };
+        
     },
 
     initTouch: function()
@@ -93,14 +132,32 @@ cc.Class({
                     return;
                 }
 
+                // get "local" position
                 var touch = event.touch;
-                // get 
+                var baseMap = null;
+                var loc = null;
+                if (this.mapParcels && this.mapParcels.length>0)
+                {
+                    baseMap = this.mapParcels[0];
+                }
+                else
+                if (this.mapSprouts && this.mapSprouts.length>0)
+                {
+                    baseMap = this.mapSprouts[0];
+                }
+                else
+                {
+                    cc.error('At least one parcel or sprout TiledMap is required');
+                    return;
+                }
+
+                var loc = baseMap.node.convertToNodeSpace(touch.getLocation());
+                UIDebug.touchLog = ''+touch.getLocationX()+','+touch.getLocationY()+' => '+loc;
 
                 if (this.mapObjects && this.mapObjects.length>0)
                 {
                     for (var i=0; i<this.mapObjects.length; i++)
                     {
-                        var loc = this.mapObjects[i].node.convertToNodeSpace(touch.getLocation());
                         if (this.touchOnMap(this.mapObjects[i], loc))
                         {
                             return;
@@ -112,7 +169,6 @@ cc.Class({
                 {
                     for (var i=0; i<this.mapSprouts.length; i++)
                     {
-                        var loc = this.mapSprouts[i].node.convertToNodeSpace(touch.getLocation());
                         if (this.touchOnMap(this.mapSprouts[i], loc))
                         {
                             return;
@@ -122,18 +178,14 @@ cc.Class({
                 
                 if (this.mapParcels && this.mapParcels.length>0)
                 {
-                    UIDebug.touchLog = ''+touch.getLocationX()+','+touch.getLocationY()+' => '+this.mapParcels[0].node.convertToNodeSpace(touch.getLocation());                    
-
                     for (var i=0; i<this.mapParcels.length; i++)
                     {
-                        var loc = this.mapParcels[i].node.convertToNodeSpace(touch.getLocation());
                         if (this.touchOnMap(this.mapParcels[i], loc))
                         {
                             return;
                         }
                     }
                 }
-
 
                 // var tiledMap = this._tiledMap; //this.node.getComponent('cc.TiledMap');
                 // if (tiledMap)
@@ -258,12 +310,15 @@ cc.Class({
             // true only if the coords is with in the map
             if(isox < mapSize.width && isoy < mapSize.height)
             {
-                var tile = layer.getTileAt(cc.v2(isox,isoy));
-                if(tile)
+                var tileGid = layer.getTileGIDAt(cc.v2(isox,isoy));
+                if(tileGid != 0)
                 {
                     // a tile is clicked!
-                    var tileGid = layer.getTileGIDAt(cc.v2(isox,isoy));
                     UIDebug.log('Clicked on layer '+layer.getLayerName()+' tile at '+isox+','+isoy+' GID='+tileGid);
+                    // if (tileGid == 104)
+                    // {
+                    //     layer.setTileGID(102, cc.v2(isox,isoy))                        
+                    // }
                     return true;
                 }
             }
