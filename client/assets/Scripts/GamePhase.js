@@ -2,18 +2,19 @@
 
 const i18n = require('LanguageData');
 
+/**
+ * Represents a 'phase' of the game (scenario or part of a scenario)
+ * @class
+ */
 export default class CGamePhase
 {
-    id='assollement';
-    score=0;
-    date=null;
-    money=50000;
-
-    _startYear=0;
-
     constructor()
     {
-        var now = new Date(Date.now());
+        this.id='assollement';
+        this.score=0;
+        this.money=50000;
+
+        var now = new Date(Date.now());       
         this._startYear = now.getFullYear();
         this.date = new Date(this._startYear, 7, 20);
     }
