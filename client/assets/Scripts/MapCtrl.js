@@ -135,6 +135,8 @@ cc.Class({
       
         this.findParcels();
 
+        //this.findSprouts();
+
         if (game.isDebug)
         {
             this.addDebugInfo();
@@ -392,8 +394,33 @@ cc.Class({
                     }
                 }
 
+                // use number of tiles as a placeholder for surface
                 game.farm.totalSurface = totalSurface;
             }
+        }
+
+        if (game.farm.parcels.length === 0)
+        {
+            cc.error('No parcels found! Please check you filled the mapParcel and parcelGID arrays');
+        }
+    },
+
+    findSprouts: function()
+    {
+        if (this.mapSprouts && game.farm.parcels.length>0)
+        {
+            var layer = this.mapSprouts[0].allLayers()[0];
+            var texture = cc.loader.loadRes('pousse_ble1_planche',
+                function (err,res)
+                {
+                    if (err)
+                    {
+                        cc.log('Error url [' + err + ']');
+                        return;
+                    }
+
+                    layer.setTexture(res);
+                });
 
         }
     },
