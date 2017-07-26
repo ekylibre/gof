@@ -1,13 +1,13 @@
 'use strict';
 
-const Constants = require('../constants');
+const Constants = require('../../../common/constants');
 const Boom = require('boom');
 const jwt = require('jsonwebtoken');
-const Joi = require('joi');
 const User = require('../models/user');
 const Bcrypt = require('bcrypt');
 const crypto = require('crypto');
 const Mailer = require('../utils/mailer');
+const Validation = require('../utils/validation')
 const config = require('config');
 const Hoek = require('hoek');
 
@@ -16,8 +16,8 @@ var cookie_options = {
     encoding: 'none',    // we already used JWT to encode
     isSecure: false,     
     isHttpOnly: true,    // prevent client alteration
-    clearInvalid: false, // remove invalid cookies
-    strictHeader: true,  // don't allow violations of RFC 6265
+    clearInvalid: true, // remove invalid cookies
+    strictHeader: false,  // don't allow violations of RFC 6265
     path: '/'            // set the cookie for all routes
 };
 
@@ -25,7 +25,13 @@ function AuthController(server) {
     server.route({
         method: 'POST',
         path: '/auth/login',
-        handler: AuthController.login
+        handler: AuthController.loginpost
+    });
+
+    server.route({
+        method: 'GET',
+        path: '/auth/login',
+        handler: AuthController.loginget
     });
 
     server.route({
@@ -49,7 +55,7 @@ function AuthController(server) {
     server.route({
         method: 'POST',
         path: '/auth/register',
-        handler: AuthController.register
+        handler: AuthController.registerpost
     });
 
     server.route({
@@ -83,28 +89,31 @@ function AuthController(server) {
     });
 }
 
-AuthController.login = function (request, reply) {
+AuthController.loginget = function(request, reply) {
+    reply.view('views/login');
+}
+
+AuthController.loginpost = function (request, reply) {
+
+    const vResult = Validation.checkLogin(request.payload);
+
+    if(vResult.error) {
+        return reply.view('views/login', {error: Validation.buildFormError(request.i18n.__("login_failed"), request.payload)});
+    }
 
     var email = request.payload.email;
     var password = request.payload.password;
 
     User.findOne( {email: email},
         (error, user) => {
-            if(error) {
-                reply(Boom.unauthorized());
-                return;
-            }
-            
-            if(!user) {
-                reply(Boom.notFound());
-                return;
+            if(error || !user) {
+                return reply.view('views/login', {error: Validation.buildFormError(request.i18n.__("login_failed"), request.payload)});
             }
 
             Bcrypt.compare(password, user.password,
                 (error, same) => {
                     if(error || !same) {
-                        reply(Boom.unauthorized());
-                        return;
+                        return reply.view('views/login', {error: Validation.buildFormError(request.i18n.__("login_failed"), request.payload)});
                     }
 
                     //here the user had successfully entered credentials
@@ -151,28 +160,32 @@ AuthController.check = function (request, reply) {
 }
 
 AuthController.registerget = function(request, reply) {
-
     reply.view('views/register');
 }
 
-AuthController.register = function(request, reply) {
+AuthController.registerpost = function(request, reply) {
+
+    const vResult = Validation.checkRegister(request.payload);
+
+    if(vResult.error) {
+        return reply.view('views/register', {
+            error: Validation.buildFormError(request.i18n.__("register_failed"), request.payload, vResult.error)
+        });
+    }
 
     var first = request.payload.firstName;
     var last = request.payload.lastName;
+    
     var email = request.payload.email;
     var p1 = request.payload.password1;
     var p2 = request.payload.password2;
-    
-    if(p1 != p2) {
-        reply(Boom.badData());
-        return;
-    }
-
+ 
     User.findOne({email: email}, 
         (error, result) => {
             if(result && result.email == email) {
-                reply(Boom.conflict('User already registered'));
-                return;
+                return reply.view('views/register', {
+                    error: Validation.buildFormError(request.i18n.__("register_failed_already_exists"), request.payload, vResult.error)
+                });
             }
 
             Bcrypt.hash(p1, 10,
@@ -189,7 +202,9 @@ AuthController.register = function(request, reply) {
                     u.save(
                         (error, user) => {
                             if(error) {
-                                reply(Boom.badRequest());
+                                return reply.view('views/register', {
+                                    error: Validation.buildFormError(request.i18n.__("generic_error"), request.payload, vResult.error)
+                                });
                                 return;
                             }
                             
@@ -208,7 +223,7 @@ AuthController.register = function(request, reply) {
                                         mailer.sendMail(u.email, subject, text, html);
                                         mailer.destroy();
                                     }
-                                    reply().code(200);
+                                    reply.view('views/register', {user: u});
                                 }
                             );
                     });

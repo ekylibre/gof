@@ -1,35 +1,52 @@
+{{#if user}}
+<div class="alert alert-success" role="alert">
+    {{{i18n "welcome_new_user"}}}
+</div>
+{{else}}
 <div class="row" style="padding: 0 20% 0 20%;">
     <div class="panel panel-info">
     <div class="panel-heading">{{i18n "register_panel_title"}}</div>
     <div class="panel-body">
-        
+        {{#if error}}
+            {{#if error.global}}
+            <div class="alert alert-danger" role="alert">
+                {{{error.global}}}
+            </div>
+            {{/if}}
+        {{/if}}
         <form method="POST" action="/auth/register" class="form-horizontal">
+            <div class="input-group {{#if error.faults.firstname}}has-error{{/if}}">
+                <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
+                <input type="text" name="firstname" required="required" class="form-control" id="inputFirstname" value="{{error.form.firstname}}" placeholder="{{i18n 'placeholder_firstname'}}"/>
+            </div>
             
-            <div class="form-group">
-                <label for="inputEmail" class="col-sm-2 control-label">{{i18n "email_input"}}</label>
-                <div class="col-sm-10">
-                    <input type="email" name="email" required="required" class="form-control" id="inputEmail"/>
-                </div>
+            <div class="input-group {{#if error.faults.lastname}}has-error{{/if}}">
+                <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
+                <input type="text" name="lastname" required="required" class="form-control" id="inputLastname" value="{{error.form.lastname}}" placeholder="{{i18n 'placeholder_lastname'}}"/>
             </div>
 
-            <div class="form-group">
-                <label for="inputPassword1" class="col-sm-2 control-label">{{i18n "password_input"}}</label>
-                <div class="col-sm-10">
-                    <input type="password" name="password1" required="required" class="form-control" id="inputPassword1"/>
-                </div>
+            <div class="input-group {{#if error.faults.email}}has-error{{/if}}">
+                <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
+                <input type="email" name="email" required="required" class="form-control" id="inputEmail" value="{{error.form.email}}" placeholder="{{i18n 'placeholder_email'}}"/>
             </div>
 
-            <div class="form-group">
-                <label for="inputPassword2" class="col-sm-2 control-label">{{i18n "password_confirmation_input"}}</label>
-                <div class="col-sm-10">
-                    <input type="password" name="password2" required="required" class="form-control" id="inputPassword2"/>
-                </div>
+            <div class="input-group {{#if error.faults.password1}}has-error{{/if}}">
+                <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
+                <input type="password" name="password1" required="required" class="form-control" id="inputPassword1"  placeholder="{{i18n 'placeholder_password'}}"/>
             </div>
 
+            <div class="input-group {{#if error.faults.password2}}has-error{{/if}}">
+                <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
+                <input type="password" name="password2" required="required" class="form-control" id="inputPassword2"  placeholder="{{i18n 'placeholder_password_confirm'}}"/>
+            </div>
            <!-- {{{ captcha_form }}} -->
 
-            <input type="submit" class="btn btn-primary pull-right" />
+           <div class="form-group" style="padding-top: 10px;">
+                <input type="submit" class="btn btn-primary pull-right" />
+            </div>
         </form>
     </div>
     </div>
 </div>
+
+{{/if}}
