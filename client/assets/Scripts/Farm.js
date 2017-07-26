@@ -8,6 +8,7 @@ import CParcel from 'Parcel';
  * @property {String}               name: farm name
  * @property {Array:cc.CParcel}     parcels: array of parcels
  * @property {number}               totalSurface: total surface of parcels (hectare)
+ * @property {Array:strings}        possibleSpecies: list of possible plant species
  */
 export default class CFarm
 {
@@ -36,11 +37,12 @@ export default class CFarm
         }
 
         this.parcels = [];
+        this.possibleSpecies = [];
     }
 
     /**
      * Adds a parcel to the farm
-     * @method
+     * @method addParcel
      * @param {CParcel} _Parcel 
      */
     addParcel(_Parcel)
@@ -49,7 +51,7 @@ export default class CFarm
     }
 
     /**
-     * @method
+     * @method findParcelAt
      * @param {cc.Vec2} _Pos: position of tile in map
      * @return {CParcel} or null
      */
@@ -67,6 +69,11 @@ export default class CFarm
         return null;
     }
 
+    /**
+     * @method findParcelAdjacent
+     * @param {cc.Vec2} _Pos: position of tile in map
+     * @return {CParcel} or null
+     */
     findParcelAdjacent(_Pos)
     {
         for (var i=0; i<this.parcels.length; i++)
