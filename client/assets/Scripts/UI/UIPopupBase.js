@@ -45,6 +45,12 @@ cc.Class({
 
             this.node.runAction(cc.moveTo(0.2, cc.p(this._defaultX, this._defaultY)));
             this._hidden = false;
+
+            if (this.onShow !== undefined)
+            {
+                this.onShow();
+            }
+
         }
     },
 
@@ -87,7 +93,12 @@ cc.Class({
                 this.node.x = to.x;
                 this.node.y = to.y;
             }
-            this._hidden = true;           
+            this._hidden = true;
+
+            if (this.onHide !== undefined)
+            {
+                this.onHide();
+            }            
         }
     },
 });

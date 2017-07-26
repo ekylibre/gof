@@ -15,6 +15,7 @@
 import CGame from 'Game';
 import CFarm from 'Farm';
 import CParcel from 'Parcel';
+import UIParcelButton from 'UIParcelButton'
 
 const game = new CGame();
 
@@ -94,6 +95,16 @@ cc.Class({
             displayName: 'Parcels GID'
         },
 
+        /**
+         * @property Prefab used to display a button over a parcel
+         */
+        parcelButtonPrefab:
+        {
+            default: null,
+            type: cc.Prefab,
+            displayName: 'Prefab Parcels button'
+        },
+
         // a debug prefab
         debugLabelPrefab: {
             default: null,
@@ -134,8 +145,6 @@ cc.Class({
         this._mapScrollView.scrollToOffset(this.startOffset);
       
         this.findParcels();
-
-        //this.findSprouts();
 
         if (game.isDebug)
         {
@@ -399,29 +408,22 @@ cc.Class({
             }
         }
 
-        if (game.farm.parcels.length === 0)
+        // Display buttons over parcels
+        if (game.farm.parcels.length>0)
+        {
+            for (var k=0; k<game.farm.parcels.length; k++)
+            {
+                var parcel = game.farm.parcels[k];
+                var btPrefab = cc.instantiate(this.parcelButtonPrefab);
+                var bt = btPrefab.getComponent(UIParcelButton);
+                bt.parcel = parcel;
+                btPrefab.setParent(this.mapUILayer);
+                btPrefab.setPosition(this.tileToUI(parcel.rect.center));
+            }                
+        }
+        else
         {
             cc.error('No parcels found! Please check you filled the mapParcel and parcelGID arrays');
-        }
-    },
-
-    findSprouts: function()
-    {
-        if (this.mapSprouts && game.farm.parcels.length>0)
-        {
-            var layer = this.mapSprouts[0].allLayers()[0];
-            var texture = cc.loader.loadRes('pousse_ble1_planche',
-                function (err,res)
-                {
-                    if (err)
-                    {
-                        cc.log('Error url [' + err + ']');
-                        return;
-                    }
-
-                    layer.setTexture(res);
-                });
-
         }
     },
 
@@ -463,13 +465,13 @@ cc.Class({
             cc.log(parcel.name+': '+parcel.tiles.length);
 
             // show label at center
-            var dbg = cc.instantiate(this.debugLabelPrefab);
-            dbg.setParent(this.mapUILayer);
-            dbg.setPosition(this.tileToUI(parcel.rect.center));
+            // var dbg = cc.instantiate(this.debugLabelPrefab);
+            // dbg.setParent(this.mapUILayer);
+            // dbg.setPosition(this.tileToUI(parcel.rect.center));
 
-            var label = dbg.getComponentInChildren(cc.Label);         
+            // var label = dbg.getComponentInChildren(cc.Label);         
             
-            label.string = parcel.name+' s='+parcel.surface+' (c='+parcel.rect.center.x+','+parcel.rect.center.y+')';
+            // label.string = parcel.name+' s='+parcel.surface+' (c='+parcel.rect.center.x+','+parcel.rect.center.y+')';
         }
     },
 

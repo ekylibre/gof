@@ -1,40 +1,26 @@
-
-import UIPopupBase from 'UIPopupBase'
 import CParcel from 'Parcel'
 
-const i18n = require('LanguageData');
+const UIParcel = require('UIParcel')
 
 /**
- * Parcel UI controller
+ * Displays the parcel name and open its menu when clicked
  * @class
- * @name UIParcel
+ * @name UIParcelButton
  */
-var UIParcel = cc.Class({
-    extends: UIPopupBase,
+cc.Class({
+    extends: cc.Component,
     editor:
     {
-        menu: 'gof/UIParcel'
+        menu: 'gof/UIParcelButton'
     },
 
     properties: {
+
         parcelName:
         {
             default: null,
             type: cc.Label,
         },
-
-        historyScrollView:
-        {
-            default: null,
-            type: cc.ScrollView
-        },
-
-        plantPrefab:
-        {
-            default: null,
-            type: cc.Prefab
-        },
-
 
         /**
          * @property {CParcel} parcel The target parcel
@@ -55,24 +41,28 @@ var UIParcel = cc.Class({
                 }
             },
             type: CParcel
-        },         
+        },        
+
+        // foo: {
+        //    default: null,      // The default value will be used only when the component attaching
+        //                           to a node for the first time
+        //    url: cc.Texture2D,  // optional, default is typeof default
+        //    serializable: true, // optional, default is true
+        //    visible: true,      // optional, default is true
+        //    displayName: 'Foo', // optional
+        //    readonly: false,    // optional, default is false
+        // },
+        // ...
     },
 
-    statics:
-    {
-        instance: null,
-    },    
-
     /**
-     * The target parcel
      * @private
      */
     _parcel: null,
 
     // use this for initialization
     onLoad: function () {
-        UIParcel.instance = this;
-        this.initPopup();
+
     },
 
     // called every frame, uncomment this function to activate update callback
@@ -80,8 +70,9 @@ var UIParcel = cc.Class({
 
     // },
 
-    onBtClose: function()
+    onButtonClick: function()
     {
-        this.hide();
-    },
+        UIParcel.instance.parcel = this.parcel;
+        UIParcel.instance.show();
+    }
 });
