@@ -1,16 +1,19 @@
 const Joi = require('joi');
+const Hoek = require('hoek');
 
 module.exports = {
 
-    buildFormError : function(globalMsg, payload, joiError) {
+    buildContext : function(request, globalMsgId, joiError) {
         var error = {
-            global: globalMsg,
             form: {}
         };
 
-        var keys = Object.keys(payload);
+        var ctx = {};
+
+        var keys = Object.keys(request.payload);
         keys.forEach(function(k){
-            error.form[k] = payload[k];
+            error.form[k] = request.payload[k];
+            ctx[k] = request.payload[k];
         });
 
         if(joiError){
@@ -20,7 +23,13 @@ module.exports = {
             });
         }
 
-        return error;
+        error.global = request.i18n.__(globalMsgId, {error: error});
+
+        
+
+        ctx.error = error;
+
+        return ctx;
     },
 
 
@@ -38,7 +47,25 @@ module.exports = {
             firstname: Joi.string().required(),
             lastname: Joi.string().required(),
             email: Joi.string().email().required(),
-            password1: Joi.string().min(6).max(12),
+            password1: Joi.string().min(6).max(12).required(),
+            password2: Joi.any().valid(Joi.ref('password1')).required()
+        });
+
+        return Joi.validate(payload, schema);
+    },
+
+    checkLostPassword: function(payload) {
+        const schema = Joi.object().keys({
+            email: Joi.string().email().required()
+        });
+
+        return Joi.validate(payload, schema)
+    },
+
+    checkResetPassword: function(payload) {
+        const schema = Joi.object().keys({
+            token: Joi.string().required(),
+            password1: Joi.string().min(6).max(12).required(),
             password2: Joi.any().valid(Joi.ref('password1')).required()
         });
 

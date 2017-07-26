@@ -67,7 +67,7 @@ function AuthController(server) {
     server.route({
         method: 'POST',
         path: '/auth/lostpassword',
-        handler: AuthController.lostpassword
+        handler: AuthController.lostpasswordpost
     });
 
     server.route({
@@ -79,7 +79,7 @@ function AuthController(server) {
     server.route({
         method: 'GET',
         path: '/auth/resetpassword/{token}',
-        handler: AuthController.resetpassword,
+        handler: AuthController.resetpasswordget,
     });
 
     server.route({
@@ -98,7 +98,7 @@ AuthController.loginpost = function (request, reply) {
     const vResult = Validation.checkLogin(request.payload);
 
     if(vResult.error) {
-        return reply.view('views/login', {error: Validation.buildFormError(request.i18n.__("login_failed"), request.payload)});
+        return reply.view('views/login', Validation.buildContext(request, "login_failed", vResult.error));
     }
 
     var email = request.payload.email;
@@ -107,13 +107,13 @@ AuthController.loginpost = function (request, reply) {
     User.findOne( {email: email},
         (error, user) => {
             if(error || !user) {
-                return reply.view('views/login', {error: Validation.buildFormError(request.i18n.__("login_failed"), request.payload)});
+                return reply.view('views/login', Validation.buildContext(request, "login_failed"));
             }
 
             Bcrypt.compare(password, user.password,
                 (error, same) => {
                     if(error || !same) {
-                        return reply.view('views/login', {error: Validation.buildFormError(request.i18n.__("login_failed"), request.payload)});
+                        return reply.view('views/login', Validation.buildContext(request, "login_failed"));
                     }
 
                     //here the user had successfully entered credentials
@@ -169,7 +169,7 @@ AuthController.registerpost = function(request, reply) {
 
     if(vResult.error) {
         return reply.view('views/register', {
-            error: Validation.buildFormError(request.i18n.__("register_failed"), request.payload, vResult.error)
+            error: Validation.buildContext(request, "register_failed", vResult.error)
         });
     }
 
@@ -183,16 +183,13 @@ AuthController.registerpost = function(request, reply) {
     User.findOne({email: email}, 
         (error, result) => {
             if(result && result.email == email) {
-                return reply.view('views/register', {
-                    error: Validation.buildFormError(request.i18n.__("register_failed_already_exists"), request.payload, vResult.error)
-                });
+                return reply.view('views/register', Validation.buildContext(request, "register_failed_already_exists"));
             }
 
             Bcrypt.hash(p1, 10,
                 (err, encrypted) => {
                     if(err) {
-                        reply(err);
-                        return;
+                        return reply.view('views/register', Validation.buildContext(request, "generic_error"));
                     }
                     var u = new User();
                     u.firstName = first;
@@ -202,10 +199,7 @@ AuthController.registerpost = function(request, reply) {
                     u.save(
                         (error, user) => {
                             if(error) {
-                                return reply.view('views/register', {
-                                    error: Validation.buildFormError(request.i18n.__("generic_error"), request.payload, vResult.error)
-                                });
-                                return;
+                                return reply.view('views/register', Validation.buildContext(request, "generic_error"));
                             }
                             
                             var mailer = new Mailer();
@@ -237,29 +231,33 @@ AuthController.lostpasswordget = function(request, reply) {
     reply.view('views/lostpassword');
 }
 
-AuthController.lostpassword = function(request, reply) {
+AuthController.lostpasswordpost = function(request, reply) {
+    
+    var vResult = Validation.checkLostPassword(request.payload);
+
+    if(vResult.error) {
+        return reply.view('views/lostpassword', Validation.buildContext(request, "lostpassword_invalid_mail", vResult.error));
+    }
+
     var email = request.payload.email;
 
     User.findOne({email: email},
         (error, user) => {
             if(error || !user) {
-                reply(Boom.badRequest('Email not found', error));
-                return;
+                return reply.view('views/lostpassword', Validation.buildContext(request, "lostpassword_unknown_mail"));
             }
 
             crypto.randomBytes(20,
                 (error, buffer) => {
                     if(error){
-                        reply(Boom.badRequest('Email not found', error));
-                        return;
+                        return reply.view('views/lostpassword', Validation.buildContext(request, "generic_error"));
                     }
                     var token = buffer.toString('hex');
                     user.resetpassordtoken = token;
                     user.save(
                         (error, user) => {
                             if(error) {
-                                reply(Boom.badRequest());
-                                return;
+                                return reply.view('views/lostpassword', Validation.buildContext(request, "generic_error"));
                             }
 
                             var url = request.server.info.uri + "/auth/resetpassword/" + token;
@@ -276,12 +274,11 @@ AuthController.lostpassword = function(request, reply) {
                             request.server.render('mails/lostpassword', ctx, { layoutPath: './templates/mails/layout', }, 
                                 (error, html, config) => {
                                     Hoek.assert(!error, error);
-                                    
 
                                     mailer.sendMail(user.email, subject, text, html);
                                     mailer.destroy();
 
-                                    reply.view('views/lostpasswordresult', {user: user});
+                                    reply.view('views/lostpassword', {user: user});
                                 }
                             );
                         }
@@ -292,41 +289,40 @@ AuthController.lostpassword = function(request, reply) {
     );
 }
 
-AuthController.resetpassword = function(request, reply) {
+AuthController.resetpasswordget = function(request, reply) {
     var token = request.params.token;
     User.findOne({resetpassordtoken: token},
         (error, result) => {
             if(error || !result) {
-                reply(Boom.badRequest('reset password token not found!', error));
-                return;
+                return reply.view('views/resetpassword', Validation.buildContext(request, "reset_password_invalid_token"));
             }
-            reply.view('views/resetpassword', {token:token, reset_password_panel_title: 'Saissisez votre nouveau mot de passe'});
+            reply.view('views/resetpassword', {token:token});
         }
     );
 }
 
 AuthController.resetpasswordpost = function(request, reply) {
+
+    var vResult = Validation.checkResetPassword(request.payload);
+
+    if(vResult.error) {
+        return reply.view('views/resetpassword', Validation.buildContext(request, "reset_password_mismatch", vResult.error));
+    }
+
     var token = request.payload.token;
     var p1 = request.payload.password1;
     var p2 = request.payload.password2;
 
-    if(p1 != p2) {
-        reply(Boom.badData('passwords are different'));
-        return;
-    }
-
     User.findOne({resetpassordtoken: token},
         (error, result) => {
             if(error || !result) {
-                reply(Boom.badRequest('reset password token not found!', error));
-                return;
+                return reply.view('views/resetpassword', Validation.buildContext(request, "reset_password_invalid_token"));
             }
             
             Bcrypt.hash(p1, 10,
                 (err, encrypted) => {
                     if(err) {
-                        reply(Boom.badRequest('unable to hash new password', error));
-                        return;
+                        return reply.view('views/resetpassword', Validation.buildContext(request, "generic_error"));
                     }
 
                     result.resetpassordtoken = null;
@@ -334,11 +330,10 @@ AuthController.resetpasswordpost = function(request, reply) {
                     result.save(
                         (error, user) => {
                             if(error) {
-                                reply(Boom.badRequest());
-                                return;
+                                return reply.view('views/resetpassword', Validation.buildContext(request, "reset_password_invalid_token"));
                             }
                             
-                            reply.view('views/passwordchanged', {user: result});
+                            reply.view('views/resetpassword', {user: result});
                     });
                 }
             );

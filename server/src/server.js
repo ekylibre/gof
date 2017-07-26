@@ -20,6 +20,10 @@ function register_plugins(server)
     //register helper to handle bars to allow {{i18n "text_tag_to_localize"}} in templates
     var Handlebars = require('handlebars');
     Handlebars.registerHelper('i18n', require('./utils/handlebarshelpers').i18n_helper);
+    if(process.env !== 'production') {
+        Handlebars.logger.level = 0;
+    }
+    
 
     server.register([
         require('inert'),
