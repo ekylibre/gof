@@ -4,7 +4,6 @@
 	"password_input": "Mot de passe",
 	"password_confirmation_input": "Confirmation",
 	"reset_password_success": "Votre mot de passe a été changé avec succès",
-	"welcome_new_user": "Bienvenue dans Game Of Farms {{user.firstName}} {{user.lastName}}",
 	"lost_password_message": "Vous avez demandé à récupérer votre de mot de passe. Veuillez cliquer ci-dessous pour choisir un nouveau mot de passe",
 	"click_here": "Cliquez ici",
 	"index_welcome": "Bienvenue dans Game Of Farms !",
@@ -16,5 +15,15 @@
 	"register_panel_title": "Créer votre compte",
 	"lost_password_panel_title": "Mot de passe perdu",
 	"lost_password_email_sent": "Nous avons envoyé un email contenant les instructions vous permettant de changer de mot de passe à l'adresse <b>{{user.email}}</b>.</br>Pensez à vérifier votre dossier spam",
-	"password_changed": "Votre mot de passe a été changé <b>{{user.email}}</b>.</br>Vous pouver maintenant vous <a href='/'>connecter</a>"
+	"password_changed": "Votre mot de passe a été changé <b>{{user.email}}</b>.</br>Vous pouver maintenant vous <a href='/'>connecter</a>",
+	"login_failed": "<b>Connexion échouée !</b> Veuillez vérifier vos identifiants. Avez-vous perdu votre mot de passe ? Vous pouvez le retrouver en cliquant <a href='/auth/lostpassword'>ici</a>",
+	"placeholder_email": "Insérez ici votre adresse email",
+	"placeholder_password": "Insérez ici votre mot de passe",
+	"placeholder_password_confirm": "Confirmez votre mot de passe",
+	"placeholder_firstname": "Prénom",
+	"placeholder_lastname": "Nom",
+	"register_failed": "Impossible de créer ce compte ! Veuillez vérifier votre saisie",
+	"register_failed_already_exists": "Désolé, le compte associé à cet email existe déjà !",
+	"welcome_new_user" : "Bienvenue dans Game Of Farms {{user.firstName}} {{user.lastName}}. Pour commencer vous devez vous connecter en cliquant <a href='/auth/login'>ici</a>",
+	"generic_error" : "Désolé, une erreur est survenue... </br>Veuillez réessayer plus tard"
 }

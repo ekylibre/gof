@@ -7,12 +7,12 @@ function PlantsController(server){
     server.route({
         method: 'GET',
         path: '/plants',
-        handler: PlantsController.getAll,
+        handler: PlantsController.getAll/*,
         config: {
             auth: {
                 strategy: 'token'
             }
-        }
+        }*/
     });
 }
 

@@ -1,0 +1,38 @@
+<div class="row" style="padding: 0 20% 0 20%;">
+    <div class="panel panel-info">
+        <div class="panel-heading">{{i18n "index_welcome"}}</div>
+        <div class="panel-body" style="padding: 5%;">
+            {{#if error}}
+                {{#if error.global}}
+                <div class="alert alert-danger" role="alert">
+                    {{{error.global}}}
+                </div>
+                {{/if}}
+            {{/if}}
+            <div class="row">
+                <form method="POST" action="/auth/login" class="form-horizontal">
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
+                        <input type="email" name="email" required="required" class="form-control" id="inputEmail" value="{{error.form.email}}" placeholder="{{i18n 'placeholder_email'}}"/>
+                    </div>
+
+                    <div class="input-group">
+                        <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
+                        <input type="password" name="password" required="required" class="form-control" id="inputPassword" placeholder="{{i18n 'placeholder_password'}}"/>
+                    </div>
+                    <div class="form-group" style="padding-top: 10px;">
+                        <input type="submit" class="btn btn-primary pull-right" value='{{i18n "login"}}'/>
+                    </div>
+                </form>
+            </div>
+            <div class="row" style="padding-top:10px;">
+                <a href="/auth/register" class="btn btn-primary pull-left" role="button">{{i18n "register"}}</a>
+            </div>
+            <div class="row" style="padding-top: 10px;">
+                <a href="/auth/lostpassword">{{i18n "index_lostpassword_link"}}</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+
