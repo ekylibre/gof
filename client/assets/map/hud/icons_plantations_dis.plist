@@ -239,13 +239,13 @@
             <key>premultiplyAlpha</key>
             <false/>
             <key>realTextureFileName</key>
-            <string>icons_cereales_dis.png</string>
+            <string>icons_plantations_dis.png</string>
             <key>size</key>
             <string>{388,114}</string>
             <key>smartupdate</key>
-            <string>$TexturePacker:SmartUpdate:938dec33add2f149e1695108bcf921cd:0a72d2feb373c41498641bcad5f0669c:7a01fb8b522b5232d5f92b8f648eee0a$</string>
+            <string>$TexturePacker:SmartUpdate:fff7a5240f11dd016133966da71c124a:0a72d2feb373c41498641bcad5f0669c:c428a7eafd2c116540b847cc93f00bc0$</string>
             <key>textureFileName</key>
-            <string>icons_cereales_dis.png</string>
+            <string>icons_plantations_dis.png</string>
         </dict>
     </dict>
 </plist>
