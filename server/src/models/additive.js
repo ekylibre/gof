@@ -1,6 +1,6 @@
 'use strict';
 
-const Constants = require('../constants')
+const Constants = require('../../../common/constants');
 var mongoose = require ('mongoose');
 
 var AdditiveSchema = new mongoose.Schema({

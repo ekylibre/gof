@@ -8,7 +8,7 @@ const Mongoose = require('mongoose');
 const Config = require('config');
 const i18n = require('i18n');
 
-const Constants = require('./constants');
+const Constants = require('../../common/constants');
 const IndexController = require('./controllers/index')
 const AuthController = require('./controllers/auth');
 const PlantsController = require('./controllers/plants');
