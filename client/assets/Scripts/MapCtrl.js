@@ -1,7 +1,15 @@
+//
 // MapCtrl component
-
-// Add this on the TiledMap to manage touch events
-// Call scrollEvent(null, 0) to disable touch (e.g.: when scrolling map)
+// Manages the map scrolling, UI, etc...
+//
+// *Add this on the ScrollView containing the TiledMaps*
+//
+// *Then in the ScrollView component, add a ScrollEvent pointing to*:
+//      MapCtrl::scrollEvent(null, 0)
+// (to disable touch when scrolling map)
+//
+// *All TiledMaps and layers must have the same size & tile size*
+// 
 
 
 import CGame from 'Game';
@@ -13,31 +21,43 @@ const game = new CGame();
 const UIOffice = require('UIOffice');
 const UIDebug = require('UIDebug');
 
+/**
+ * Manages the map scrolling, UI, etc...
+ * @class
+ * @name MapCtrl
+ */
 cc.Class({
     extends: cc.Component,
     editor:
     {
-        //requireComponent: cc.TiledMap,
+        requireComponent: cc.ScrollView,
         menu: 'gof/MapCtrl'
     },
 
     properties: {
-        // the ScrollView containing the map
-        mapScrollView:
+
+        /**
+         * @property Layer to place the UI
+         */
+        mapUILayer:
         {
             default: null,
-            type: cc.ScrollView,
-            displayName: 'MapScrollView'
+            type: cc.Node,
+            displayName: 'UI layer'
         },
         
-        // starting ScrollView offset
+        /**
+         * @property Starting scrollview position
+         */
         startOffset:
         {
             default: new cc.Vec2(0,0),
             displayName: 'Scroll starting pos'
         },
         
-        // List of parcels TiledMaps
+        /**
+         * @property List of TiledMaps containing parcels ground
+         */        
         mapParcels:
         {
             default: [],
@@ -45,20 +65,14 @@ cc.Class({
             displayName: 'Parcels maps'
         },
 
-        // List of sprouts TiledMaps
+        /**
+         * @property List of TiledMaps containing the sprouts
+         */
         mapSprouts:
         {
             default: [],
             type: [cc.TiledMap],
             displayName: 'Sprouts maps'
-        },
-
-        // List of valid parcel tiles gid
-        parcelsGID:
-        {
-            default: [],
-            type: [cc.Integer],
-            displayName: 'Parcels GID'
         },
 
         // List of objects TiledMaps
@@ -69,6 +83,17 @@ cc.Class({
             displayName: 'Objects maps'
         },
 
+
+        /**
+         * @property List of valid parcel tiles gid
+         */
+        parcelsGID:
+        {
+            default: [],
+            type: [cc.Integer],
+            displayName: 'Parcels GID'
+        },
+
         // a debug prefab
         debugLabelPrefab: {
             default: null,
@@ -76,55 +101,69 @@ cc.Class({
         },
     },
 
+    /**
+     * The ScrollView component
+     */
+    _mapScrollView: null,
+
+    /**
+     * The base tiledmap used as reference
+     */
+    _refMap: null,
+
+    /**
+     * First layer of the _refMap, used as reference
+     */
+    _refLayer: null,
+    
+
     // use this for initialization
     onLoad: function()
     {
-        // Setting touch events
+        this._mapScrollView = this.getComponent(cc.ScrollView);
 
+        // Setting touch events       
         this.initTouch();
-
-        // DEBUG
-        // _ccsg.TMXLayer.prototype.getTileAt = function(pos, y)
-        // {
-        //     if (void 0 === pos) {
-        //         throw new Error("_ccsg.TMXLayer.getTileAt(): pos should be non-null");
-        //     }
-        //     var x = pos;
-        //     if (void 0 === y) {
-        //         x = pos.x;
-        //         y = pos.y;
-        //     }
-        //     if (x >= this._layerSize.width || y >= this._layerSize.height || x < 0 || y < 0) {
-        //         throw new Error("_ccsg.TMXLayer.getTileAt(): invalid position");
-        //     }
-        //     if (!this.tiles) {
-        //         cc.logID(7204);
-        //         return null;
-        //     }
-        //     var tile = null, gid = this.getTileGIDAt(x, y);
-        //     if (0 === gid) {
-        //         return tile;
-        //     }
-        //     var z = Math.floor(x) + Math.floor(y) * this._layerSize.width;
-        //     tile = this._spriteTiles[z];
-        //     if (!tile) {
-        //         var rect = this._texGrids[gid];
-        //         var tex = this._textures[rect.texId];
-        //         tile = new _ccsg.Sprite(tex, rect);
-        //         tile.setPosition(this.getPositionAt(x, y));
-        //         var vertexZ = this._vertexZForPos(x, y);
-        //         tile.setVertexZ(vertexZ);
-        //         tile.setAnchorPoint(0, 0);
-        //         tile.setOpacity(this._opacity);
-        //         //this.addChild(tile, vertexZ, z);
-        //     }
-        //     return tile;
-        // };
-       
     },
 
+    start: function(err)
+    {
+        if (err) return;
+
+        // Scroll map to starting offset
+        this._mapScrollView.scrollToOffset(this.startOffset);
+      
+        this.findParcels();
+
+        if (game.isDebug)
+        {
+            this.addDebugInfo();
+        }
+    },
+    
+    /**
+     * Initializes touch events
+     * @method
+     */
     initTouch: function()
     {
+        if (this.mapParcels && this.mapParcels.length>0)
+        {
+            this._refMap = this.mapParcels[0];
+            this._refLayer = this._refMap.allLayers()[0];
+        }
+        else
+        if (this.mapSprouts && this.mapSprouts.length>0)
+        {
+            this._refMap = this.mapSprouts[0];
+            this._refLayer = this._refMap.allLayers()[0];
+        }
+        else
+        {
+            cc.error('At least one parcel or sprout TiledMap is required');
+            return;
+        }
+        
         this.node.on(cc.Node.EventType.TOUCH_START,
             (event) =>
             {
@@ -132,7 +171,6 @@ cc.Class({
             },
             this.node
         );
-
 
         this.node.on(cc.Node.EventType.TOUCH_END,
             (event) =>
@@ -145,24 +183,8 @@ cc.Class({
 
                 // get "local" position
                 var touch = event.touch;
-                var baseMap = null;
-                var loc = null;
-                if (this.mapParcels && this.mapParcels.length>0)
-                {
-                    baseMap = this.mapParcels[0];
-                }
-                else
-                if (this.mapSprouts && this.mapSprouts.length>0)
-                {
-                    baseMap = this.mapSprouts[0];
-                }
-                else
-                {
-                    cc.error('At least one parcel or sprout TiledMap is required');
-                    return;
-                }
 
-                var loc = baseMap.node.convertToNodeSpace(touch.getLocation());
+                var loc = this._refMap.node.convertToNodeSpace(touch.getLocation());
                 UIDebug.touchLog = ''+touch.getLocationX()+','+touch.getLocationY()+' => '+loc;
 
                 if (this.mapObjects && this.mapObjects.length>0)
@@ -197,79 +219,18 @@ cc.Class({
                         }
                     }
                 }
-
-                // var tiledMap = this._tiledMap; //this.node.getComponent('cc.TiledMap');
-                // if (tiledMap)
-                // {
-                //     var mapSize = tiledMap.getMapSize();
-                //     var layers = tiledMap.allLayers();
-
-                //     // convert touch position to node position (i.e. map position)
-                //     var loc = tiledMap.node.convertToNodeSpace(touch.getLocation());
-                    
-                //     UIDebug.touchLog = ''+touch.getLocationX()+','+touch.getLocationY()+' => '+loc;
-
-                //     var groups = tiledMap.getObjectGroups();
-                //     for (var i= groups.length-1; i>=0; i--)
-                //     {
-                //         var group = groups[i];
-                //         var objs = group.getObjects();
-
-                //         for (var j=0; j<objs.length; j++)
-                //         {
-                //             var obj = objs[j];
-
-                //             var rect = cc.rect(obj.sgNode.x - obj.sgNode.width/2, obj.sgNode.y,
-                //             obj.sgNode.width, obj.sgNode.height);
-
-                //             if (rect.contains(loc))
-                //             {
-                //                 UIDebug.log('Clicked on object '+obj.name);
-
-                //                 UIOffice.instance.show();
-                //                 return;
-                //             }
-                //         }
-                //     }
-
-                //     for (var i = layers.length-1; i >=0; i--)
-                //     {
-                //         var layer = layers[i];
-
-                //         var TILE_WIDTH_HALF = layer.getMapTileSize().width;
-                //         var TILE_HEIGHT_HALF = layer.getMapTileSize().height;
-
-                //         var tw = layer.getMapTileSize().width;
-                //         var th = layer.getMapTileSize().height;
-                //         var mw = layer.getLayerSize().width;
-                //         var mh = layer.getLayerSize().height;
-
-                //         var x = (loc.x) * 1;
-                //         var y = (loc.y) * 1;
-
-                //         var isox = Math.floor(mh - y/th + x/tw - mw/2);
-                //         var isoy = Math.floor(mh - y/th - x/tw + mw/2);
-
-                //         // true only if the coords is with in the map
-                //         if(isox < mapSize.width && isoy < mapSize.height)
-                //         {
-                //             var tile = layer.getTileAt(cc.v2(isox,isoy));
-                //             if(tile)
-                //             {
-                //                 // a tile is clicked!
-                //                 var tileGid = layer.getTileGIDAt(cc.v2(isox,isoy));
-                //                 UIDebug.log('Clicked on layer '+layer.getLayerName()+' tile at '+isox+','+isoy+' GID='+tileGid);
-                //                 return;
-                //             }
-                //         }                        
-                //     }
-                //}
             },
             this.node);
 
     },
 
-    // Find if there's something on map at specified pos
+    /**
+     *  Checks if there's something on map at specified 'pixel' position
+     * @method
+     * @param {cc.TiledMap} _Map the TiledMap to look into
+     * @param {cc.Vec2}     _Pos the position in the map in pixels
+     * @return {Boolean}
+     */
     touchOnMap: function(_Map, _Pos)
     {
         var mapSize = _Map.getMapSize();
@@ -315,9 +276,6 @@ cc.Class({
         {
             var layer = layers[i];
 
-            var TILE_WIDTH_HALF = layer.getMapTileSize().width;
-            var TILE_HEIGHT_HALF = layer.getMapTileSize().height;
-
             var tw = layer.getMapTileSize().width;
             var th = layer.getMapTileSize().height;
             var mw = layer.getLayerSize().width;
@@ -362,48 +320,36 @@ cc.Class({
         return false;
     },
 
-    start: function(err)
+    /**
+     * Converts a tile position to a 'UI Layer' position
+     * @method
+     * @param {cc.Vec2} _Pos position of tile in map
+     * @return {cc.Vec2}
+     */
+    tileToUI: function(_Pos)
     {
-        if (err) return;
-
-        // Scroll map to starting offset
-        this.mapScrollView.scrollToOffset(this.startOffset);
-
-        this.findParcels();
-
-        // // display debug info on map "objects"
-        // if (this.mapObjects && this.mapObjects.length>0)
-        // {
-        //     for (var k=0; k<this.mapObjects.length; k++)
-        //     {            
-        //         var groups = this.mapObjects[k].getObjectGroups();
-        //         for (var i= groups.length-1; i>=0; i--)
-        //         {
-        //             var group = groups[i];
-        //             var objs = group.getObjects();
-
-        //             for (var j=0; j<objs.length; j++)
-        //             {
-        //                 var obj = objs[j];
-
-        //                 //var pos = this.mapObjects[k].node.convertToWorldSpace(new cc.Vec2(obj.sgNode.x, obj.sgNode.y));
-
-        //                 var dbg = cc.instantiate(this.debugLabelPrefab);
-
-        //                 dbg.setParent(this.mapScrollView.node);
-        //                 dbg.setPosition(new cc.Vec2(obj.sgNode.x, obj.sgNode.y));
-
-        //                 var label = dbg.getComponentInChildren(cc.Label);                   
-                        
-        //                 label.string = obj.name+': '+Math.floor(obj.sgNode.x)+','+Math.floor(obj.sgNode.y);
-        //             }
-        //         }
-                
-        //     }
-        // }
-        
+        var ts = this._refMap.getTileSize();
+        var pos = this._refLayer.getPositionAt(_Pos);
+        //pos.x += ts.width * 0.5;
+        pos.y += ts.height * 0.5;
+        return this.mapToUI(pos);
     },
 
+    /**
+     * Converts a pixel position in the map to a 'UI Layer' position
+     * @method
+     * @param {cc.Vec2} _Pos pixel position in map
+     * @return {cc.Vec2}
+     */
+    mapToUI: function(_Pos)
+    {
+        return cc.v2(_Pos.x-this.mapUILayer.width*0.5, _Pos.y-this.mapUILayer.height*0.5);
+    },
+
+    /**
+     * Parses the parcels map to create CParcel objects
+     * @method
+     */
     findParcels: function()
     {
         if (this.mapParcels && this.parcelsGID && this.parcelsGID.length>0)
@@ -424,7 +370,7 @@ cc.Class({
                             {
                                 var pos = new cc.Vec2(x, y);
                                 var parcel = game.farm.findParcelAdjacent(pos);
-                                if (parcel != null)
+                                if (parcel != null && parcel.tiledLayer == layer)
                                 {
                                     // adjacent parcel found, add tile to it
                                     parcel.addTile(pos);
@@ -433,7 +379,7 @@ cc.Class({
                                 {
                                     // create a new parcel
                                     var name = 'Parcel'+(game.farm.parcels.length+1);
-                                    parcel = new CParcel(name);
+                                    parcel = new CParcel(name, layer);
                                     parcel.addTile(pos);
                                     game.farm.addParcel(parcel);
                                 }
@@ -449,15 +395,54 @@ cc.Class({
                 game.farm.totalSurface = totalSurface;
             }
 
-            if (game.isDebug)
-            {
-                cc.log('NbParcels='+game.farm.parcels.length);
-                for (var k=0; k<game.farm.parcels.length; k++)
+        }
+    },
+
+    addDebugInfo: function()
+    {
+        // Display info labels on top of map objects
+        if (this.mapObjects)
+        {
+            for (var k=0; k<this.mapObjects.length; k++)
+            {            
+                var groups = this.mapObjects[k].getObjectGroups();
+                for (var i= groups.length-1; i>=0; i--)
                 {
-                    var parcel = game.farm.parcels[k];
-                    cc.log(parcel.name+': '+parcel.tiles.length);
+                    var group = groups[i];
+                    var objs = group.getObjects();
+
+                    for (var j=0; j<objs.length; j++)
+                    {
+                        var obj = objs[j];
+                        var sgPos = cc.v2(obj.sgNode.x, obj.sgNode.y);
+
+                        var dbg = cc.instantiate(this.debugLabelPrefab);
+                        dbg.setParent(this.mapUILayer);
+                        dbg.setPosition(this.mapToUI(sgPos));
+
+                        var label = dbg.getComponentInChildren(cc.Label);
+                        
+                        label.string = obj.name+': '+Math.floor(obj.sgNode.x)+','+Math.floor(obj.sgNode.y);
+                    }
                 }
+                
             }
+        }
+        
+        cc.log('NbParcels='+game.farm.parcels.length);
+        for (var k=0; k<game.farm.parcels.length; k++)
+        {
+            var parcel = game.farm.parcels[k];
+            cc.log(parcel.name+': '+parcel.tiles.length);
+
+            // show label at center
+            var dbg = cc.instantiate(this.debugLabelPrefab);
+            dbg.setParent(this.mapUILayer);
+            dbg.setPosition(this.tileToUI(parcel.rect.center));
+
+            var label = dbg.getComponentInChildren(cc.Label);         
+            
+            label.string = parcel.name+' s='+parcel.surface+' (c='+parcel.rect.center.x+','+parcel.rect.center.y+')';
         }
     },
 
@@ -466,7 +451,10 @@ cc.Class({
 
     // },
 
-    // ScrollView callback, so we know when its scrolling
+    /**
+     * ScrollView callback, so we know when its scrolling
+     * @callback
+     */
     scrollEvent: function(sender, event)
     {
         if (event<9)
@@ -477,5 +465,52 @@ cc.Class({
         {
             this._isScrolling = false;          
         }
-    }
+    },
+
+
+    __Debug: function()
+    {
+
+        // DEBUG
+        // _ccsg.TMXLayer.prototype.getTileAt = function(pos, y)
+        // {
+        //     if (void 0 === pos) {
+        //         throw new Error("_ccsg.TMXLayer.getTileAt(): pos should be non-null");
+        //     }
+        //     var x = pos;
+        //     if (void 0 === y) {
+        //         x = pos.x;
+        //         y = pos.y;
+        //     }
+        //     if (x >= this._layerSize.width || y >= this._layerSize.height || x < 0 || y < 0) {
+        //         throw new Error("_ccsg.TMXLayer.getTileAt(): invalid position");
+        //     }
+        //     if (!this.tiles) {
+        //         cc.logID(7204);
+        //         return null;
+        //     }
+        //     var tile = null, gid = this.getTileGIDAt(x, y);
+        //     if (0 === gid) {
+        //         return tile;
+        //     }
+        //     var z = Math.floor(x) + Math.floor(y) * this._layerSize.width;
+        //     tile = this._spriteTiles[z];
+        //     if (!tile) {
+        //         var rect = this._texGrids[gid];
+        //         var tex = this._textures[rect.texId];
+        //         tile = new _ccsg.Sprite(tex, rect);
+        //         tile.setPosition(this.getPositionAt(x, y));
+        //         var vertexZ = this._vertexZForPos(x, y);
+        //         tile.setVertexZ(vertexZ);
+        //         tile.setAnchorPoint(0, 0);
+        //         tile.setOpacity(this._opacity);
+        //         //this.addChild(tile, vertexZ, z);
+        //     }
+        //     return tile;
+        // };
+       
+
+    },
+
+
 });

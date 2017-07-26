@@ -17,6 +17,7 @@ var ParcelState = cc.Enum({
  * @class CParcel
  * 
  * @property {String}           name: parcel name
+ * @property {cc.TiledLayer}    tiledLayer: TiledLayer containing the parcel
  * @property {Array:cc.Vec2}    tiles: array of tiles positions
  * @property {cc.Rect}          rect: rectangle containg the parcel
  * @property {ParcelState}      state: current parcel state
@@ -30,8 +31,9 @@ export default class CParcel
     /**
      * @constructor
      * @param {string} _Name: parcel name
+     * @param {cc.TiledLayer} _TiledLayer: layer containing the parcel
      */
-    constructor(_Name)
+    constructor(_Name, _TiledLayer)
     {
         if (_Name === undefined)
         {
@@ -41,8 +43,9 @@ export default class CParcel
         {
             this.name = _Name;
         }
+        this.tiledLayer = _TiledLayer;
         this.tiles = [];
-        this.rect = cc.rect(0,0,0,0);
+        this.rect = cc.rect();
         this.state = ParcelState.EMPTY;
         this.surface = 0;
 
@@ -101,6 +104,14 @@ export default class CParcel
     {
         // Add tile to the array
         this.tiles.push(_Pos);
+
+        if (this.rect.width == 0)
+        {
+            this.rect.x = _Pos.x;
+            this.rect.y = _Pos.y;
+            this.rect.width = 1;
+            this.rect.height = 1;
+        }
 
         // Updates rectangle
         if (this.rect.x>_Pos.x)
