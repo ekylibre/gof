@@ -1,5 +1,5 @@
 
-const Constants = require('../../../server/src/constants')
+const Constants = require('../../../common/constants')
 
 
 export default class Plant
