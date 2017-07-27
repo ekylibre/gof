@@ -398,8 +398,9 @@ cc.Class({
                                 else
                                 {
                                     // create a new parcel
+                                    var uid = 'parcel'+(game.farm.parcels.length+1);
                                     var name = i18n.t('parcel')+(game.farm.parcels.length+1);
-                                    parcel = new CParcel(name, layer);
+                                    parcel = new CParcel(uid, name, layer);
                                     parcel.addTile(pos);
                                     game.farm.addParcel(parcel);
                                 }

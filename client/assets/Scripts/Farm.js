@@ -25,7 +25,7 @@ export default class CFarm
     constructor(_Name, _Surface)
     {
         this.name = _Name;
-        
+
         if (_Surface === undefined)
         {
             this.totalSurface = 0;
@@ -90,5 +90,28 @@ export default class CFarm
         }
 
         return null;        
+    }
+
+    /**
+     * Finds a parcel with specified UID
+     * @method findParcelUID
+     * @param {String} _UID parcel unique identifier
+     * @returns {CParcel} the parcel, or null
+     */
+    findParcelUID(_UID)
+    {
+        if (_UID !== undefined)
+        {
+        for (var i=0; i<this.parcels.length; i++)
+            {
+                var parcel = this.parcels[i];
+                if (parcel.uid === _UID)
+                {
+                    return parcel;
+                }
+            }
+        }
+
+        return null;
     }
 }

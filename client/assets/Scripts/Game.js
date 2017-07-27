@@ -79,7 +79,7 @@ export default class CGame
     {
         if (_Phase !== undefined && _Phase !== null)
         {
-            if (this._currPhase !== null && this._currPhase.id == _Phase.id)
+            if (this._currPhase !== null && this._currPhase.uid == _Phase.uid)
             {
                 // same phase
                 return;
@@ -91,7 +91,23 @@ export default class CGame
             if (this._currPhase === null)
             {
                 // First phase
+                // Give money
                 this.farm.money = _Phase.startMoney;
+
+                // Setup parcels history
+                for (var i=0; i<_Phase.parcels.length; i++)
+                {
+                    var setup = _Phase.parcels[i];
+                    var parcel = this.farm.findParcelUID(setup.uid);
+                    if (parcel != null)
+                    {
+                        parcel.rotationHistory = setup.history;
+                    }
+                    else
+                    {
+                        cc.error('Could not find parcel uid '+setup.uid);
+                    }
+                }
             }
             else
             {
