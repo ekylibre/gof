@@ -13,6 +13,7 @@
 
 
 import CGame from 'Game';
+import CGamePhase from 'GamePhase';
 import CFarm from 'Farm';
 import CParcel from 'Parcel';
 import UIParcelButton from 'UIParcelButton'
@@ -21,6 +22,8 @@ const game = new CGame();
 
 const UIOffice = require('UIOffice');
 const UIDebug = require('UIDebug');
+
+const i18n = require('LanguageData');
 
 /**
  * Manages the map scrolling, UI, etc...
@@ -149,6 +152,12 @@ cc.Class({
         if (game.isDebug)
         {
             this.addDebugInfo();
+        }
+
+        // Start a phase if needed
+        if (game.phase === null)
+        {
+            game.phase = new CGamePhase();
         }
     },
     
@@ -389,7 +398,7 @@ cc.Class({
                                 else
                                 {
                                     // create a new parcel
-                                    var name = 'Parcel'+(game.farm.parcels.length+1);
+                                    var name = i18n.t('parcel')+(game.farm.parcels.length+1);
                                     parcel = new CParcel(name, layer);
                                     parcel.addTile(pos);
                                     game.farm.addParcel(parcel);
