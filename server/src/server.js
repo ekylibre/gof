@@ -13,6 +13,7 @@ const IndexController = require('./controllers/index')
 const AuthController = require('./controllers/auth');
 const PlantsController = require('./controllers/plants');
 const GameController = require('./controllers/game');
+const Api = require('./api/api');
 const DbManager = require('./dbmanager');
 
 function register_plugins(server)
@@ -85,6 +86,7 @@ function setup_routes(server) {
     new AuthController(server);
     new PlantsController(server);
     new GameController(server);
+    new Api(server);
 }
 
 function start_server(server){

@@ -5,7 +5,7 @@
 	"password_confirmation_input": "Confirmation",
 	"reset_password_success": "Votre mot de passe a été changé avec succès. Vous pouver maintenant vous connecter en cliquant <a href='/auth/login'>ici</a>",
 	"reset_password_mismatch": "Votre mot de passe de confirmation ne correspond pas. Veuillez recommencer",
-	"reset_password_invalid_token" : "Le jeton pour le changement de mot de passe est invalide ou expiré ! Veuillez recommencer la procédure en cliquant <a href='/auth/lostpassword'>ici</a>",
+	"reset_password_invalid_token": "Le jeton pour le changement de mot de passe est invalide ou expiré ! Veuillez recommencer la procédure en cliquant <a href='/auth/lostpassword'>ici</a>",
 	"lost_password_message": "Vous avez demandé à récupérer votre de mot de passe. Veuillez cliquer ci-dessous pour choisir un nouveau mot de passe",
 	"click_here": "Cliquez ici",
 	"index_welcome": "Bienvenue dans Game Of Farms !",
@@ -25,8 +25,10 @@
 	"placeholder_lastname": "Nom",
 	"register_failed": "Impossible de créer ce compte ! Veuillez vérifier votre saisie",
 	"register_failed_already_exists": "Désolé, le compte associé à cet email existe déjà !",
-	"welcome_new_user" : "Bienvenue dans Game Of Farms {{user.firstName}} {{user.lastName}}. Pour commencer vous devez vous connecter en cliquant <a href='/auth/login'>ici</a>",
-	"lostpassword_invalid_mail" : "Désolé, <b>{{error.form.email}}</b> n'est pas une adresse mail valide",
-	"lostpassword_unknown_mail" : "Désolé, nous ne connaissons pas cette adresse mail <b>{{error.form.email}}</b>",
-	"generic_error" : "Désolé, une erreur est survenue... </br>Veuillez réessayer plus tard"
+	"welcome_new_user": "Bienvenue dans Game Of Farms {{user.firstName}} {{user.lastName}}. Pour commencer vous devez vous connecter en cliquant <a href='/auth/login'>ici</a>",
+	"lostpassword_invalid_mail": "Désolé, <b>{{error.form.email}}</b> n'est pas une adresse mail valide",
+	"lostpassword_unknown_mail": "Désolé, nous ne connaissons pas cette adresse mail <b>{{error.form.email}}</b>",
+	"ekylibre_copyright": "© 2017 Ekylibre",
+	"generic_error": "Désolé, une erreur est survenue... </br>Veuillez réessayer plus tard",
+	"made_by_ekylibre": "made_by_ekylibre"
 }

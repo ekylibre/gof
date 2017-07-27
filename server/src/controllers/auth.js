@@ -46,9 +46,7 @@ function AuthController(server) {
         path: '/auth/check',
         handler: AuthController.check,
         config: {
-            auth: {
-                strategy: 'token'
-            }
+            auth: 'token'
         }
     });
 
@@ -253,7 +251,7 @@ AuthController.lostpasswordpost = function(request, reply) {
                         return reply.view('views/lostpassword', Validation.buildContext(request, "generic_error"));
                     }
                     var token = buffer.toString('hex');
-                    user.resetpassordtoken = token;
+                    user.resetpasswordtoken = token;
                     user.save(
                         (error, user) => {
                             if(error) {
@@ -291,7 +289,7 @@ AuthController.lostpasswordpost = function(request, reply) {
 
 AuthController.resetpasswordget = function(request, reply) {
     var token = request.params.token;
-    User.findOne({resetpassordtoken: token},
+    User.findOne({resetpasswordtoken: token},
         (error, result) => {
             if(error || !result) {
                 return reply.view('views/resetpassword', Validation.buildContext(request, "reset_password_invalid_token"));
@@ -313,7 +311,7 @@ AuthController.resetpasswordpost = function(request, reply) {
     var p1 = request.payload.password1;
     var p2 = request.payload.password2;
 
-    User.findOne({resetpassordtoken: token},
+    User.findOne({resetpasswordtoken: token},
         (error, result) => {
             if(error || !result) {
                 return reply.view('views/resetpassword', Validation.buildContext(request, "reset_password_invalid_token"));
@@ -325,7 +323,7 @@ AuthController.resetpasswordpost = function(request, reply) {
                         return reply.view('views/resetpassword', Validation.buildContext(request, "generic_error"));
                     }
 
-                    result.resetpassordtoken = null;
+                    result.resetpasswordtoken = null;
                     result.password = encrypted;
                     result.save(
                         (error, user) => {

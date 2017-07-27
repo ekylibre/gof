@@ -1,131 +1,132 @@
-"scenario" : {
+{
+	"scenario" : {
 	
-	"name" : "croprotation",
+		"name" : "croprotation",
 
-	"end" : {
-		"condition" : {
+		"end" : {
+			"condition" : {
 				"parcels.each.rotationPrevision.length" : 3
+			},
+			
+			"score" : {
+				"max" : 1000
 			}
 		},
-		"score" : {
-			"max" : 1000
-		}
-	},
 
-	"start": {
-		"farm" : {
-			"treasury" : 50000,
-			"tiledmapPrefab" : "gof_map01",
+		"start": {
+			"farm" : {
+				"treasury" : 50000,
+				"tiledmapPrefab" : "gof_map01",
 
-			"parcels" : [ {
-				"name" : "Parcel1",
-				"surface" : 42,
-				"data" : {
+				"parcels" : [ {
+					"name" : "Parcel1",
+					"surface" : 42,
+					"data" : {
 
-					"state" : "growing",
+						"state" : "growing",
 
-					"plant" : {
-						"species" : "soft_wheat"
-					},
-
-					"rotationHistory" : [
-						{"plant" : {"species" : "carrot"}},
-						{"plant" : {"species" : "corn"}},
-						{"plant" : {"species" : "corn"}}
-					]
-				}
-			}, {
-				"name" : "Parcel2",
-				"surface" : 96,
-				"data" : {
-
-					"state" : "seeds",
-					"plant" : null,
-
-					"rotationHistory" : [
-						{"plant" : {"species" : "carrot"}},
-						{"plant" : {"species" : "corn"}},
-						{"plant" : {"species" : "corn"}}
-					]
-				}
-			}, {
-				"name" : "Parcel3",
-				"surface" : 120,
-				"data" : {
-
-					"state" : "ready",
-					"plant" : {
-						"species" : "durum_wheat"
+						"plant" : {
+							"species" : "soft_wheat"
 						},
 
-					"rotationHistory" : [
-						{"plant" : {"species" : "carrot"}},
-						{"plant" : {"species" : "corn"}},
-						{"plant" : {"species" : "corn"}}
-					]
-				}	
-			}, {
-				"name" : "Parcel4",
-				"surface" : 65,
-				"data" : {
+						"rotationHistory" : [
+							{"plant" : {"species" : "carrot"}},
+							{"plant" : {"species" : "corn"}},
+							{"plant" : {"species" : "corn"}}
+						]
+					}
+				}, {
+					"name" : "Parcel2",
+					"surface" : 96,
+					"data" : {
 
-					"state" : "ready",
-					"plant" : {
-						"species" : "soft_wheat"
-						},
+						"state" : "seeds",
+						"plant" : null,
 
-					"rotationHistory" : [
-						{"plant" : {"species" : "carrot"}},
-						{"plant" : {"species" : "corn"}},
-						{"plant" : {"species" : "corn"}}
-					]
-				}	
-			}, {
-				"name" : "Parcel5",
-				"surface" : 77,
-				"data" : {
+						"rotationHistory" : [
+							{"plant" : {"species" : "carrot"}},
+							{"plant" : {"species" : "corn"}},
+							{"plant" : {"species" : "corn"}}
+						]
+					}
+				}, {
+					"name" : "Parcel3",
+					"surface" : 120,
+					"data" : {
 
-					"state" : "growing",
-					"plant" : {
-						"species" : "durum_wheat"
-						},
+						"state" : "ready",
+						"plant" : {
+							"species" : "durum_wheat"
+							},
 
-					"rotationHistory" : [
-						{"plant" : {"species" : "carrot"}},
-						{"plant" : {"species" : "corn"}},
-						{"plant" : {"species" : "corn"}}
-					]
-				}	
-			}, {
-				"name" : "Parcel6",
-				"surface" : 120,
-				"data" : {
+						"rotationHistory" : [
+							{"plant" : {"species" : "carrot"}},
+							{"plant" : {"species" : "corn"}},
+							{"plant" : {"species" : "corn"}}
+						]
+					}	
+				}, {
+					"name" : "Parcel4",
+					"surface" : 65,
+					"data" : {
 
-					"state" : "plowed",
-					"plant" : null,
+						"state" : "ready",
+						"plant" : {
+							"species" : "soft_wheat"
+							},
 
-					"rotationHistory" : [
-						{"plant" : {"species" : "carrot"}},
-						{"plant" : {"species" : "corn"}},
-						{"plant" : {"species" : "corn"}}
-					]
-				}	
-			}, {
-				"name" : "Parcel7",
-				"surface" : 77,
-				"data" : {
+						"rotationHistory" : [
+							{"plant" : {"species" : "carrot"}},
+							{"plant" : {"species" : "corn"}},
+							{"plant" : {"species" : "corn"}}
+						]
+					}	
+				}, {
+					"name" : "Parcel5",
+					"surface" : 77,
+					"data" : {
 
-					"state" : "seeds",
-					"plant" : null,
+						"state" : "growing",
+						"plant" : {
+							"species" : "durum_wheat"
+							},
 
-					"rotationHistory" : [
-						{"plant" : {"species" : "carrot"}},
-						{"plant" : {"species" : "corn"}},
-						{"plant" : {"species" : "corn"}}
-					]
-				}	
-			}]
+						"rotationHistory" : [
+							{"plant" : {"species" : "carrot"}},
+							{"plant" : {"species" : "corn"}},
+							{"plant" : {"species" : "corn"}}
+						]
+					}	
+				}, {
+					"name" : "Parcel6",
+					"surface" : 120,
+					"data" : {
+
+						"state" : "plowed",
+						"plant" : null,
+
+						"rotationHistory" : [
+							{"plant" : {"species" : "carrot"}},
+							{"plant" : {"species" : "corn"}},
+							{"plant" : {"species" : "corn"}}
+						]
+					}	
+				}, {
+					"name" : "Parcel7",
+					"surface" : 77,
+					"data" : {
+
+						"state" : "seeds",
+						"plant" : null,
+
+						"rotationHistory" : [
+							{"plant" : {"species" : "carrot"}},
+							{"plant" : {"species" : "corn"}},
+							{"plant" : {"species" : "corn"}}
+						]
+					}	
+				}]
+			}
 		}
 	}
-
 }
