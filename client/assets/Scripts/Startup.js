@@ -3,6 +3,7 @@
 // Must be started before every other "GoF" components
 
 const i18n = require('LanguageData');
+import ApiClient from 'ApiClient';
 
 import CGame from 'Game';
 const game = new CGame();
@@ -33,6 +34,35 @@ cc.Class({
     {
         //Game.getInstance().init();
         game.init();
+        
+        /*
+        var endpoint = '/api';
+        if(cc.sys.isBrowser && location.hostname === 'localhost' && location.port !== 3000) {
+            endpoint = 'http://gof.julien.dev:3000/api';
+        }
+        
+        var client = new ApiClient(endpoint);
+        client.login('julien.castets@shinypix.com', 'alacon',
+            (error, response, c) => {
+                if(!error) {
+                    c.checkAuth(
+                        (error, response) => {
+                            if(error) {
+                                if(cc.sys.isBrowser && location.hostname === 'localhost' && location.port !== 3000) {
+                                    //location.replace('http://gof.julien.dev:3000');
+                                } else {
+                                    //location.replace('/');
+                                }
+
+                                return console.log(error);
+                            }
+                            console.log(response);
+                        }
+                    );
+                }
+            }
+        );
+        */
     },
 
     // called every frame, uncomment this function to activate update callback
