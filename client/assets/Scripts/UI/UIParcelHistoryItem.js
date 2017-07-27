@@ -1,16 +1,31 @@
 
-import UIPopupBase from 'UIPopupBase'
-import CGame from 'Game'
+import CParcel from 'Parcel'
 
-const i18n = require('LanguageData');
-
-var UIOffice = cc.Class({
-    extends: UIPopupBase,
+cc.Class({
+    extends: cc.Component,
     editor:
     {
-        menu: 'gof/UIOffice'
+        menu: 'gof/UIParcelHistoryItem'
     },
+
     properties: {
+        plantIcon:
+        {
+            default: null,
+            type: cc.Sprite
+        },
+
+        plantSpecies:
+        {
+            default: null,
+            type: cc.Label
+        },
+
+        year:
+        {
+            default: null,
+            type: cc.Label
+        },
 
         // foo: {
         //    default: null,      // The default value will be used only when the component attaching
@@ -22,39 +37,16 @@ var UIOffice = cc.Class({
         //    readonly: false,    // optional, default is false
         // },
         // ...
-    },
 
-    statics:
-    {
-        instance: null,
     },
 
     // use this for initialization
     onLoad: function () {
 
-        UIOffice.instance = this;
-        this.initPopup();
-
-        this._label = this.getComponentInChildren(cc.Label);
-    },
-
-    onShow: function()
-    {
-        var game = new CGame();
-        var txt = game.farm.name+'\n'+
-            i18n.t('parcels')+' '+game.farm.parcels.length+'\n'+
-            i18n.t('totalSurface', {'val': game.farm.totalSurface})+'\n';
-
-        this._label.string = txt;
     },
 
     // called every frame, uncomment this function to activate update callback
-    update: function (dt) {
-    },
+    // update: function (dt) {
 
-    onBtClose: function()
-    {
-        this.hide();
-    }
-
+    // },
 });

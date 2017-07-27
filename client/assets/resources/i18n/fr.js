@@ -4,4 +4,5 @@ window.i18n.languages.fr={
 	"assollement": "Assollement",
 	"parcels": "Parcelles",
 	"totalSurface": "Surface totale : %{val}",
+	"parcelHistory": "Historique d'assollement",
 }
