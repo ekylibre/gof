@@ -2,13 +2,13 @@
 
 function GameController(server) {
 
-    //route for static files
+    //routes for static files
     server.route({
         method: 'GET',
         path : '/game/{file*}',
         handler: {
             directory: {
-                path: __dirname + '/../public',
+                path: __dirname + '/../public/web-desktop',
                 listing: false,
                 index: false,
             }
@@ -23,14 +23,11 @@ function GameController(server) {
             auth: 'token'
         }
     });
-
-    
-
 }
 
 
 GameController.startGame = function(request, reply) {
-    reply.view('views/game', {path:'..'});
+    reply.view('views/game');
 }
 
 module.exports = GameController;

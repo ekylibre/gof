@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<map version="1.0" tiledversion="1.0.1" orientation="isometric" renderorder="right-down" width="50" height="50" tilewidth="158" tileheight="78" nextobjectid="8">
+<map version="1.0" tiledversion="1.0.1" orientation="isometric" renderorder="right-down" width="50" height="50" tilewidth="158" tileheight="78" nextobjectid="10">
  <tileset firstgid="1" name="atlas_terrain_1024" tilewidth="160" tileheight="80" tilecount="72" columns="6">
   <image source="atlas_terrain_1024.png" width="1024" height="1024"/>
  </tileset>
@@ -49,6 +49,9 @@
  </tileset>
  <tileset firstgid="140" name="arbuste_01" tilewidth="158" tileheight="78" tilecount="1" columns="1">
   <image source="arbuste_01.png" width="158" height="78"/>
+ </tileset>
+ <tileset firstgid="141" name="batiment_silo" tilewidth="200" tileheight="343" tilecount="1" columns="1">
+  <image source="batiment_silo.png" width="200" height="343"/>
  </tileset>
  <layer name="sol" width="50" height="50">
   <data encoding="csv">
@@ -434,6 +437,9 @@
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 </data>
  </layer>
+ <objectgroup name="silo">
+  <object id="9" gid="141" x="600.899" y="1365.1" width="200" height="343"/>
+ </objectgroup>
  <layer name="arbuste" width="50" height="50">
   <data encoding="csv">
 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
