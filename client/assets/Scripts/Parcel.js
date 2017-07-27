@@ -15,26 +15,29 @@ var ParcelState = cc.Enum({
 /**
  * A parcel from the map
  * @class CParcel
- * 
+ * @property {String}           uid: unique identifier
  * @property {String}           name: parcel name
  * @property {cc.TiledLayer}    tiledLayer: TiledLayer containing the parcel
  * @property {Array:cc.Vec2}    tiles: array of tiles positions
  * @property {cc.Rect}          rect: rectangle containg the parcel
  * @property {ParcelState}      state: current parcel state
  * @property {number}           surface: surface area of parcel (hectare)
- * @property {Array:number}     rotationHistory: history of crop rotation (most recent first)
- * @property {Array:number}     rotationPrevision: previsions of crop rotation (next one is first)
+ * @property {Array}            rotationHistory: history of crop rotation (most recent first)
+ * @property {Array}            rotationPrevision: previsions of crop rotation (next one is first)
  */
 export default class CParcel
 {
 
     /**
      * @constructor
+     * @param {string} _UID: parcel unique identifier
      * @param {string} _Name: parcel name
      * @param {cc.TiledLayer} _TiledLayer: layer containing the parcel
      */
-    constructor(_Name, _TiledLayer)
+    constructor(_UID, _Name, _TiledLayer)
     {
+        this.uid = _UID;
+
         if (_Name === undefined)
         {
             this.name = '';

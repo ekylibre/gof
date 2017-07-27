@@ -75,6 +75,19 @@ var UIParcel = cc.Class({
         this.initPopup();
     },
 
+    onShow: function()
+    {
+        if (this.parcel != null)
+        {
+            var histContent  = this.historyScrollView.content;
+            histContent.removeAllChildren(true);
+            //////////TODO
+            /**
+             * @todo FINIR
+             */
+        }
+    },
+
     // called every frame, uncomment this function to activate update callback
     // update: function (dt) {
 
