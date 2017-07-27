@@ -41,7 +41,13 @@ var UIOffice = cc.Class({
     onShow: function()
     {
         var game = new CGame();
-        var txt = game.farm.name+'\n'+
+        var name = game.farm.name;
+        if (name === undefined)
+        {
+            name = i18n.t('farmDefaultName');
+        }
+
+        var txt = name+'\n'+
             i18n.t('parcels')+' '+game.farm.parcels.length+'\n'+
             i18n.t('totalSurface', {'val': game.farm.totalSurface})+'\n';
 

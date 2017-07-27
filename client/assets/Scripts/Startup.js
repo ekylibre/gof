@@ -31,8 +31,7 @@ cc.Class({
     // use this for initialization
     onLoad: function ()
     {
-        //Game.getInstance().init();
-        game.init();
+
     },
 
     // called every frame, uncomment this function to activate update callback
