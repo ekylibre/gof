@@ -29,6 +29,7 @@ function register_plugins(server)
     server.register([
         require('inert'),
         require('hapi-auth-cookie-jwt'),
+        require('hapi-auth-jwt'),
         {
             //localization plugin will set language from header field 'language'
             register: require('hapi-i18n'),
@@ -53,8 +54,15 @@ function register_plugins(server)
         
         Hoek.assert(!error, error);
 
-        //setup authentication
-        //server.auth.strategy('token', 'jwt', {
+        //setup authentication for api
+        server.auth.strategy('bearer', 'jwt', {
+            key: Config.get('Jwt.key'),
+            verifyOptions: {
+                algorithms: [ 'HS256' ],
+            }
+        });
+
+        //setup authentification for site
         server.auth.strategy('token', 'jwt-cookie', {
             key: Config.get('Jwt.key'),
             verifyOptions: {
