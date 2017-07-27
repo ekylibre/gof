@@ -67,7 +67,7 @@ def ExportGameStrings(_sheet):
             print(langname+' => '+langcode)
 
             f = open(os.path.join(EXPORT_DIR, 'i18n', langcode + ".js"), "wt", encoding="utf-8")
-            f.write("if (!window.i18n) window.i18n = {};if (!window.i18n.languages) window.i18n.languages = {};\nwindow.i18n.languages."+langcode+"={\n")
+            f.write("if (!window.i18n) window.i18n = {};\nif (!window.i18n.languages) window.i18n.languages = {};\nwindow.i18n.languages."+langcode+"={\n")
             
             for r in range(2, _sheet.nrows):
                 uid = _sheet.cell(r, 1).value
@@ -75,7 +75,7 @@ def ExportGameStrings(_sheet):
                     value = cleanupText(_sheet.cell(r,c).value)
                     f.write("\t\""+uid+"\": \""+value+"\",\n")
             
-            f.write("}\n")
+            f.write("};\n")
             f.close()
 
 def main():

@@ -1,6 +1,8 @@
 
 import CParcel from 'Parcel'
 
+const i18n = require('LanguageData');
+
 cc.Class({
     extends: cc.Component,
     editor:
@@ -20,13 +22,19 @@ cc.Class({
             type: cc.SpriteAtlas
         },
 
-        plantIcon:
+        icon:
         {
             default: null,
             type: cc.Sprite
         },
 
-        plantSpecies:
+        species:
+        {
+            default: null,
+            type: cc.Label
+        },
+
+        culture:
         {
             default: null,
             type: cc.Label
@@ -56,14 +64,35 @@ cc.Class({
         
     },
 
-    start: function()
+    init: function(_Year, _Species, _Culture)
     {
-        this.plantIcon.spriteFrame = this.plantAtlas.getSpriteFrame('ico_pois');
+        this.year.string = _Year;
 
+        if (_Species == 'fallow')
+        {
+            this.species.string = i18n.t(_Species);
+            this.culture.string = '';
+            this.icon.spriteFrame = this.plantAtlas.getSpriteFrame('ico_prairies');
+        }
+        else
+        {
+            this.species.string = i18n.t('plant_'+_Species);
+            
+            if (_Culture !== undefined)
+            {
+                this.culture.string = i18n.t('culture_'+_Culture);
+            }
+            else
+            {
+                this.culture.string = i18n.t('culture_normal');
+            }
+
+            this.icon.spriteFrame = this.plantAtlas.getSpriteFrame('ico_'+_Species);
+        }
     },
 
     // called every frame, uncomment this function to activate update callback
-    update: function (dt) {
+    // update: function (dt) {
 
-    },
+    // },
 });

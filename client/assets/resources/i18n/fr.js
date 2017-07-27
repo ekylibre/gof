@@ -1,4 +1,5 @@
-if (!window.i18n) window.i18n = {};if (!window.i18n.languages) window.i18n.languages = {};
+if (!window.i18n) window.i18n = {};
+if (!window.i18n.languages) window.i18n.languages = {};
 window.i18n.languages.fr={
 	"game_title": "Game of Farms",
 	"farmDefaultName": "Mon Exploitation",
@@ -8,4 +9,21 @@ window.i18n.languages.fr={
 	"totalSurface": "Surface totale : %{val}",
 	"parcelHistory": "Historique d'assollement",
 	"date_value": "A+%{year} / M%{month} / S%{week}",
-}
+	"plant_avoine": "Avoine",
+	"plant_betterave": "Betterave",
+	"plant_carotte": "Carotte",
+	"plant_colza": "Colza",
+	"plant_feverole": "Feverole",
+	"plant_lupin": "Lupin",
+	"plant_mais": "Maïs",
+	"plant_orge": "Orge",
+	"plant_pois": "Poïs",
+	"plant_sarrasin": "Sarrasin",
+	"plant_seigle": "Seigle",
+	"plant_tournesol": "Tournesol",
+	"plant_triticale": "Triticale",
+	"culture_normal": "Normal",
+	"culture_bio": "Bio",
+	"culture_permaculture": "Permaculture",
+	"fallow": "Jachère",
+};

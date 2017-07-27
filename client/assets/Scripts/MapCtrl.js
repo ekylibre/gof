@@ -146,6 +146,8 @@ cc.Class({
 
         // Scroll map to starting offset
         this._mapScrollView.scrollToOffset(this.startOffset);
+
+        var toto = i18n.t('parcel');
       
         this.findParcels();
 
@@ -399,7 +401,7 @@ cc.Class({
                                 {
                                     // create a new parcel
                                     var uid = 'parcel'+(game.farm.parcels.length+1);
-                                    var name = i18n.t('parcel')+(game.farm.parcels.length+1);
+                                    var name = i18n.t('parcel')+String(game.farm.parcels.length+1);
                                     parcel = new CParcel(uid, name, layer);
                                     parcel.addTile(pos);
                                     game.farm.addParcel(parcel);

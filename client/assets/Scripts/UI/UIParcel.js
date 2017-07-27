@@ -1,6 +1,7 @@
 
 import UIPopupBase from 'UIPopupBase'
 import CParcel from 'Parcel'
+import UIParcelHistoryItem from 'UIParcelHistoryItem'
 
 const i18n = require('LanguageData');
 
@@ -23,7 +24,19 @@ var UIParcel = cc.Class({
             type: cc.Label,
         },
 
+        parcelGroundType:
+        {
+            default: null,
+            type: cc.Label,                     
+        },
+
         historyScrollView:
+        {
+            default: null,
+            type: cc.ScrollView
+        },
+
+        previsionScrollView:
         {
             default: null,
             type: cc.ScrollView
@@ -77,15 +90,24 @@ var UIParcel = cc.Class({
 
     onShow: function()
     {
-        if (this.parcel != null)
-        {
-            var histContent  = this.historyScrollView.content;
-            histContent.removeAllChildren(true);
-            //////////TODO
-            /**
-             * @todo FINIR
-             */
-        }
+        // var histContent  = this.historyScrollView.content;
+        // histContent.removeAllChildren(true);
+        // if (this._parcel != null)
+        // {
+        //     var y=-1;
+        //     for (var i=0; i<this._parcel.rotationHistory.length; i++)
+        //     {
+        //         var hPrefab = cc.instantiate(this.plantPrefab);
+        //         hPrefab.setParent(histContent);
+
+        //         var h = hPrefab.getComponent(UIParcelHistoryItem);                
+        //         h.init(y, this._parcel.rotationHistory[i]);
+        //         y--;
+        //     }
+        // }
+
+        var prevContent = this.previsionScrollView.content;
+        prevContent.removeAllChildren(true);
     },
 
     // called every frame, uncomment this function to activate update callback

@@ -62,7 +62,7 @@ var UIDebug = cc.Class({
             cc.error('UIDebug instance already loaded');
         }
         UIDebug.instance = this;
-        UIDebug.log(game.initialized+'\n isDebug='+game.isDebug+'\n'+game.config.SERVICES_URL);
+        UIDebug.log('isDebug='+game.isDebug+'\n'+game.config.SERVICES_URL);
     },
 
     start: function(err)
