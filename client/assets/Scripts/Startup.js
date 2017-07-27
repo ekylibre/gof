@@ -3,7 +3,6 @@
 // Must be started before every other "GoF" components
 
 const i18n = require('LanguageData');
-import ApiClient from 'ApiClient';
 
 import CGame from 'Game';
 const game = new CGame();
@@ -32,8 +31,6 @@ cc.Class({
     // use this for initialization
     onLoad: function ()
     {
-        //Game.getInstance().init();
-        game.init();
         
         /*
         var endpoint = '/api';

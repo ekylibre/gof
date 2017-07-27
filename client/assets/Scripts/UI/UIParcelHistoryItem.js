@@ -9,6 +9,17 @@ cc.Class({
     },
 
     properties: {
+        plantAtlas:
+        {
+            default: null,
+            type: cc.SpriteAtlas
+        },
+        plantDisAtlas:
+        {
+            default: null,
+            type: cc.SpriteAtlas
+        },
+
         plantIcon:
         {
             default: null,
@@ -42,11 +53,17 @@ cc.Class({
 
     // use this for initialization
     onLoad: function () {
+        
+    },
+
+    start: function()
+    {
+        this.plantIcon.spriteFrame = this.plantAtlas.getSpriteFrame('ico_pois');
 
     },
 
     // called every frame, uncomment this function to activate update callback
-    // update: function (dt) {
+    update: function (dt) {
 
-    // },
+    },
 });

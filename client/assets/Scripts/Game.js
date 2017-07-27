@@ -35,10 +35,16 @@ let instance = null;
  * @property {Boolean}      isDebug: true if the game is in 'debug' mode
  * @property {Dictionary}   config: current game config
  * @property {CFarm}        farm: the farm
- * @property {CGamePhase}   gamePhase: active game 'phase'
+ * @property {CGamePhase}   phase: active game 'phase'
  */
 export default class CGame
 {
+    /**
+     * @private
+     * @type {CGamePhase}
+     */
+    _currPhase = null;
+
     constructor()
     {
         if (instance)
@@ -49,7 +55,6 @@ export default class CGame
         instance = this;
 
         this.isDebug=DEBUG;
-        this.initialized = '';
 
         if (DEBUG)
         {
@@ -60,16 +65,65 @@ export default class CGame
             this.config = ConfigMaster;
         }
 
-        this.farm = new CFarm();
-        this.gamePhase = new CGamePhase();
-
         i18n.init(this.config.LANGUAGE_DEFAULT);
+
+        this.farm = new CFarm();
     }
 
-    init()
+    get phase()
     {
-        // used for debug
-        this.initialized = 'Game singleton initialized';
+        return this._currPhase;
+    }
+
+    set phase(_Phase)
+    {
+        if (_Phase !== undefined && _Phase !== null)
+        {
+            if (this._currPhase !== null && this._currPhase.uid == _Phase.uid)
+            {
+                // same phase
+                return;
+            }
+
+            this.farm.month = _Phase.startMonth;
+            this.farm.week = _Phase.startWeek;
+
+            if (this._currPhase === null)
+            {
+                // First phase
+                // Give money
+                this.farm.money = _Phase.startMoney;
+
+                // Setup parcels history
+                for (var i=0; i<_Phase.parcels.length; i++)
+                {
+                    var setup = _Phase.parcels[i];
+                    var parcel = this.farm.findParcelUID(setup.uid);
+                    if (parcel != null)
+                    {
+                        parcel.rotationHistory = setup.history;
+                    }
+                    else
+                    {
+                        cc.error('Could not find parcel uid '+setup.uid);
+                    }
+                }
+            }
+            else
+            {
+                // Add year difference if needed
+                /**
+                 * @todo also change parcels history
+                 */
+                this.farm.year += _Phase.startYearDiff;
+            }
+
+            this._currPhase = _Phase;
+        }
+        else
+        {
+            this._currPhase = null;            
+        }
     }
 }
 

@@ -1,35 +1,58 @@
 // GamePhase class ("scenario")
 
-const i18n = require('LanguageData');
-
 /**
  * Represents a 'phase' of the game (scenario or part of a scenario)
  * @class
+ * @property {string} uid: unique identifier
+ * @property {number} startMoney: money given if 1st phase
+ * @property {number} startMonth: starting month
+ * @property {number} startWeek: starting week in month
+ * @property {number} startYearDiff: interval of year if not 1st phase
+ * @property {number} perfectScore: score received for doing a perfect phase
+ * @property {array}  parcels: parcels setup data
  */
 export default class CGamePhase
 {
     constructor()
     {
-        this.id='assollement';
-        this.score=0;
-        this.money=50000;
+        this.uid='assollement';
+        this.startMoney=50000;
+        this.startMonth = 7;
+        this.startWeek = 3;
+        this.startYearDiff = 0;
+        this.perfectScore=0;
 
-        var now = new Date(Date.now());       
-        this._startYear = now.getFullYear();
-        this.date = new Date(this._startYear, 7, 20);
-    }
+        this.parcels =
+        [
+            {
+                uid: 'parcel1',
+                history: ['ble', 'ble', 'orge']
+            },
+            {
+                uid: 'parcel2',
+                history: ['pois', 'avoine', 'ble']
+            },
+            {
+                uid: 'parcel3',
+                history: ['lupin', 'lupin', 'colza']
+            },
+            {
+                uid: 'parcel4',
+                history: ['orge', 'sarrasin', 'seigle']
+            },
+            {
+                uid: 'parcel5',
+                history: ['tournesol', 'mais', 'fallow']
+            },
+            {
+                uid: 'parcel6',
+                history: ['fallow', 'fallow', 'carotte']
+            },
+            {
+                uid: 'parcel7',
+                history: ['lupin', 'lupin', 'triticale']
+            },
+        ];
 
-    getDateString()
-    {
-        var y = this.date.getFullYear();
-        var m = this.date.getMonth() + 1;
-        var d = this.date.getDate();
-
-        return d.toLocaleString("fr", {minimumIntegerDigits: 2})+'/'+m.toLocaleString("fr", {minimumIntegerDigits: 2})+'/'+y;
-    }
-
-    get title()
-    {
-        return i18n.t(this.id);
     }
 }
