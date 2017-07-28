@@ -30,6 +30,12 @@ var UIParcel = cc.Class({
             type: cc.Label,                     
         },
 
+        parcelSurface:
+        {
+            default: null,
+            type: cc.Label,
+        },
+
         historyScrollView:
         {
             default: null,
@@ -90,21 +96,28 @@ var UIParcel = cc.Class({
 
     onShow: function()
     {
-        // var histContent  = this.historyScrollView.content;
-        // histContent.removeAllChildren(true);
-        // if (this._parcel != null)
-        // {
-        //     var y=-1;
-        //     for (var i=0; i<this._parcel.rotationHistory.length; i++)
-        //     {
-        //         var hPrefab = cc.instantiate(this.plantPrefab);
-        //         hPrefab.setParent(histContent);
+        var histContent  = this.historyScrollView.content;
+        histContent.removeAllChildren(true);
+        if (this._parcel != null)
+        {
+            var y=-1;
+            for (var i=0; i<this._parcel.rotationHistory.length; i++)
+            {
+                var hPrefab = cc.instantiate(this.plantPrefab);
+                hPrefab.setParent(histContent);
 
-        //         var h = hPrefab.getComponent(UIParcelHistoryItem);                
-        //         h.init(y, this._parcel.rotationHistory[i]);
-        //         y--;
-        //     }
-        // }
+                var h = hPrefab.getComponent(UIParcelHistoryItem);                
+                h.init(y, this._parcel.rotationHistory[i]);
+                y--;
+            }
+
+            this.parcelSurface.string = i18n.t(
+                'surfaceHectare',
+                {
+                    'val': this._parcel.surface.toString()
+                });
+
+        }
 
         var prevContent = this.previsionScrollView.content;
         prevContent.removeAllChildren(true);

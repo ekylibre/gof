@@ -22,6 +22,24 @@ var UIOffice = cc.Class({
         //    readonly: false,    // optional, default is false
         // },
         // ...
+
+        farmName:
+        {
+            default: null,
+            type: cc.Label
+        },
+
+        totalSurface:
+        {
+            default: null,
+            type: cc.Label
+        },
+
+        nbParcels:
+        {
+            default: null,
+            type: cc.Label
+        },
     },
 
     statics:
@@ -34,8 +52,6 @@ var UIOffice = cc.Class({
 
         UIOffice.instance = this;
         this.initPopup();
-
-        this._label = this.getComponentInChildren(cc.Label);
     },
 
     onShow: function()
@@ -47,11 +63,9 @@ var UIOffice = cc.Class({
             name = i18n.t('farmDefaultName');
         }
 
-        var txt = name+'\n'+
-            i18n.t('parcels')+' '+game.farm.parcels.length+'\n'+
-            i18n.t('totalSurface', {'val': game.farm.totalSurface})+'\n';
-
-        this._label.string = txt;
+        this.farmName.string = name;
+        this.totalSurface.string = i18n.t('surfaceHectare', {'val': game.farm.totalSurface});
+        this.nbParcels.string = game.farm.parcels.length.toString();
     },
 
     // called every frame, uncomment this function to activate update callback
