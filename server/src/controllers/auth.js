@@ -14,10 +14,9 @@ const Hoek = require('hoek');
 var cookie_options = {
     ttl: 12 * 3600 * 1000, // expires in 12h
     encoding: 'none',    // we already used JWT to encode
-    isSecure: false,     
+    isSecure: false,
     isHttpOnly: true,    // prevent client alteration
     clearInvalid: true, // remove invalid cookies
-    strictHeader: false,  // don't allow violations of RFC 6265
     path: '/'            // set the cookie for all routes
 };
 
