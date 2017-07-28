@@ -45,7 +45,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 79.8,
+      "width": 115.4,
       "height": 108
     },
     "_rotationX": 0,
@@ -115,8 +115,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 79.8,
-      "height": 108
+      "width": 103.6,
+      "height": 99.3
     },
     "_rotationX": 0,
     "_rotationY": 0,
@@ -124,8 +124,8 @@
     "_scaleY": 1,
     "_position": {
       "__type__": "cc.Vec2",
-      "x": 39.9,
-      "y": 0
+      "x": 56.4,
+      "y": -0.20000000000000284
     },
     "_skewX": 0,
     "_skewY": 0,
@@ -164,12 +164,12 @@
     "_cascadeOpacityEnabled": true,
     "_anchorPoint": {
       "__type__": "cc.Vec2",
-      "x": 1,
+      "x": 0.5,
       "y": 0.5
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 33,
+      "width": 10,
       "height": 30
     },
     "_rotationX": 0,
@@ -178,7 +178,7 @@
     "_scaleY": 1,
     "_position": {
       "__type__": "cc.Vec2",
-      "x": 18.5,
+      "x": 0,
       "y": -36.3
     },
     "_skewX": 0,
@@ -204,7 +204,7 @@
     "_N$file": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
-    "_N$string": "LABEL",
+    "_N$string": "-1",
     "_N$horizontalAlign": 2,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
@@ -251,12 +251,12 @@
     "_cascadeOpacityEnabled": true,
     "_anchorPoint": {
       "__type__": "cc.Vec2",
-      "x": 0,
+      "x": 0.5,
       "y": 0.5
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 43,
+      "width": 68.96,
       "height": 30
     },
     "_rotationX": 0,
@@ -265,7 +265,7 @@
     "_scaleY": 1,
     "_position": {
       "__type__": "cc.Vec2",
-      "x": -19.8,
+      "x": 0,
       "y": 34.9
     },
     "_skewX": 0,
@@ -291,8 +291,8 @@
     "_N$file": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
-    "_N$string": "LABEL",
-    "_N$horizontalAlign": 0,
+    "_N$string": "TEST MAT",
+    "_N$horizontalAlign": 1,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
     "_N$overflow": 0
@@ -338,12 +338,12 @@
     "_cascadeOpacityEnabled": true,
     "_anchorPoint": {
       "__type__": "cc.Vec2",
-      "x": 0,
-      "y": 0.5
+      "x": 0.5,
+      "y": 0.4999999999999979
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 33,
+      "width": 47,
       "height": 30
     },
     "_rotationX": 0,
@@ -352,7 +352,7 @@
     "_scaleY": 1,
     "_position": {
       "__type__": "cc.Vec2",
-      "x": -15,
+      "x": 0,
       "y": 21.1
     },
     "_skewX": 0,
@@ -378,7 +378,7 @@
     "_N$file": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
-    "_N$string": "LABEL",
+    "_N$string": "NORMAL",
     "_N$horizontalAlign": 1,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
@@ -425,7 +425,7 @@
     "_cascadeOpacityEnabled": true,
     "_anchorPoint": {
       "__type__": "cc.Vec2",
-      "x": 0,
+      "x": 0.5,
       "y": 0.5
     },
     "_contentSize": {
@@ -439,7 +439,7 @@
     "_scaleY": 0.7,
     "_position": {
       "__type__": "cc.Vec2",
-      "x": -17.9,
+      "x": 0,
       "y": -8.5
     },
     "_skewX": 0,
@@ -499,7 +499,7 @@
     "_spriteFrame": {
       "__uuid__": "dd57b117-fd46-414e-991b-3633693bb551"
     },
-    "_type": 0,
+    "_type": 1,
     "_sizeMode": 0,
     "_fillType": 0,
     "_fillCenter": {
@@ -525,10 +525,10 @@
     "isAlignOnce": true,
     "_target": null,
     "_alignFlags": 45,
-    "_left": 0,
-    "_right": 0,
-    "_top": 0,
-    "_bottom": 0,
+    "_left": 4.600000000000001,
+    "_right": 7.20000000000001,
+    "_top": 4.550000000000005,
+    "_bottom": 4.1499999999999995,
     "_verticalCenter": 0,
     "_horizontalCenter": 0,
     "_isAbsLeft": true,
