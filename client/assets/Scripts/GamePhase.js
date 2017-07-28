@@ -26,31 +26,31 @@ export default class CGamePhase
         [
             {
                 uid: 'parcel1',
-                history: ['ble', 'ble', 'orge']
+                history: ['ble', 'ble', 'orge', 'fallow', 'fallow']
             },
             {
                 uid: 'parcel2',
-                history: ['pois', 'avoine', 'ble']
+                history: ['pois', 'avoine', 'ble', 'ble', 'fallow']
             },
             {
                 uid: 'parcel3',
-                history: ['lupin', 'lupin', 'colza']
+                history: ['lupin', 'lupin', 'colza', 'colza', 'fallow']
             },
             {
                 uid: 'parcel4',
-                history: ['orge', 'sarrasin', 'seigle']
+                history: ['orge', 'sarrasin', 'seigle', 'sarrasin', 'fallow']
             },
             {
                 uid: 'parcel5',
-                history: ['tournesol', 'mais', 'fallow']
+                history: ['tournesol', 'mais', 'fallow', 'avoine', 'lupin']
             },
             {
                 uid: 'parcel6',
-                history: ['fallow', 'fallow', 'carotte']
+                history: ['fallow', 'fallow', 'carotte', 'pois', 'fallow']
             },
             {
                 uid: 'parcel7',
-                history: ['lupin', 'lupin', 'triticale']
+                history: ['lupin', 'lupin', 'triticale', 'fallow', 'ble']
             },
         ];
 

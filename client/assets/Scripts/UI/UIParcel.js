@@ -96,19 +96,21 @@ var UIParcel = cc.Class({
 
     onShow: function()
     {
+        //historyScrollView.scrollToOffset(cc.v2(,0));
         var histContent  = this.historyScrollView.content;
         histContent.removeAllChildren(true);
+
         if (this._parcel != null)
         {
-            var y=-1;
-            for (var i=0; i<this._parcel.rotationHistory.length; i++)
+            var y=-this._parcel.rotationHistory.length;
+            for (var i=this._parcel.rotationHistory.length-1; i>=0; i--)
             {
                 var hPrefab = cc.instantiate(this.plantPrefab);
                 hPrefab.setParent(histContent);
 
                 var h = hPrefab.getComponent(UIParcelHistoryItem);                
                 h.init(y, this._parcel.rotationHistory[i]);
-                y--;
+                y++;
             }
 
             this.parcelSurface.string = i18n.t(
@@ -118,6 +120,8 @@ var UIParcel = cc.Class({
                 });
 
         }
+
+        this.historyScrollView.scrollToLeft();
 
         var prevContent = this.previsionScrollView.content;
         prevContent.removeAllChildren(true);

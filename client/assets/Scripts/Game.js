@@ -11,7 +11,7 @@ import CFarm from 'Farm';
 
 const i18n = require('LanguageData');
 
-const DEBUG = true;
+const DEBUG = false;
 
 // Game configuration when DEBUG is true
 var ConfigDebug =
@@ -24,7 +24,7 @@ var ConfigDebug =
 var ConfigMaster=
 {
     LANGUAGE_DEFAULT: 'fr',
-    SERVICES_URL: 'http://gof.julien.dev:3000/',
+    SERVICES_URL: 'https://game-of-farms.ekylibre.com',
 };
 
 let instance = null;
