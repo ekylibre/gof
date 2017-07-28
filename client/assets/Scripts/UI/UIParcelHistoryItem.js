@@ -76,15 +76,15 @@ cc.Class({
         }
         else
         {
-            this.species.string = i18n.t('plant_'+_Species);
+            this.species.string = i18n.t('plant_'+_Species).toUpperCase();
             
             if (_Culture !== undefined)
             {
-                this.culture.string = i18n.t('culture_'+_Culture);
+                this.culture.string = i18n.t('culture_'+_Culture).toUpperCase();
             }
             else
             {
-                this.culture.string = i18n.t('culture_normal');
+                this.culture.string = i18n.t('culture_normal').toUpperCase();
             }
 
             this.icon.spriteFrame = this.plantAtlas.getSpriteFrame('ico_'+_Species);

@@ -15,7 +15,7 @@ export default class CGamePhase
 {
     constructor()
     {
-        this.uid='assollement';
+        this.uid='assolement';
         this.startMoney=50000;
         this.startMonth = 7;
         this.startWeek = 3;

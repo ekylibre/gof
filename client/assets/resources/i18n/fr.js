@@ -3,7 +3,7 @@ if (!window.i18n.languages) window.i18n.languages = {};
 window.i18n.languages.fr={
 	"game_title": "Game of Farms",
 	"farmDefaultName": "Mon Exploitation",
-	"assollement": "Assollement",
+	"assolement": "Assolement",
 	"parcel": "Parcelle",
 	"parcels": "Parcelles",
 	"totalSurface": "Surface totale : %{val}",
@@ -26,4 +26,5 @@ window.i18n.languages.fr={
 	"culture_bio": "Bio",
 	"culture_permaculture": "Permaculture",
 	"fallow": "Jachère",
+	"surfaceHectare": "%{val} Ha",
 };
