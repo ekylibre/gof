@@ -20,6 +20,14 @@ var cookie_options = {
     path: '/'            // set the cookie for all routes
 };
 
+function getUrl(request, endpoint) {
+    var host = request.server.info.uri;
+    if(process.env.NODE_ENV === 'production'){
+        host = 'https://game-of-farms.ekylibre.com';
+    }
+    return host + endpoint;
+}
+
 function AuthController(server) {
     server.route({
         method: 'POST',
@@ -202,6 +210,7 @@ AuthController.registerpost = function(request, reply) {
                             var mailer = new Mailer();
                             var ctx = request.i18n;
                             ctx.user = u;
+                            ctx.url = getUrl(request, "/auth/login");
                             
                             request.server.render('mails/welcome', ctx, { layoutPath: './templates/mails/layout', }, 
                                 (error, html, config) => {
@@ -209,7 +218,7 @@ AuthController.registerpost = function(request, reply) {
 
                                     if(!error) {
                                         var subject = request.i18n.__("game_title");
-                                        var text = request.i18n.__("welcome_new_user");
+                                        var text = request.i18n.__("welcome_new_user_mail");
 
                                         mailer.sendMail(u.email, subject, text, html);
                                         mailer.destroy();
@@ -257,15 +266,13 @@ AuthController.lostpasswordpost = function(request, reply) {
                                 return reply.view('views/lostpassword', Validation.buildContext(request, "generic_error"));
                             }
 
-                            var url = request.server.info.uri + "/auth/resetpassword/" + token;
-
                             var subject = request.i18n.__("game_title");
                             var text = request.i18n.__("lost_password_message");
 
                             var mailer = new Mailer();
                             var ctx = request.i18n;
                             ctx.user = user;
-                            ctx.url = url;
+                            ctx.url = getUrl(request, "/auth/resetpassword/" + token);
                             ctx.preheader_text = text;
 
                             request.server.render('mails/lostpassword', ctx, { layoutPath: './templates/mails/layout', }, 
