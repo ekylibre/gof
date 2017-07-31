@@ -70,7 +70,11 @@ var UIParcel = cc.Class({
                 this._parcel = _value;
                 if (this._parcel != null && this.parcelName != null)
                 {
-                    this.parcelName.string = this._parcel.name;
+                    
+                }
+                if (!this._hidden)
+                {
+                    this.onShow();
                 }
             },
             type: CParcel
@@ -99,9 +103,13 @@ var UIParcel = cc.Class({
         //historyScrollView.scrollToOffset(cc.v2(,0));
         var histContent  = this.historyScrollView.content;
         histContent.removeAllChildren(true);
+        var prevContent = this.previsionScrollView.content;
+        prevContent.removeAllChildren(true);
 
         if (this._parcel != null)
         {
+            this.parcelName.string = this._parcel.name;
+            
             var y=-this._parcel.rotationHistory.length;
             for (var i=this._parcel.rotationHistory.length-1; i>=0; i--)
             {
@@ -119,12 +127,12 @@ var UIParcel = cc.Class({
                     'val': this._parcel.surface.toString()
                 });
 
+
+
+            this.historyScrollView.scrollToLeft();
+            this.previsionScrollView.scrollToLeft();
         }
 
-        this.historyScrollView.scrollToLeft();
-
-        var prevContent = this.previsionScrollView.content;
-        prevContent.removeAllChildren(true);
     },
 
     // called every frame, uncomment this function to activate update callback
