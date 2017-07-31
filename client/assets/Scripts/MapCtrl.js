@@ -30,7 +30,7 @@ const i18n = require('LanguageData');
  * @class
  * @name MapCtrl
  */
-cc.Class({
+var MapCtrl = cc.Class({
     extends: cc.Component,
     editor:
     {
@@ -115,6 +115,16 @@ cc.Class({
         },
     },
 
+    statics:
+    {
+        /**
+         * @property {MapCtrl} instance current instance
+         * @static
+         */
+        instance: null
+    },
+
+
     /**
      * The ScrollView component
      */
@@ -130,10 +140,18 @@ cc.Class({
      */
     _refLayer: null,
     
-
     // use this for initialization
     onLoad: function()
     {
+        if (MapCtrl.instance == null)
+        {
+            MapCtrl.instance = this;
+        }
+        else
+        {
+            cc.error('An instance of MapCtrl already exists');
+        }
+
         this._mapScrollView = this.getComponent(cc.ScrollView);
 
         // Setting touch events       
@@ -167,6 +185,30 @@ cc.Class({
      */
     initTouch: function()
     {
+        // Replace the _onMouseWheel callback from the ScrollView
+        this._mapScrollView._onMouseWheel = function(event, captureListeners)
+        {
+            if (!this.enabledInHierarchy) return;
+            if (this._hasNestedViewGroup(event, captureListeners)) return;
+
+            var deltaMove = cc.p(0, 0);
+            var wheelPrecision = -0.1;
+            if(CC_JSB) {
+                wheelPrecision = -7;
+            }
+            if(this.vertical) {
+                deltaMove = cc.p(0, event.getScrollY() * wheelPrecision);
+            }
+            else if(this.horizontal) {
+                deltaMove = cc.p(event.getScrollY() * wheelPrecision, 0);
+            }
+
+
+
+            this._stopPropagationIfTargetIsMe(event);
+        };
+
+        // Check map content
         if (this.mapParcels && this.mapParcels.length>0)
         {
             this._refMap = this.mapParcels[0];
@@ -183,21 +225,29 @@ cc.Class({
             cc.error('At least one parcel or sprout TiledMap is required');
             return;
         }
-        
+
+
         this.node.on(cc.Node.EventType.TOUCH_START,
             (event) =>
             {
-                this._isScrolling = false;
+                this._scrollLen = 0;
             },
             this.node
         );
-
+        this.node.on(cc.Node.EventType.TOUCH_MOVE,
+            (event) =>
+            {
+                this._scrollLen += cc.pLength(event.touch.getDelta());
+            },
+            this.node
+        );        
         this.node.on(cc.Node.EventType.TOUCH_END,
             (event) =>
             {
-                if (this._isScrolling)
+                if (this._scrollLen>2)
                 {
                     // scrollview is scrolling, ignore touch
+                    this._scrollLen = 0;
                     return;
                 }
 
@@ -489,22 +539,6 @@ cc.Class({
     //update: function (dt) {
 
     // },
-
-    /**
-     * ScrollView callback, so we know when its scrolling
-     * @callback
-     */
-    scrollEvent: function(sender, event)
-    {
-        if (event<9)
-        {
-            this._isScrolling = true;
-        }
-        else
-        {
-            this._isScrolling = false;          
-        }
-    },
 
 
     __Debug: function()
