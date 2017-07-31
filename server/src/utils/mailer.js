@@ -10,7 +10,7 @@ function Mailer() {
 
 Mailer.prototype.sendMail = function (recipient, subject, text, html) {
     var message = {
-        from: 'no-reply@game-of-farms.com',
+        from: 'no-reply@game-of-farms.ekylibre.com',
         to: recipient,
         subject: subject,
         text: text,
