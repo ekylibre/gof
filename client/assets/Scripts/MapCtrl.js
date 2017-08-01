@@ -139,6 +139,11 @@ var MapCtrl = cc.Class({
      * First layer of the _refMap, used as reference
      */
     _refLayer: null,
+
+    /**
+     * Size of map in pixels
+     */
+    _refSize: null,
     
     // use this for initialization
     onLoad: function()
@@ -153,6 +158,7 @@ var MapCtrl = cc.Class({
         }
 
         this._mapScrollView = this.getComponent(cc.ScrollView);
+        this._mapStartSize = this._mapScrollView.content.getContentSize();
 
         // Setting touch events       
         this.initTouch();
@@ -185,29 +191,6 @@ var MapCtrl = cc.Class({
      */
     initTouch: function()
     {
-        // Replace the _onMouseWheel callback from the ScrollView
-        this._mapScrollView._onMouseWheel = function(event, captureListeners)
-        {
-            if (!this.enabledInHierarchy) return;
-            if (this._hasNestedViewGroup(event, captureListeners)) return;
-
-            var deltaMove = cc.p(0, 0);
-            var wheelPrecision = -0.1;
-            if(CC_JSB) {
-                wheelPrecision = -7;
-            }
-            if(this.vertical) {
-                deltaMove = cc.p(0, event.getScrollY() * wheelPrecision);
-            }
-            else if(this.horizontal) {
-                deltaMove = cc.p(event.getScrollY() * wheelPrecision, 0);
-            }
-
-
-
-            this._stopPropagationIfTargetIsMe(event);
-        };
-
         // Check map content
         if (this.mapParcels && this.mapParcels.length>0)
         {
@@ -226,7 +209,39 @@ var MapCtrl = cc.Class({
             return;
         }
 
+        // Compute full map size in pixels
+        var mapSize = this._refMap.getMapSize();
+        var tileSize = this._refMap.getTileSize();
+        this._refSize = cc.v2(mapSize.width * tileSize.width, mapSize.height * tileSize.height);
 
+        // Replace the _onMouseWheel callback from the ScrollView
+        this._mapScrollView._onMouseWheel = function(event, captureListeners)
+        {
+            var speed = 0.05;
+            if (event.getScrollY()<0)
+            {
+                speed = -speed;
+            }
+            var scale = this.content.scaleX + speed;
+            if (scale < game.config.MAP_ZOOM_MIN)
+            {
+                scale = game.config.MAP_ZOOM_MIN;
+            }
+            if (scale> game.config.MAP_ZOOM_MAX)
+            {
+                scale = game.config.MAP_ZOOM_MAX;
+            }
+            
+            this.content.scaleX = scale;
+            this.content.scaleY = scale;
+
+            this.content.width = MapCtrl.instance._refSize.x * scale;
+            this.content.height = MapCtrl.instance._refSize.y * scale;
+
+            this._stopPropagationIfTargetIsMe(event);
+        };
+
+        // Register touch events
         this.node.on(cc.Node.EventType.TOUCH_START,
             (event) =>
             {
@@ -587,3 +602,5 @@ var MapCtrl = cc.Class({
 
 
 });
+
+module.exports = MapCtrl;

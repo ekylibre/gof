@@ -1,0 +1,30 @@
+{
+  "ver": "1.0.0",
+  "uuid": "0faefd29-dfbf-46b2-9f2c-22e82bb4594d",
+  "type": "sprite",
+  "wrapMode": "clamp",
+  "filterMode": "bilinear",
+  "subMetas": {
+    "terrain_herbe_basse": {
+      "ver": "1.0.3",
+      "uuid": "1d4bc43c-7325-464d-8f7b-8e06f57cd6e8",
+      "rawTextureUuid": "0faefd29-dfbf-46b2-9f2c-22e82bb4594d",
+      "trimType": "auto",
+      "trimThreshold": 1,
+      "rotated": false,
+      "offsetX": 0,
+      "offsetY": 0.5,
+      "trimX": 0,
+      "trimY": 0,
+      "width": 672,
+      "height": 355,
+      "rawWidth": 672,
+      "rawHeight": 356,
+      "borderTop": 0,
+      "borderBottom": 0,
+      "borderLeft": 0,
+      "borderRight": 0,
+      "subMetas": {}
+    }
+  }
+}
