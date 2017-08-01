@@ -1,5 +1,6 @@
 
-import CParcel from 'Parcel'
+import CParcel from 'Parcel';
+import CPlant from 'Plant';
 
 const i18n = require('LanguageData');
 
@@ -58,7 +59,7 @@ cc.Class({
         
     },
 
-    init: function(_Year, _Species, _Culture)
+    init: function(_Year, _Plant)
     {
         var y;
         if (_Year <0)
@@ -71,7 +72,7 @@ cc.Class({
         }
         this.year.string = i18n.t('parcelHistoryYear', { 'val': y});
 
-        if (_Species === undefined)
+        if (_Plant === undefined)
         {
             // "Add" mode
             this.species.string = i18n.t('new').toUpperCase();
@@ -79,10 +80,10 @@ cc.Class({
             this.icon.node.active = false;
             this.btAdd.node.active = true;
         }
-        else if (_Species == 'fallow')
+        else if (_Plant.species === 'pasture')
         {
             // Fallow
-            this.species.string = i18n.t(_Species);
+            this.species.string = i18n.t('fallow');
             this.culture.string = '';
             this.icon.node.active = true;
             this.icon.spriteFrame = this.plantAtlas.getSpriteFrame('ico_prairies');
@@ -90,12 +91,14 @@ cc.Class({
         }
         else
         {
+            var icoId = CPlant._getIconId(_Plant.species);
+
             // Existing plant
-            this.species.string = i18n.t('plant_'+_Species).toUpperCase();
+            this.species.string = i18n.t('plant_'+icoId).toUpperCase();
            
-            if (_Culture !== undefined)
+            if (_Plant.culture !== undefined)
             {
-                this.culture.string = i18n.t('culture_'+_Culture).toUpperCase();
+                this.culture.string = i18n.t('culture_'+_Plant.culture).toUpperCase();
             }
             else
             {
@@ -103,7 +106,7 @@ cc.Class({
             }
 
             this.icon.node.active = true;
-            this.icon.spriteFrame = this.plantAtlas.getSpriteFrame('ico_'+_Species);
+            this.icon.spriteFrame = this.plantAtlas.getSpriteFrame('ico_'+icoId);
             this.btAdd.node.active = false;
         }
     },
