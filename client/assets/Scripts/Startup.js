@@ -3,9 +3,30 @@
 // Must be started before every other "GoF" components
 
 const i18n = require('LanguageData');
+const ApiClient = require('./ApiClient');
 
 import CGame from 'Game';
 const game = new CGame();
+
+function whenLoggedIn(client) {
+    client.getPlants({cultureMode: 'normal', __v:0}, 
+        (error, response, client) => {
+            console.log("client.getPlants response");
+            console.log(response);
+
+            console.log("client.getPlants ERROR");
+            console.log(error);
+    });
+
+    client.getPlant('598041ce31dc2c27ecfd7d2a', 
+        (error, response, client) => {
+            console.log("client.getPlant response");
+            console.log(response);
+
+            console.log("client.getPlant ERROR");
+            console.log(error);
+    });
+}
 
 
 cc.Class({
@@ -32,34 +53,39 @@ cc.Class({
     onLoad: function ()
     {
         
-        /*
         var endpoint = '/api';
-        if(cc.sys.isBrowser && location.hostname === 'localhost' && location.port !== 3000) {
+        var isPreview = location.hostname == 'localhost' && location.port != 3000;
+        if(isPreview) {
             endpoint = 'http://gof.julien.dev:3000/api';
         }
         
         var client = new ApiClient(endpoint);
-        client.login('julien.castets@shinypix.com', 'alacon',
+        client.checkAuth(
             (error, response, c) => {
-                if(!error) {
-                    c.checkAuth(
-                        (error, response) => {
-                            if(error) {
-                                if(cc.sys.isBrowser && location.hostname === 'localhost' && location.port !== 3000) {
-                                    //location.replace('http://gof.julien.dev:3000');
-                                } else {
-                                    //location.replace('/');
-                                }
+                if(error) {
+                    if(isPreview) {
+                        var email = prompt('email');
+                        var password = prompt('password');
 
-                                return console.log(error);
-                            }
-                            console.log(response);
-                        }
-                    );
+                        c.login(email, password, 
+                            (error, response, c) => {
+                                if(!error) {
+                                    document.cookie = "access_token="+response.payload.accessToken;
+                                    localStorage.setItem("gof-access-token", response.payload.accessToken);
+                                    
+                                    whenLoggedIn(client);
+                                }
+                        });
+                    } else {
+                        console.log('going /');
+                        return;
+                        //return location.replace('/');
+                    }
                 }
+                whenLoggedIn(client);
             }
         );
-        */
+        
     },
 
     // called every frame, uncomment this function to activate update callback

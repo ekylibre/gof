@@ -177,51 +177,51 @@ function Auth(server) {
     server.route({
         method:'GET',
         path: '/api/plants/{id?}',
-        handler: this.getPlants/*,
+        handler: this.getPlants,
         config: {
             auth : 'bearer',
             cors : CORS
-        }*/
+        }
     });
 
     server.route({
         method:'GET',
         path: '/api/additives/{id?}',
-        handler: this.getAdditives/*,
+        handler: this.getAdditives,
         config: {
             auth : 'bearer',
             cors : CORS
-        }*/
+        }
     });
 
     server.route({
         method:'GET',
         path: '/api/tools/{id?}',
-        handler: this.getTools/*,
+        handler: this.getTools,
         config: {
             auth : 'bearer',
             cors : CORS
-        }*/
+        }
     });
 
     server.route({
         method:'GET',
         path: '/api/equipments/{id?}',
-        handler: this.getEquipments/*,
+        handler: this.getEquipments,
         config: {
             auth : 'bearer',
             cors : CORS
-        }*/
+        }
     });
 
     server.route({
         method:'GET',
         path: '/api/rotations/{id?}',
-        handler: this.getRotations/*,
+        handler: this.getRotations,
         config: {
             auth : 'bearer',
             cors : CORS
-        }*/
+        }
     });
 }
 
