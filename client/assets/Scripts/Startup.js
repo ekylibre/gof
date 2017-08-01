@@ -52,9 +52,10 @@ cc.Class({
     // use this for initialization
     onLoad: function ()
     {
+        
         var endpoint = '/api';
-        var debugLocal = cc.sys.isBrowser && location.hostname === 'localhost' && location.port !== 3000;
-        if(debugLocal) {
+        var isPreview = location.hostname == 'localhost' && location.port != 3000;
+        if(isPreview) {
             endpoint = 'http://gof.julien.dev:3000/api';
         }
         
@@ -62,7 +63,7 @@ cc.Class({
         client.checkAuth(
             (error, response, c) => {
                 if(error) {
-                    if(debugLocal) {
+                    if(isPreview) {
                         var email = prompt('email');
                         var password = prompt('password');
 
@@ -70,18 +71,21 @@ cc.Class({
                             (error, response, c) => {
                                 if(!error) {
                                     document.cookie = "access_token="+response.payload.accessToken;
+                                    localStorage.setItem("gof-access-token", response.payload.accessToken);
+                                    
                                     whenLoggedIn(client);
                                 }
                         });
                     } else {
-                        location.replace('/');
+                        console.log('going /');
+                        return;
+                        //return location.replace('/');
                     }
-
-                    return console.log(error);
                 }
                 whenLoggedIn(client);
             }
         );
+        
     },
 
     // called every frame, uncomment this function to activate update callback

@@ -4,7 +4,9 @@
 function ApiClient(_EndPoint) {
     this.endPoint = _EndPoint;
 
-    var at = getCookie('access_token');
+    var elem = document.getElementById('GameCanvas');
+    var at = elem.getAttribute('gof-access-token') || localStorage.getItem('gof-access-token');
+
     if(at) {
         this.accessToken = at;
     }

@@ -179,7 +179,7 @@ function Auth(server) {
         path: '/api/plants/{id?}',
         handler: this.getPlants,
         config: {
-            //auth : 'bearer',
+            auth : 'bearer',
             cors : CORS
         }
     });
@@ -189,7 +189,7 @@ function Auth(server) {
         path: '/api/additives/{id?}',
         handler: this.getAdditives,
         config: {
-            //auth : 'bearer',
+            auth : 'bearer',
             cors : CORS
         }
     });
@@ -199,7 +199,7 @@ function Auth(server) {
         path: '/api/tools/{id?}',
         handler: this.getTools,
         config: {
-            //auth : 'bearer',
+            auth : 'bearer',
             cors : CORS
         }
     });
@@ -209,7 +209,7 @@ function Auth(server) {
         path: '/api/equipments/{id?}',
         handler: this.getEquipments,
         config: {
-            //auth : 'bearer',
+            auth : 'bearer',
             cors : CORS
         }
     });
@@ -219,7 +219,7 @@ function Auth(server) {
         path: '/api/rotations/{id?}',
         handler: this.getRotations,
         config: {
-            //auth : 'bearer',
+            auth : 'bearer',
             cors : CORS
         }
     });
