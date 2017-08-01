@@ -9,7 +9,7 @@
     "config": "^1.26.1",
     "handlebars": "^4.0.10",
     "hapi": "^16.4.3",
-    "hapi-auth-cookie-jwt": "https://github.com/jcastets/hapi-auth-cookie-jwt/tarball/master",
+    "hapi-auth-cookie-jwt": "^1.0.2",
     "hapi-auth-jwt": "^4.0.0",
     "hapi-graceful-pm2": "^1.0.15",
     "hapi-i18n": "^1.0.5",

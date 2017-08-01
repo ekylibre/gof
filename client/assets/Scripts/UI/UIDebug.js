@@ -99,6 +99,7 @@ var UIDebug = cc.Class({
                 if (this.mapScrollView != null)
                 {
                     this.touchLabel.string += ' scrollOffset='+this.mapScrollView.getScrollOffset();
+                    this.touchLabel.string += ' zoom='+this.mapScrollView.content.scaleX;
                 }
             }
 

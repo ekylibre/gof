@@ -110,29 +110,50 @@ var UIParcel = cc.Class({
         {
             this.parcelName.string = this._parcel.name;
             
-            var y=-this._parcel.rotationHistory.length;
+            this.parcelSurface.string = i18n.t(
+                'surfaceHectare',
+                {
+                    'val': this._parcel.surface.toString()
+                });
+            
+            // history
             for (var i=this._parcel.rotationHistory.length-1; i>=0; i--)
             {
                 var hPrefab = cc.instantiate(this.plantPrefab);
                 hPrefab.setParent(histContent);
 
                 var h = hPrefab.getComponent(UIParcelHistoryItem);                
-                h.init(y, this._parcel.rotationHistory[i]);
-                y++;
+                h.init(-(i+1), this._parcel.rotationHistory[i]);
             }
 
-            this.parcelSurface.string = i18n.t(
-                'surfaceHectare',
-                {
-                    'val': this._parcel.surface.toString()
-                });
+            // previsions
+            for (var i=0; i<this._parcel.rotationPrevision.length; i++)
+            {
+                var hPrefab = cc.instantiate(this.plantPrefab);
+                hPrefab.setParent(prevContent);
 
+                var h = hPrefab.getComponent(UIParcelHistoryItem);                
+                h.init(i, this._parcel.rotationPrevision[i]);
+            }
 
+            this.addEmptyPrevision();
 
-            this.historyScrollView.scrollToLeft();
+            this.historyScrollView.scrollToRight();
             this.previsionScrollView.scrollToLeft();
         }
 
+    },
+
+    addEmptyPrevision: function()
+    {
+        if (this._parcel.rotationPrevision.length < 5)
+        {
+            var hPrefab = cc.instantiate(this.plantPrefab);
+            hPrefab.setParent(this.previsionScrollView.content);
+
+            var h = hPrefab.getComponent(UIParcelHistoryItem);                
+            h.init(this._parcel.rotationPrevision.length);
+        }        
     },
 
     // called every frame, uncomment this function to activate update callback

@@ -43,7 +43,25 @@ cc.Class({
                 }
             }
         },
-        _dataID: ''
+        _dataID: '',
+
+        forceUppercase:
+        {
+            get () {
+                return this._forceUppercase;
+            },
+            set (val) {
+                if (this._forceUppercase !== val) {
+                    this._forceUppercase = val;
+                    if (CC_EDITOR) {
+                        this._debouncedUpdateLabel();
+                    } else {
+                        this.updateLabel();
+                    }
+                }
+            }
+        },
+        _forceUppercase: false,
     },
     
     onLoad () {
@@ -77,7 +95,11 @@ cc.Class({
         }
         let localizedString = i18n.t(this.dataID);
         if (localizedString) {
-            this.label.string = i18n.t(this.dataID);
+            if (this.forceUppercase)
+            {
+                localizedString = localizedString.toUpperCase();
+            }
+            this.label.string = localizedString;
         }
         else
         {

@@ -30,7 +30,7 @@ const i18n = require('LanguageData');
  * @class
  * @name MapCtrl
  */
-cc.Class({
+var MapCtrl = cc.Class({
     extends: cc.Component,
     editor:
     {
@@ -115,6 +115,16 @@ cc.Class({
         },
     },
 
+    statics:
+    {
+        /**
+         * @property {MapCtrl} instance current instance
+         * @static
+         */
+        instance: null
+    },
+
+
     /**
      * The ScrollView component
      */
@@ -129,12 +139,26 @@ cc.Class({
      * First layer of the _refMap, used as reference
      */
     _refLayer: null,
-    
 
+    /**
+     * Size of map in pixels
+     */
+    _refSize: null,
+    
     // use this for initialization
     onLoad: function()
     {
+        if (MapCtrl.instance == null)
+        {
+            MapCtrl.instance = this;
+        }
+        else
+        {
+            cc.error('An instance of MapCtrl already exists');
+        }
+
         this._mapScrollView = this.getComponent(cc.ScrollView);
+        this._mapStartSize = this._mapScrollView.content.getContentSize();
 
         // Setting touch events       
         this.initTouch();
@@ -167,6 +191,7 @@ cc.Class({
      */
     initTouch: function()
     {
+        // Check map content
         if (this.mapParcels && this.mapParcels.length>0)
         {
             this._refMap = this.mapParcels[0];
@@ -183,21 +208,61 @@ cc.Class({
             cc.error('At least one parcel or sprout TiledMap is required');
             return;
         }
-        
+
+        // Compute full map size in pixels
+        var mapSize = this._refMap.getMapSize();
+        var tileSize = this._refMap.getTileSize();
+        this._refSize = cc.v2(mapSize.width * tileSize.width, mapSize.height * tileSize.height);
+
+        // Replace the _onMouseWheel callback from the ScrollView
+        this._mapScrollView._onMouseWheel = function(event, captureListeners)
+        {
+            var speed = 0.05;
+            if (event.getScrollY()<0)
+            {
+                speed = -speed;
+            }
+            var scale = this.content.scaleX + speed;
+            if (scale < game.config.MAP_ZOOM_MIN)
+            {
+                scale = game.config.MAP_ZOOM_MIN;
+            }
+            if (scale> game.config.MAP_ZOOM_MAX)
+            {
+                scale = game.config.MAP_ZOOM_MAX;
+            }
+            
+            this.content.scaleX = scale;
+            this.content.scaleY = scale;
+
+            this.content.width = MapCtrl.instance._refSize.x * scale;
+            this.content.height = MapCtrl.instance._refSize.y * scale;
+
+            this._stopPropagationIfTargetIsMe(event);
+        };
+
+        // Register touch events
         this.node.on(cc.Node.EventType.TOUCH_START,
             (event) =>
             {
-                this._isScrolling = false;
+                this._scrollLen = 0;
             },
             this.node
         );
-
+        this.node.on(cc.Node.EventType.TOUCH_MOVE,
+            (event) =>
+            {
+                this._scrollLen += cc.pLength(event.touch.getDelta());
+            },
+            this.node
+        );        
         this.node.on(cc.Node.EventType.TOUCH_END,
             (event) =>
             {
-                if (this._isScrolling)
+                if (this._scrollLen>2)
                 {
                     // scrollview is scrolling, ignore touch
+                    this._scrollLen = 0;
                     return;
                 }
 
@@ -490,22 +555,6 @@ cc.Class({
 
     // },
 
-    /**
-     * ScrollView callback, so we know when its scrolling
-     * @callback
-     */
-    scrollEvent: function(sender, event)
-    {
-        if (event<9)
-        {
-            this._isScrolling = true;
-        }
-        else
-        {
-            this._isScrolling = false;          
-        }
-    },
-
 
     __Debug: function()
     {
@@ -553,3 +602,5 @@ cc.Class({
 
 
 });
+
+module.exports = MapCtrl;

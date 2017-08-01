@@ -1,7 +1,7 @@
 // UIPopupBase is a base class to make a popup appear from a side
 //
 
-// Direction from the popup will appear
+// Side from where the popup will appear
 var FromMode = cc.Enum(
     {
         //@property LEFT
@@ -19,31 +19,63 @@ cc.Class({
     extends: cc.Component,
 
     properties:
-    {
+    {  
+        /**
+         * @property {cc.Node} Popup the popup content
+         */
+        Popup:
+        {
+            default: null,
+            type: cc.Node,
+        },
+
+        /**
+         * @property {FromMode} From the side to appear from / to go hide to
+         */
         From:
         {
             default: FromMode.LEFT,
             type: FromMode
-        }        
+        },
+            
     },
 
 
+    /**
+     * @method initPopup must be called from onLoad
+     */
     initPopup: function () {
+
+        if (this.Popup == null)
+        {
+            this.Popup = this.node;
+        }
+
+        if (!this.Popup.active)
+        {
+            this.Popup.active = true;
+        }
+        
         this._hidden = false;
-        this._defaultX = this.node.x;
-        this._defaultY = this.node.y;
-        this._size = this.node.getContentSize();
+        this._defaultX = this.Popup.x;
+        this._defaultY = this.Popup.y;
+        this._size = this.Popup.getContentSize();
+
 
         this.hide(true);
     },
 
+    /**
+     * @method show to open the popup
+     * calls this.onShow callback if present
+     */
     show: function()
     {
         if (this._hidden)
         {
-            this.node.stopAllActions();
+            this.Popup.stopAllActions();
 
-            this.node.runAction(cc.moveTo(0.2, cc.p(this._defaultX, this._defaultY)));
+            this.Popup.runAction(cc.moveTo(0.2, cc.p(this._defaultX, this._defaultY)));
             this._hidden = false;
 
             if (this.onShow !== undefined)
@@ -54,11 +86,16 @@ cc.Class({
         }
     },
 
+    /**
+     * @method hide to close the popup
+     * @param {Boolean} instant true to close the popup immediately (default is false)
+     * calls this.onHide callback if present
+     */
     hide: function(instant=false)
     {
         if (!this._hidden)
         {
-            this.node.stopAllActions();
+            this.Popup.stopAllActions();
 
             var cvw = cc.Canvas.instance.node.width;
             var cvh = cc.Canvas.instance.node.height;
@@ -86,12 +123,12 @@ cc.Class({
 
             if (!instant)
             {
-                this.node.runAction(cc.moveTo(0.2, to));
+                this.Popup.runAction(cc.moveTo(0.2, to));
             }
             else
             {
-                this.node.x = to.x;
-                this.node.y = to.y;
+                this.Popup.x = to.x;
+                this.Popup.y = to.y;
             }
             this._hidden = true;
 

@@ -11,13 +11,15 @@ import CFarm from 'Farm';
 
 const i18n = require('LanguageData');
 
-const DEBUG = false;
+const DEBUG = true;
 
 // Game configuration when DEBUG is true
 var ConfigDebug =
 {
     LANGUAGE_DEFAULT: 'fr',
     SERVICES_URL: 'http://gof.julien.dev:3000/',
+    MAP_ZOOM_MAX: 1.7,
+    MAP_ZOOM_MIN: 0.1
 };
 
 // Game configuration
@@ -25,6 +27,8 @@ var ConfigMaster=
 {
     LANGUAGE_DEFAULT: 'fr',
     SERVICES_URL: 'https://game-of-farms.ekylibre.com',
+    MAP_ZOOM_MAX: 1,
+    MAP_ZOOM_MIN: 0.4
 };
 
 let instance = null;
