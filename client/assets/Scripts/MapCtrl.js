@@ -179,12 +179,20 @@ var MapCtrl = cc.Class({
         }
 
         // Start a phase if needed
-        if (game.phase === null)
-        {
-            game.phase = new CGamePhase();
-        }
+        // if (game.phase === null)
+        // {
+        //     game.phase = new CGamePhase();
+        // }
     },
     
+    update: function(dt)
+    {
+        if (game.phase === null && game.isReady)
+        {
+            game.createRandomPhase();
+        }
+    },
+
     /**
      * Initializes touch events
      * @method

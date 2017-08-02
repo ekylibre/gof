@@ -45,7 +45,7 @@
                 <key>spriteSourceSize</key>
                 <string>{55,55}</string>
                 <key>textureRect</key>
-                <string>{{295,1},{45,53}}</string>
+                <string>{{299,1},{45,53}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
@@ -75,7 +75,7 @@
                 <key>spriteSourceSize</key>
                 <string>{55,55}</string>
                 <key>textureRect</key>
-                <string>{{254,1},{39,55}}</string>
+                <string>{{254,58},{39,55}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
@@ -120,7 +120,7 @@
                 <key>spriteSourceSize</key>
                 <string>{55,55}</string>
                 <key>textureRect</key>
-                <string>{{295,56},{49,51}}</string>
+                <string>{{336,56},{49,51}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
@@ -135,7 +135,7 @@
                 <key>spriteSourceSize</key>
                 <string>{55,55}</string>
                 <key>textureRect</key>
-                <string>{{254,58},{39,55}}</string>
+                <string>{{295,58},{39,55}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
@@ -150,7 +150,7 @@
                 <key>spriteSourceSize</key>
                 <string>{55,55}</string>
                 <key>textureRect</key>
-                <string>{{342,1},{45,51}}</string>
+                <string>{{346,1},{45,51}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
@@ -199,6 +199,21 @@
                 <key>textureRotated</key>
                 <false/>
             </dict>
+            <key>ico_soja.png</key>
+            <dict>
+                <key>aliases</key>
+                <array/>
+                <key>spriteOffset</key>
+                <string>{-2,0}</string>
+                <key>spriteSize</key>
+                <string>{43,55}</string>
+                <key>spriteSourceSize</key>
+                <string>{55,55}</string>
+                <key>textureRect</key>
+                <string>{{254,1},{43,55}}</string>
+                <key>textureRotated</key>
+                <false/>
+            </dict>
             <key>ico_tournesol.png</key>
             <dict>
                 <key>aliases</key>
@@ -241,9 +256,9 @@
             <key>realTextureFileName</key>
             <string>icons_plantations_dis.png</string>
             <key>size</key>
-            <string>{388,114}</string>
+            <string>{392,114}</string>
             <key>smartupdate</key>
-            <string>$TexturePacker:SmartUpdate:fff7a5240f11dd016133966da71c124a:0a72d2feb373c41498641bcad5f0669c:c428a7eafd2c116540b847cc93f00bc0$</string>
+            <string>$TexturePacker:SmartUpdate:3315e7a9b76c78c17d1f6a1b29795fa5:0261371ba43abe8e104438a1b2d7f56a:c428a7eafd2c116540b847cc93f00bc0$</string>
             <key>textureFileName</key>
             <string>icons_plantations_dis.png</string>
         </dict>
