@@ -4,6 +4,10 @@ const Constants = require('../../../common/constants');
 var mongoose = require ('mongoose');
 
 var ToolSchema = new mongoose.Schema({
+    linkDbId: {
+        type: Number,
+        unique: true
+    },
     name : {
         type: String,
         index: true,
