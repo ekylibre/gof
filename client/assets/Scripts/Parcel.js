@@ -22,8 +22,8 @@ var ParcelState = cc.Enum({
  * @property {cc.Rect}          rect: rectangle containg the parcel
  * @property {ParcelState}      state: current parcel state
  * @property {number}           surface: surface area of parcel (hectare)
- * @property {Array}            rotationHistory: history of crop rotation (most recent first)
- * @property {Array}            rotationPrevision: previsions of crop rotation (next one is first)
+ * @property {Array:{species, culture}}            rotationHistory: history of crop rotation (most recent first)
+ * @property {Array:{species, culture}}            rotationPrevision: previsions of crop rotation (next one is first)
  */
 export default class CParcel
 {

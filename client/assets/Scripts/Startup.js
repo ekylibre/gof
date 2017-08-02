@@ -5,8 +5,10 @@
 const i18n = require('LanguageData');
 const ApiClient = require('./ApiClient');
 
-import CGame from 'Game';
+const CGame = require('Game');
 const game = new CGame();
+
+const UIDebug = require('UIDebug');
 
 
 cc.Class({
@@ -17,62 +19,70 @@ cc.Class({
     },
 
     properties: {
-        // foo: {
-        //    default: null,      // The default value will be used only when the component attaching
-        //                           to a node for the first time
-        //    url: cc.Texture2D,  // optional, default is typeof default
-        //    serializable: true, // optional, default is true
-        //    visible: true,      // optional, default is true
-        //    displayName: 'Foo', // optional
-        //    readonly: false,    // optional, default is false
-        // },
-        // ...
+
     },
 
     // use this for initialization
     onLoad: function ()
     {
-        this.whenLoggedIn();
+        //this.whenLoggedIn();
 
-        // var endpoint = '/api';
-        // var isPreview = location.hostname == 'localhost' && location.port != 3000;
-        // if(isPreview) {
-        //     endpoint = 'http://gof.julien.dev:3000/api';
-        // }
+        // Select REST API endpoint
+        var endpoint = '/api';
+        var isPreview = location.hostname == 'localhost' && location.port != 3000;
+        if(isPreview) {
+            endpoint = 'http://localhost:3000/api'; //'http://gof.julien.dev:3000/api',
+        }
+
+        UIDebug.log('API endpoint: '+endpoint);
         
-        // var self = this;
-        // var client = new ApiClient(endpoint);
-        // client.checkAuth(
-        //     (error, response, c) => {
-        //         if(error) {
-        //             if(isPreview) {
-        //                 var email = prompt('email');
-        //                 var password = prompt('password');
+        var self = this;
+        var client = new ApiClient(endpoint);
+        client.checkAuth(
+            (error, response, c) => {
+                if(error) {
+                    if(isPreview) {
+                        var email = prompt('email');
+                        var password = prompt('password');
 
-        //                 c.login(email, password, 
-        //                     (error, response, c) => {
-        //                         if(!error) {
-        //                             document.cookie = "access_token="+response.payload.accessToken;
-        //                             localStorage.setItem("gof-access-token", response.payload.accessToken);
-                                    
-        //                             whenLoggedIn(client);
-        //                         }
-        //                 });
-        //             } else {
-        //                 console.log('going /');
-        //                 return;
-        //                 //return location.replace('/');
-        //             }
-        //         }
-        //         self.whenLoggedIn(client);
-        //     }
-        // );
+                        c.login(email, password, 
+                            (error, response, c) => {
+                                if(!error) {
+                                    localStorage.setItem("gof-access-token", response.payload.accessToken);                                    
+                                    self.whenLoggedIn(client);
+                                }
+                                else
+                                {
+                                    UIDebug.log('Error: Login failed!');
+                                    cc.error('Login failed');
+                                }
+                        });
+                    } else {
+                        UIDebug.log('Error: you are not logged in!');
+                        return;
+                    }
+                }
+                else
+                {
+                    self.whenLoggedIn(client);
+                }
+            }
+        );
         
     },
 
+    start: function()
+    {
+        if (UIDebug.instance != null)
+        {
+            UIDebug.instance.node.active = game.isDebug;            
+        }
+        
+    },
 
     whenLoggedIn: function(client)
     {
+        cc.log('Logged-in!')
         game.api = client;
         game.pullDatabase();
         

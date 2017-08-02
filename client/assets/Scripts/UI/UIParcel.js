@@ -123,7 +123,7 @@ var UIParcel = cc.Class({
                 hPrefab.setParent(histContent);
 
                 var h = hPrefab.getComponent(UIParcelHistoryItem);                
-                h.init(-(i+1), this._parcel.rotationHistory[i]);
+                h.init(-(i+1), this._parcel.rotationHistory[i], false);
             }
 
             // previsions
@@ -133,7 +133,7 @@ var UIParcel = cc.Class({
                 hPrefab.setParent(prevContent);
 
                 var h = hPrefab.getComponent(UIParcelHistoryItem);                
-                h.init(i, this._parcel.rotationPrevision[i]);
+                h.init(i, this._parcel.rotationPrevision[i], true);
             }
 
             this.addEmptyPrevision();

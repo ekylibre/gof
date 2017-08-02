@@ -22,11 +22,11 @@
     "_active": true,
     "_components": [
       {
-        "__id__": 29
+        "__id__": 31
       }
     ],
     "_prefab": {
-      "__id__": 30
+      "__id__": 32
     },
     "_id": "",
     "_opacity": 255,
@@ -91,21 +91,21 @@
         "__id__": 18
       },
       {
-        "__id__": 22
+        "__id__": 23
       }
     ],
     "_tag": -1,
     "_active": true,
     "_components": [
       {
-        "__id__": 26
+        "__id__": 28
       },
       {
-        "__id__": 27
+        "__id__": 29
       }
     ],
     "_prefab": {
-      "__id__": 28
+      "__id__": 30
     },
     "_id": "",
     "_opacity": 255,
@@ -607,7 +607,7 @@
       }
     ],
     "_prefab": {
-      "__id__": 21
+      "__id__": 22
     },
     "_id": "",
     "_opacity": 255,
@@ -702,7 +702,11 @@
     "hoverSprite": {
       "__uuid__": "3979df81-5d65-4683-ab5a-ecab12b1925d"
     },
-    "clickEvents": [],
+    "clickEvents": [
+      {
+        "__id__": 21
+      }
+    ],
     "_N$interactable": true,
     "_N$enableAutoGrayEffect": false,
     "_N$normalColor": {
@@ -730,6 +734,15 @@
     }
   },
   {
+    "__type__": "cc.ClickEvent",
+    "target": {
+      "__id__": 1
+    },
+    "component": "UIParcelHistoryItem",
+    "handler": "onBtAdd",
+    "customEventData": ""
+  },
+  {
     "__type__": "cc.PrefabInfo",
     "root": {
       "__id__": 1
@@ -752,14 +765,14 @@
     "_active": false,
     "_components": [
       {
-        "__id__": 23
+        "__id__": 24
       },
       {
-        "__id__": 24
+        "__id__": 25
       }
     ],
     "_prefab": {
-      "__id__": 25
+      "__id__": 27
     },
     "_id": "",
     "_opacity": 255,
@@ -802,7 +815,7 @@
     "_name": "",
     "_objFlags": 0,
     "node": {
-      "__id__": 22
+      "__id__": 23
     },
     "_enabled": true,
     "_spriteFrame": {
@@ -828,7 +841,7 @@
     "_name": "",
     "_objFlags": 0,
     "node": {
-      "__id__": 22
+      "__id__": 23
     },
     "_enabled": true,
     "transition": 2,
@@ -854,7 +867,11 @@
     "hoverSprite": {
       "__uuid__": "c1a1b428-37cf-4fd1-9fbf-5fc073d16b81"
     },
-    "clickEvents": [],
+    "clickEvents": [
+      {
+        "__id__": 26
+      }
+    ],
     "_N$interactable": true,
     "_N$enableAutoGrayEffect": false,
     "_N$normalColor": {
@@ -878,8 +895,17 @@
       "__uuid__": "ec21dfcf-dba1-4c9b-8081-dc4910eb2355"
     },
     "_N$target": {
-      "__id__": 22
+      "__id__": 23
     }
+  },
+  {
+    "__type__": "cc.ClickEvent",
+    "target": {
+      "__id__": 1
+    },
+    "component": "UIParcelHistoryItem",
+    "handler": "onBtEdit",
+    "customEventData": ""
   },
   {
     "__type__": "cc.PrefabInfo",
@@ -983,6 +1009,9 @@
     },
     "btAdd": {
       "__id__": 20
+    },
+    "btEdit": {
+      "__id__": 25
     }
   },
   {
