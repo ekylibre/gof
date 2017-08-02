@@ -1,5 +1,7 @@
 
+const i18n = require('LanguageData');
 const CPlant = require('Plant');
+const RscPreload = require('RscPreload');
 
 cc.Class({
     extends: cc.Component,
@@ -34,7 +36,7 @@ cc.Class({
         speciesIcon:
         {
             default: null,
-            type: cc.SpriteFrame,
+            type: cc.Sprite,
         },
 
         /**
@@ -203,22 +205,22 @@ cc.Class({
 
     updateUI: function()
     {
-        // if (this._plant != null)
-        // {
-        //     if (this._plant.species == 'fallow')
-        //     {
-        //         this.speciesName.string = i18n.t('fallow');
-        //         this.icon.spriteFrame = this.plantAtlas.getSpriteFrame('ico_prairies');              
-        //     }
-        //     else
-        //     {
-        //         var icoId = CPlant._getIconId(_Plant.species);
+        if (this._plant != null)
+        {
+            if (this._plant.species == 'fallow')
+            {
+                this.speciesName.string = i18n.t('fallow');
+                this.speciesIcon.spriteFrame = RscPreload.instance.plantIconsAtlas.getSpriteFrame('ico_prairies');              
+            }
+            else
+            {
+                var icoId = CPlant._getIconId(this._plant.species);
 
-        //         // Existing plant
-        //         this.species.string = i18n.t('plant_'+icoId).toUpperCase();
-        //         this.icon.spriteFrame = this.plantAtlas.getSpriteFrame('ico_'+icoId);
-        //     }
-        // }
+                // Existing plant
+                this.speciesName.string = i18n.t('plant_'+icoId).toUpperCase();
+                this.speciesIcon.spriteFrame = RscPreload.instance.plantIconsAtlas.getSpriteFrame('ico_'+icoId);
+            }
+        }
     },
 
     // called every frame, uncomment this function to activate update callback

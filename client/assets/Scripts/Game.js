@@ -9,10 +9,10 @@
 const CGamePhase = require('GamePhase');
 const CFarm = require('Farm');
 const CPlant = require('Plant');
-
 const i18n = require('LanguageData');
 const SharedConsts = require('../../../common/constants');
 const ApiClient = require('ApiClient');
+const UIDebug = require('UIDebug');
 
 const DEBUG = true;
 
@@ -20,7 +20,6 @@ const DEBUG = true;
 var ConfigDebug =
 {
     LANGUAGE_DEFAULT: 'fr',
-    SERVICES_URL: 'http://gof.julien.dev:3000/api/',
     MAP_ZOOM_MAX: 1.7,
     MAP_ZOOM_MIN: 0.1
 };
@@ -29,7 +28,6 @@ var ConfigDebug =
 var ConfigMaster=
 {
     LANGUAGE_DEFAULT: 'fr',
-    SERVICES_URL: 'https://game-of-farms.ekylibre.com',
     MAP_ZOOM_MAX: 1,
     MAP_ZOOM_MIN: 0.4
 };
@@ -163,41 +161,8 @@ export default class CGame
 
     pullDatabase()
     {
-        // if (!this.api)
-        // {
-        //     cc.error('Please setup CGame.api');
-        //     return;
-        // }
-
-        cc.loader.loadRes('plantsDb',
-            function(err, json)
-            {
-                if (json && Array.isArray(json))
-                {
-                    for (var i=0; i<json.length; i++)
-                    {
-                        var jsonPlant = json[i];
-                        var plant = instance.findPlant(jsonPlant.species);
-                        if (plant != null)
-                        {
-                            plant.updatePrices(jsonPlant);
-                        }
-                        else
-                        {
-                            plant = new CPlant(jsonPlant);
-                            if (plant._valid)
-                            {
-                                instance.plants.push(plant);
-                            }
-                        }
-                    }
-
-                    instance.isReady = true;
-                }
-            }
-        );
-        // this.api.getPlants(null,
-        //     (error, json, c) =>
+        // cc.loader.loadRes('plantsDb',
+        //     function(err, json)
         //     {
         //         if (json && Array.isArray(json))
         //         {
@@ -218,8 +183,55 @@ export default class CGame
         //                     }
         //                 }
         //             }
+
+        //             instance.isReady = true;
         //         }
-        //     });
+        //     }
+        // );
+
+        if (!this.api)
+        {
+            cc.error('Please setup CGame.api');
+            return;
+        }
+
+        this.api.getPlants(null,
+            (error, json, c) =>
+            {
+                if (error)
+                {
+                    UIDebug.log('Error: Failed to get plants:'+error);
+                    return;
+                }
+
+                if (json && Array.isArray(json))
+                {
+                    UIDebug.log('Pulled plants: '+json.length);
+                    for (var i=0; i<json.length; i++)
+                    {
+                        var jsonPlant = json[i];
+                        var plant = instance.findPlant(jsonPlant.species);
+                        if (plant != null)
+                        {
+                            plant.updatePrices(jsonPlant);
+                        }
+                        else
+                        {
+                            plant = new CPlant(jsonPlant);
+                            if (plant._valid)
+                            {
+                                instance.plants.push(plant);
+                            }
+                        }
+                    }
+
+                    instance.isReady = true;
+                }
+                else
+                {
+                    UIDebug.log('Error: Invalid response for getPlants: '+json);
+                }
+            });
     }
 
     createRandomPhase()

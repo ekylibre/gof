@@ -190,6 +190,7 @@ var MapCtrl = cc.Class({
     {
         if (game.phase === null && game.isReady)
         {
+            UIDebug.log('Game is ready - Starting a random phase');
             game.createRandomPhase();
         }
     },
