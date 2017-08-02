@@ -80,7 +80,7 @@ function parseData(model, data, callback) {
         } else {
             f = function updateOrCreateCallback(err) {
                 if(err) {
-                    process.stderr.write(err);
+                    logMessage(err);
                 }
             }
         }
@@ -263,7 +263,7 @@ function storeToken(token) {
 
 function populateComplete(err) {
     if(err) {
-        process.stderr.write(err);
+        logMessage(err);
     }
     setTimeout(() => {
         logMessage('Good bye', () => {
@@ -288,7 +288,7 @@ function main() {
             (err) => {
                 if(err) {
                     logMessage('Can\'t connect to ' + program.connection);
-                    process.stderr.write(err);
+                    logMessage(err);
                     return;
                 }
 
