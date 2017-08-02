@@ -5,7 +5,7 @@
 const i18n = require('LanguageData');
 const ApiClient = require('./ApiClient');
 
-import CGame from 'Game';
+const CGame = require('Game');
 const game = new CGame();
 
 

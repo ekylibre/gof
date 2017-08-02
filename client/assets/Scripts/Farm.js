@@ -1,6 +1,6 @@
 
-import CParcel from 'Parcel'
-import CGamePhase from 'GamePhase'
+const CParcel = require('Parcel');
+const CGamePhase = require('GamePhase');
 
 /**
  * The farm

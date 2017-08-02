@@ -1,7 +1,8 @@
 
-import CParcel from 'Parcel';
-import CPlant from 'Plant';
+const CParcel = require('Parcel');
+const CPlant = require('Plant');
 
+const UISpeciesSelPopup = require('UISpeciesSelPopup');
 const i18n = require('LanguageData');
 
 cc.Class({
@@ -52,6 +53,12 @@ cc.Class({
             default: null,
             type: cc.Button
         },
+
+        btEdit:
+        {
+            default: null,
+            type: cc.Button
+        },
     },
 
     // use this for initialization
@@ -59,7 +66,7 @@ cc.Class({
         
     },
 
-    init: function(_Year, _Plant)
+    init: function(_Year, _Plant, _CanEdit)
     {
         var y;
         if (_Year <0)
@@ -88,6 +95,7 @@ cc.Class({
             this.icon.node.active = true;
             this.icon.spriteFrame = this.plantAtlas.getSpriteFrame('ico_prairies');
             this.btAdd.node.active = false;
+            this.btEdit.node.active = _CanEdit;
         }
         else
         {
@@ -108,15 +116,21 @@ cc.Class({
             this.icon.node.active = true;
             this.icon.spriteFrame = this.plantAtlas.getSpriteFrame('ico_'+icoId);
             this.btAdd.node.active = false;
+            this.btEdit.node.active = _CanEdit;
         }
     },
 
 
     onBtAdd: function()
     {
-        cc.error('UIParcelHistoryItem::onBtAdd: TODO');
+        //cc.error('UIParcelHistoryItem::onBtAdd: TODO');
+        UISpeciesSelPopup.instance.show();
     },
 
+    onBtEdit: function()
+    {
+        cc.error('UIParcelHistoryItem::onBtEdit: TODO');
+    },
     // called every frame, uncomment this function to activate update callback
     // update: function (dt) {
 

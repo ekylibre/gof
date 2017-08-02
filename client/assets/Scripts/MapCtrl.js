@@ -12,18 +12,19 @@
 // 
 
 
-import CGame from 'Game';
-import CGamePhase from 'GamePhase';
-import CFarm from 'Farm';
-import CParcel from 'Parcel';
-import UIParcelButton from 'UIParcelButton'
-
-const game = new CGame();
+const CGame = require('Game');
+const CGamePhase = require('GamePhase');
+const CFarm = require('Farm');
+const CParcel = require('Parcel');
+const UIParcelButton = require('UIParcelButton');
 
 const UIOffice = require('UIOffice');
 const UIDebug = require('UIDebug');
 
 const i18n = require('LanguageData');
+
+const game = new CGame();
+
 
 /**
  * Manages the map scrolling, UI, etc...

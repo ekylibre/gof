@@ -1,14 +1,14 @@
 // Game "singleton" implementation
 // How to use:
-//      import CGame from 'Game';
+//      const CGame = require('Game');
 //      const game = new CGame();   // the constructor always returns the same instance
 //
 // the singleton also initializes i18n
 // TODO: check language provided by the environment
 
-import CGamePhase from 'GamePhase';
-import CFarm from 'Farm';
-import CPlant from 'Plant';
+const CGamePhase = require('GamePhase');
+const CFarm = require('Farm');
+const CPlant = require('Plant');
 
 const i18n = require('LanguageData');
 const SharedConsts = require('../../../common/constants');
@@ -43,7 +43,7 @@ let instance = null;
  * @property {Dictionary}   config: current game config
  * @property {CFarm}        farm: the farm
  * @property {CGamePhase}   phase: active game 'phase'
- * @property {Array}        plants: list of known plants
+ * @property {Array:CPlant}        plants: list of known plants
  * @property {ApiClient}    api
  */
 export default class CGame
