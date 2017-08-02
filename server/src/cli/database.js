@@ -267,7 +267,7 @@ function populateComplete(err) {
     }
     setTimeout(() => {
         logMessage('Good bye', () => {
-            process.exit(err ? -1 : 0);
+            //process.exit(err ? -1 : 0);
         });
     }, 1000);
     
