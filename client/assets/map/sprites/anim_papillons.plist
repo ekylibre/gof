@@ -4,243 +4,243 @@
     <dict>
         <key>frames</key>
         <dict>
-            <key>ico_avoine.png</key>
+            <key>anim_papillons_diffuse0000.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
-                <string>{0,0}</string>
+                <string>{-3,11}</string>
                 <key>spriteSize</key>
-                <string>{49,55}</string>
+                <string>{64,78}</string>
                 <key>spriteSourceSize</key>
-                <string>{55,55}</string>
+                <string>{160,100}</string>
                 <key>textureRect</key>
-                <string>{{56,58},{49,55}}</string>
+                <string>{{99,1},{64,78}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
-            <key>ico_betterave.png</key>
+            <key>anim_papillons_diffuse0001.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
-                <string>{3,0}</string>
+                <string>{13,6}</string>
                 <key>spriteSize</key>
-                <string>{49,55}</string>
+                <string>{80,68}</string>
                 <key>spriteSourceSize</key>
-                <string>{55,55}</string>
+                <string>{160,100}</string>
                 <key>textureRect</key>
-                <string>{{107,58},{49,55}}</string>
+                <string>{{165,1},{80,68}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
-            <key>ico_ble.png</key>
+            <key>anim_papillons_diffuse0002.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
-                <string>{-1,0}</string>
+                <string>{9,17}</string>
                 <key>spriteSize</key>
-                <string>{45,53}</string>
+                <string>{112,56}</string>
                 <key>spriteSourceSize</key>
-                <string>{55,55}</string>
+                <string>{160,100}</string>
                 <key>textureRect</key>
-                <string>{{299,1},{45,53}}</string>
+                <string>{{101,81},{112,56}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
-            <key>ico_carotte.png</key>
+            <key>anim_papillons_diffuse0003.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
-                <string>{4,0}</string>
+                <string>{5,12}</string>
                 <key>spriteSize</key>
-                <string>{47,55}</string>
+                <string>{150,36}</string>
                 <key>spriteSourceSize</key>
-                <string>{55,55}</string>
+                <string>{160,100}</string>
                 <key>textureRect</key>
-                <string>{{111,1},{47,55}}</string>
+                <string>{{1,203},{150,36}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
-            <key>ico_colza.png</key>
+            <key>anim_papillons_diffuse0004.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
-                <string>{-1,0}</string>
+                <string>{1,17}</string>
                 <key>spriteSize</key>
-                <string>{39,55}</string>
+                <string>{158,24}</string>
                 <key>spriteSourceSize</key>
-                <string>{55,55}</string>
+                <string>{160,100}</string>
                 <key>textureRect</key>
-                <string>{{254,58},{39,55}}</string>
+                <string>{{307,203},{158,24}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
-            <key>ico_feverole.png</key>
+            <key>anim_papillons_diffuse0005.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
-                <string>{0,0}</string>
+                <string>{-4,-5}</string>
                 <key>spriteSize</key>
-                <string>{53,55}</string>
+                <string>{152,24}</string>
                 <key>spriteSourceSize</key>
-                <string>{55,55}</string>
+                <string>{160,100}</string>
                 <key>textureRect</key>
-                <string>{{1,1},{53,55}}</string>
+                <string>{{153,203},{152,24}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
-            <key>ico_lupin.png</key>
+            <key>anim_papillons_diffuse0006.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
-                <string>{-1,0}</string>
+                <string>{-7,-6}</string>
                 <key>spriteSize</key>
-                <string>{45,55}</string>
+                <string>{128,42}</string>
                 <key>spriteSourceSize</key>
-                <string>{55,55}</string>
+                <string>{160,100}</string>
                 <key>textureRect</key>
-                <string>{{160,1},{45,55}}</string>
+                <string>{{335,81},{128,42}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
-            <key>ico_mais.png</key>
+            <key>anim_papillons_diffuse0007.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
-                <string>{0,-1}</string>
+                <string>{0,-17}</string>
                 <key>spriteSize</key>
-                <string>{49,51}</string>
+                <string>{90,54}</string>
                 <key>spriteSourceSize</key>
-                <string>{55,55}</string>
+                <string>{160,100}</string>
                 <key>textureRect</key>
-                <string>{{336,56},{49,51}}</string>
+                <string>{{335,1},{90,54}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
-            <key>ico_orge.png</key>
+            <key>anim_papillons_diffuse0008.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
-                <string>{-1,0}</string>
+                <string>{5,-9}</string>
                 <key>spriteSize</key>
-                <string>{39,55}</string>
+                <string>{46,58}</string>
                 <key>spriteSourceSize</key>
-                <string>{55,55}</string>
+                <string>{160,100}</string>
                 <key>textureRect</key>
-                <string>{{295,58},{39,55}}</string>
+                <string>{{1,1},{46,58}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
-            <key>ico_pois.png</key>
+            <key>anim_papillons_diffuse0009.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
-                <string>{0,0}</string>
+                <string>{-1,-18}</string>
                 <key>spriteSize</key>
-                <string>{45,51}</string>
+                <string>{48,50}</string>
                 <key>spriteSourceSize</key>
-                <string>{55,55}</string>
+                <string>{160,100}</string>
                 <key>textureRect</key>
-                <string>{{346,1},{45,51}}</string>
+                <string>{{49,1},{48,50}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
-            <key>ico_prairies.png</key>
+            <key>anim_papillons_diffuse0010.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
-                <string>{0,0}</string>
+                <string>{2,-11}</string>
                 <key>spriteSize</key>
-                <string>{53,55}</string>
+                <string>{98,40}</string>
                 <key>spriteSourceSize</key>
-                <string>{55,55}</string>
+                <string>{160,100}</string>
                 <key>textureRect</key>
-                <string>{{1,58},{53,55}}</string>
+                <string>{{1,81},{98,40}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
-            <key>ico_sarrasin.png</key>
+            <key>anim_papillons_diffuse0011.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
-                <string>{0,0}</string>
+                <string>{1,-21}</string>
                 <key>spriteSize</key>
-                <string>{45,55}</string>
+                <string>{136,26}</string>
                 <key>spriteSourceSize</key>
-                <string>{55,55}</string>
+                <string>{160,100}</string>
                 <key>textureRect</key>
-                <string>{{207,1},{45,55}}</string>
+                <string>{{135,149},{136,26}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
-            <key>ico_seigle.png</key>
+            <key>anim_papillons_diffuse0012.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
-                <string>{-3,0}</string>
+                <string>{5,-14}</string>
                 <key>spriteSize</key>
-                <string>{45,55}</string>
+                <string>{140,34}</string>
                 <key>spriteSourceSize</key>
-                <string>{55,55}</string>
+                <string>{160,100}</string>
                 <key>textureRect</key>
-                <string>{{207,58},{45,55}}</string>
+                <string>{{273,149},{140,34}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
-            <key>ico_soja.png</key>
+            <key>anim_papillons_diffuse0013.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
-                <string>{-2,0}</string>
+                <string>{4,-24}</string>
                 <key>spriteSize</key>
-                <string>{43,55}</string>
+                <string>{132,52}</string>
                 <key>spriteSourceSize</key>
-                <string>{55,55}</string>
+                <string>{160,100}</string>
                 <key>textureRect</key>
-                <string>{{254,1},{43,55}}</string>
+                <string>{{1,149},{132,52}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
-            <key>ico_tournesol.png</key>
+            <key>anim_papillons_diffuse0014.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
-                <string>{1,0}</string>
+                <string>{-1,-10}</string>
                 <key>spriteSize</key>
-                <string>{47,55}</string>
+                <string>{118,66}</string>
                 <key>spriteSourceSize</key>
-                <string>{55,55}</string>
+                <string>{160,100}</string>
                 <key>textureRect</key>
-                <string>{{158,58},{47,55}}</string>
+                <string>{{215,81},{118,66}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
-            <key>ico_triticale.png</key>
+            <key>anim_papillons_diffuse0015.png</key>
             <dict>
                 <key>aliases</key>
                 <array/>
                 <key>spriteOffset</key>
-                <string>{1,0}</string>
+                <string>{-8,-9}</string>
                 <key>spriteSize</key>
-                <string>{53,55}</string>
+                <string>{86,76}</string>
                 <key>spriteSourceSize</key>
-                <string>{55,55}</string>
+                <string>{160,100}</string>
                 <key>textureRect</key>
-                <string>{{56,1},{53,55}}</string>
+                <string>{{247,1},{86,76}}</string>
                 <key>textureRotated</key>
                 <false/>
             </dict>
@@ -254,13 +254,13 @@
             <key>premultiplyAlpha</key>
             <false/>
             <key>realTextureFileName</key>
-            <string>icons_plantations.png</string>
+            <string>anim_papillons.png</string>
             <key>size</key>
-            <string>{392,114}</string>
+            <string>{466,240}</string>
             <key>smartupdate</key>
-            <string>$TexturePacker:SmartUpdate:455b15331e5a4163dd06af50b0ed594d:8f6f59ebfb8fc72c74014bfe9f07b6cb:47d4760405228a0b05338bfd09351eac$</string>
+            <string>$TexturePacker:SmartUpdate:f5f51ba833dd9d6453290e0c650e49cd:bf43c4553b6694f3b95de98fd81c95d7:c7a3321e95011b6324826c0398882579$</string>
             <key>textureFileName</key>
-            <string>icons_plantations.png</string>
+            <string>anim_papillons.png</string>
         </dict>
     </dict>
 </plist>
