@@ -20,8 +20,8 @@ var TOKEN_DIR = './cli/.credentials/';
 var TOKEN_PATH = TOKEN_DIR + 'sheets.googleapis.com-nodejs.json';
 
 
-function logMessage(message) {
-    process.stdout.write(message+'\n');
+function logMessage(message, cb) {
+    return process.stdout.write(message+'\n', cb);
 }
 
 function updateOrCreateDocument(model, conditions, header, row, callback) {
@@ -289,7 +289,7 @@ function main() {
                 if(err) {
                     logMessage('Can\'t connect to ' + program.connection);
                     process.stderr.write(err);
-                    return  result = -1;
+                    return;
                 }
 
                 if(program.populate) {
