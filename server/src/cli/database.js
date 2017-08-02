@@ -19,11 +19,6 @@ var SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
 var TOKEN_DIR = './cli/.credentials/';
 var TOKEN_PATH = TOKEN_DIR + 'sheets.googleapis.com-nodejs.json';
 
-
-function logMessage(message, cb) {
-    return process.stdout.write(message+'\n', 'utf8', cb);
-}
-
 function updateOrCreateDocument(model, conditions, header, row, callback) {
     model.findOne(conditions, (err, res) => {
         if(err) {
@@ -80,7 +75,7 @@ function parseData(model, data, callback) {
         } else {
             f = function updateOrCreateCallback(err) {
                 if(err) {
-                    logMessage(err);
+                    console.error(err);
                 }
             }
         }
@@ -98,35 +93,35 @@ var parser = {
     
     Plants : function parsePlants(data, callback) {
         parseData(Plant, data, function(err) {
-            logMessage('Done parsing plants');
+            console.log('Done parsing plants');
             callback(err);
         });
     },
 
     Tools: function parseTools(data, callback) {
         parseData(Tool, data, function(err) {
-            logMessage('Done parsing tools');
+            console.log('Done parsing tools');
             callback(err);
         });
     },
 
     Additives: function parseAdditives(data, callback) {
         parseData(Additive, data, function(err) {
-            logMessage('Done parsing additives');
+            console.log('Done parsing additives');
             callback(err);
         });
     },
 
     Equipments: function parseEquipments(data, callback) {
         parseData(Equipment, data, function(err) {
-            logMessage('Done parsing equipments');
+            console.log('Done parsing equipments');
             callback(err);
         });
     },
 
     Rotations: function parseRotations(data, callback) {
         parseData(Rotation, data, function(err) {
-            logMessage('Done parsing rotations');
+            console.log('Done parsing rotations');
             callback(err);
         });
     }
@@ -142,7 +137,7 @@ function readSheet(auth, sheet, callback) {
         valueRenderOption: 'UNFORMATTED_VALUE'
     }, function (err, response) {
         if(err) {
-            logMessage('Google API error: ' + err);
+            console.error(err);
             callback(err, null);
             return;
         }
@@ -151,7 +146,8 @@ function readSheet(auth, sheet, callback) {
         if(parseFunc){
             parseFunc(response, callback);
         } else {
-            callback(new Error('Mission implementation of parse'+sheetId+' in parser module'));
+            console.warn('Missing implementation of \"parse'+sheetId+'\" in parser module');
+            callback(null); //don't return error here, otherwise the flow of import will be stopped
         }
     });
 }
@@ -164,13 +160,28 @@ function readSpreadSheet(auth, callback) {
         includeGridData: false
     }, function(err, response) {
         if(err) {
-            logMessage('Google API error: ' + err)
+            console.error(err);
             callback(err);
             return;
         }
         var sheets = response.sheets;
         var errors = null;
-        sheets.forEach(function(element, index, array) {
+        var promises = sheets.map(function(element) {
+            return new Promise(function(resolve, reject){
+                readSheet(auth, element, function(err) {
+                    if(err){
+                        return reject(err);
+                    }
+                    resolve();
+                });
+            });
+        });
+
+        Promise.all(promises).then(function(){
+            callback();
+        }).catch(callback);
+
+        /*sheets.forEach(function(element, index, array) {
             readSheet(auth, element, function sheetRead(err) {
                 if(err) {
                     if(!errors) {
@@ -183,7 +194,7 @@ function readSpreadSheet(auth, callback) {
                     callback(errors);
                 }
            }); 
-        });
+        });*/
     });
 }
 
@@ -234,7 +245,7 @@ function getNewToken(oauth2Client, callback) {
     rl.close();
     oauth2Client.getToken(code, function(err, token) {
       if (err) {
-        logMessage('Error while trying to retrieve access token', err);
+        console.error(err);
         return;
       }
       oauth2Client.credentials = token;
@@ -258,19 +269,17 @@ function storeToken(token) {
     }
   }
   fs.writeFile(TOKEN_PATH, JSON.stringify(token));
-  logMessage('Token stored to ' + TOKEN_PATH);
+  console.log('Token stored to ' + TOKEN_PATH);
 }
 
 function populateComplete(err) {
+    console.log('Good bye');
     if(err) {
-        logMessage(err);
+        console.error(err);
+        process.exit(-1);
+        return;
     }
-    setTimeout(() => {
-        logMessage('Good bye', () => {
-            //process.exit(err ? -1 : 0);
-        });
-    }, 1000);
-    
+    process.exit(0);
 }
 
 function main() {
@@ -284,11 +293,11 @@ function main() {
 
     var result = null;
     if(program.connection) {
-        mongoose.connect(program.connection, 
+        mongoose.Promise = global.Promise;
+        mongoose.connect(program.connection, {useMongoClient: true},
             (err) => {
                 if(err) {
-                    logMessage('Can\'t connect to ' + program.connection);
-                    logMessage(err);
+                    console.error(err);
                     return;
                 }
 
@@ -296,8 +305,8 @@ function main() {
                     // Load client secrets from a local file.
                     fs.readFile('./cli/client_secret.json', function processClientSecrets(err, content) {
                         if (err) {
-                            logMessage('Error loading client secret file: ' + err);
-                            return result = -1;
+                            console.error(err);
+                            return;
                         }
                         // Authorize a client with the loaded credentials, then call the
                         // Google Sheets API.
