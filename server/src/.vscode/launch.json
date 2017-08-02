@@ -12,6 +12,15 @@
             }
         },
         {
+            "type": "node",
+            "request": "launch",
+            "name": "cli",
+            "program": "${workspaceRoot}/cli/database.js",
+            "args": [
+                "-c", "mongodb://localhost:27017/gof",  "-p" 
+            ]
+        },
+        {
             "type": "chrome",
             "request": "launch",
             "name": "client",
