@@ -102,14 +102,19 @@ export default class CFarm
     {
         if (_UID !== undefined)
         {
-        for (var i=0; i<this.parcels.length; i++)
+            var parcel = this.parcels.find( (p)=> {return p.uid == _UID;} );
+            if (parcel !== undefined)
             {
-                var parcel = this.parcels[i];
-                if (parcel.uid === _UID)
-                {
-                    return parcel;
-                }
+                return parcel;
             }
+            // for (var i=0; i<this.parcels.length; i++)
+            // {
+            //     var parcel = this.parcels[i];
+            //     if (parcel.uid === _UID)
+            //     {
+            //         return parcel;
+            //     }
+            // }
         }
 
         return null;
