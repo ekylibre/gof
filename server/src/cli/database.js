@@ -21,7 +21,7 @@ var TOKEN_PATH = TOKEN_DIR + 'sheets.googleapis.com-nodejs.json';
 
 
 function logMessage(message, cb) {
-    return process.stdout.write(message+'\n', cb);
+    return process.stdout.write(message+'\n', 'utf8', cb);
 }
 
 function updateOrCreateDocument(model, conditions, header, row, callback) {
