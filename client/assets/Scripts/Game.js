@@ -195,6 +195,27 @@ export default class CGame
             return;
         }
 
+        this.api.getScenarios(null,
+            (error, scenarios) => 
+            {
+                if(error) {
+                    UIDebug.log('Error: Failed to get scenarios: '+error);
+                    return;
+                }
+
+                cc.log(scenarios);
+
+                if(scenarios && Array.isArray(scenarios)) {
+                    this.api.getScenarios('saucisse', //scenarios[0], 
+                        (error, scenario) => {
+                            if(error) {
+                                UIDebug.log('Error: Failed to get scenario with uid: ' + scenarios[0] + ' ' + error);
+                            }
+                            cc.log(scenario);
+                        })
+                }
+            });
+
         this.api.getPlants(null,
             (error, json, c) =>
             {
