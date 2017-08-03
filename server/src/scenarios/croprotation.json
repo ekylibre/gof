@@ -256,6 +256,90 @@
 							"acceptables": []
 						}
 					}	
+				}, {
+					"name" : "Parcel12",
+					"surface" : 77,
+					"data" : {
+
+						"state" : "seeds",
+						"plant" : null,
+
+						"rotationHistory" : [ 
+							{"species":"triticale", "culture":"normal"}, 
+							{"species":"wheat", "culture":"normal"}, 
+							{"species":"colza", "culture":"normal"}, 
+							{"species":"wheat", "culture":"normal"}, 
+							{"species":"sunflower", "culture":"normal"}
+						],
+
+						"solution": {
+							"perfect": "sunflower",
+							"acceptables": []
+						}
+					}	
+				}, {
+					"name" : "Parcel13",
+					"surface" : 77,
+					"data" : {
+
+						"state" : "seeds",
+						"plant" : null,
+
+						"rotationHistory" : [ 
+							{"species":"wheat", "culture":"normal"}, 
+							{"species":"corn", "culture":"normal"}, 
+							{"species":"barley", "culture":"normal"}, 
+							{"species":"wheat", "culture":"normal"}, 
+							{"species":"colza", "culture":"normal"}
+						],
+
+						"solution": {
+							"perfect": "pea",
+							"acceptables": []
+						}
+					}	
+				}, {
+					"name" : "Parcel14",
+					"surface" : 77,
+					"data" : {
+
+						"state" : "seeds",
+						"plant" : null,
+
+						"rotationHistory" : [ 
+							{"species":"pasture", "culture":"normal"}, 
+							{"species":"triticale", "culture":"normal"}, 
+							{"species":"field_bean", "culture":"normal"}, 
+							{"species":"beetroot", "culture":"normal"}, 
+							{"species":"pasture", "culture":"normal"}
+						],
+
+						"solution": {
+							"perfect": "pasture",
+							"acceptables": []
+						}
+					}	
+				}, {
+					"name" : "Parcel15",
+					"surface" : 77,
+					"data" : {
+
+						"state" : "seeds",
+						"plant" : null,
+
+						"rotationHistory" : [ 
+							{"species":"pasture", "culture":"normal"}, 
+							{"species":"pasture", "culture":"normal"}, 
+							{"species":"triticale", "culture":"normal"}, 
+							{"species":"lupin", "culture":"normal"}, 
+							{"species":"corn", "culture":"normal"}
+						],
+
+						"solution": {
+							"perfect": "pasture",
+							"acceptables": []
+						}
+					}	
 				}]
 			}
 		}
