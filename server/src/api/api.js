@@ -1,5 +1,6 @@
 'use strict';
 
+var fs = require('fs');
 const Boom = require('boom');
 const config = require('config');
 const Hoek = require('hoek');
@@ -13,16 +14,19 @@ const Equipment = require('../models/equipment');
 const Rotation = require('../models/rotation');
 const Tool = require('../models/tool');
 
+var CORS = false;
+if(process.env.NODE_ENV === 'development') {
+    //accept Cross Origin Resource Sharing when in dev
+    CORS = {
+        origin : ['*']
+    };
+}
+
 var Auth = function(server) {
-    var CORS = false;
+
     var self = this;
 
-    if(process.env.NODE_ENV === 'development') {
-        //accept Cross Origin Resource Sharing when in dev
-        CORS = {
-            origin : ['*']
-        };
-    }
+    
 
     server.route({
         method: 'GET',
@@ -214,8 +218,51 @@ Auth.prototype.getAdditives = function(request, reply) {
     this.defaultGetModel(Additive, request, reply);
 }
 
+/**
+ * @class Scenario: api class to manage scenario
+ * @param {*} server 
+ */
+function Scenario(server) {
+
+    var self = this;
+
+    server.route({
+        method: 'GET',
+        path: '/api/scenarios/{uid?}',
+        handler: function(request, reply) { self.getScenarios(request, reply); },
+        config: {
+            auth : 'bearer',
+            cors : CORS
+        }
+    });
+}
+
+Scenario.prototype.getScenarios = function(request, reply) {
+    var uid = request.params.uid;
+    var folder = './scenarios/';
+    if(uid) {
+        var fPath = folder + uid + '.json';
+        fs.readFile(fPath, 'utf8', function(err,data) {
+            if(err) {
+                return Boom.notFound();
+            }
+            return reply(data);
+        });
+    } else {
+        fs.readdir(folder, {encoding: 'utf8'}, function(err, files) {
+            if(err) {
+                return Boom.notFound();
+            }
+            var scenarios = files.filter( f => f.endsWith('.json'));
+            return reply(scenarios.map(s => s.replace('.json', '')));
+        });
+    }
+}
+
+
 function Api(server) {
     this.Auth = new Auth(server);
+    this.Scenario = new Scenario(server);
 }
 
 module.exports = Api;

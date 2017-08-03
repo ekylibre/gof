@@ -22,18 +22,23 @@
 					"name" : "Parcel1",
 					"surface" : 42,
 					"data" : {
-
 						"state" : "growing",
-
 						"plant" : {
 							"species" : "soft_wheat"
 						},
 
-						"rotationHistory" : [
-							{"plant" : {"species" : "carrot"}},
-							{"plant" : {"species" : "corn"}},
-							{"plant" : {"species" : "corn"}}
-						]
+						"rotationHistory" : [ 
+							{"species":"wheat", "culture":"normal"}, 
+							{"species":"colza", "culture":"normal"}, 
+							{"species":"barley", "culture":"normal"}, 
+							{"species":"wheat", "culture":"normal"}, 
+							{"species":"colza", "culture":"normal"}
+						],
+
+						"solution": {
+							"perfect": "barley",
+							"acceptables": []
+						}
 					}
 				}, {
 					"name" : "Parcel2",
@@ -43,11 +48,18 @@
 						"state" : "seeds",
 						"plant" : null,
 
-						"rotationHistory" : [
-							{"plant" : {"species" : "carrot"}},
-							{"plant" : {"species" : "corn"}},
-							{"plant" : {"species" : "corn"}}
-						]
+						"rotationHistory" : [ 
+							{"species":"wheat", "culture":"normal"}, 
+							{"species":"colza", "culture":"normal"}, 
+							{"species":"wheat", "culture":"normal"}, 
+							{"species":"sunflower", "culture":"normal"}, 
+							{"species":"barley", "culture":"normal"}
+						],
+
+						"solution": {
+							"perfect": "barley",
+							"acceptables": []
+						}
 					}
 				}, {
 					"name" : "Parcel3",
@@ -59,11 +71,18 @@
 							"species" : "durum_wheat"
 							},
 
-						"rotationHistory" : [
-							{"plant" : {"species" : "carrot"}},
-							{"plant" : {"species" : "corn"}},
-							{"plant" : {"species" : "corn"}}
-						]
+						"rotationHistory" : [ 
+							{"species":"sunflower", "culture":"normal"}, 
+							{"species":"triticale", "culture":"normal"}, 
+							{"species":"wheat", "culture":"normal"}, 
+							{"species":"colza", "culture":"normal"}, 
+							{"species":"wheat", "culture":"normal"}
+						],
+
+						"solution": {
+							"perfect": "wheat",
+							"acceptables": []
+						}
 					}	
 				}, {
 					"name" : "Parcel4",
@@ -75,11 +94,18 @@
 							"species" : "soft_wheat"
 							},
 
-						"rotationHistory" : [
-							{"plant" : {"species" : "carrot"}},
-							{"plant" : {"species" : "corn"}},
-							{"plant" : {"species" : "corn"}}
-						]
+						"rotationHistory" : [ 
+							{"species":"barley", "culture":"normal"}, 
+							{"species":"wheat", "culture":"normal"}, 
+							{"species":"colza", "culture":"normal"}, 
+							{"species":"wheat", "culture":"normal"}, 
+							{"species":"corn", "culture":"normal"}
+						],
+
+						"solution": {
+							"perfect": "corn",
+							"acceptables": []
+						}
 					}	
 				}, {
 					"name" : "Parcel5",
@@ -91,11 +117,18 @@
 							"species" : "durum_wheat"
 							},
 
-						"rotationHistory" : [
-							{"plant" : {"species" : "carrot"}},
-							{"plant" : {"species" : "corn"}},
-							{"plant" : {"species" : "corn"}}
-						]
+						"rotationHistory" : [ 
+							{"species":"wheat", "culture":"normal"}, 
+							{"species":"sunflower", "culture":"normal"}, 
+							{"species":"wheat", "culture":"normal"}, 
+							{"species":"colza", "culture":"normal"}, 
+							{"species":"field_bean", "culture":"normal"}
+						],
+
+						"solution": {
+							"perfect": "field_bean",
+							"acceptables": []
+						}
 					}	
 				}, {
 					"name" : "Parcel6",
@@ -105,11 +138,18 @@
 						"state" : "plowed",
 						"plant" : null,
 
-						"rotationHistory" : [
-							{"plant" : {"species" : "carrot"}},
-							{"plant" : {"species" : "corn"}},
-							{"plant" : {"species" : "corn"}}
-						]
+						"rotationHistory" : [ 
+							{"species":"wheat", "culture":"normal"}, 
+							{"species":"corn", "culture":"normal"}, 
+							{"species":"wheat", "culture":"normal"}, 
+							{"species":"colza", "culture":"normal"}, 
+							{"species":"wheat", "culture":"normal"}
+						],
+
+						"solution": {
+							"perfect": "colza",
+							"acceptables": []
+						}
 					}	
 				}, {
 					"name" : "Parcel7",
@@ -119,11 +159,102 @@
 						"state" : "seeds",
 						"plant" : null,
 
-						"rotationHistory" : [
-							{"plant" : {"species" : "carrot"}},
-							{"plant" : {"species" : "corn"}},
-							{"plant" : {"species" : "corn"}}
-						]
+						"rotationHistory" : [ 
+							{"species":"pea", "culture":"normal"}, 
+							{"species":"corn", "culture":"normal"}, 
+							{"species":"corn", "culture":"normal"}, 
+							{"species":"wheat", "culture":"normal"}, 
+							{"species":"buckweat", "culture":"normal"}
+						],
+
+						"solution": {
+							"perfect": "buckweat",
+							"acceptables": []
+						}
+					}	
+				}, {
+					"name" : "Parcel8",
+					"surface" : 77,
+					"data" : {
+
+						"state" : "seeds",
+						"plant" : null,
+
+						"rotationHistory" : [ 
+							{"species":"barley", "culture":"normal"}, 
+							{"species":"sunflower", "culture":"normal"}, 
+							{"species":"wheat", "culture":"normal"}, 
+							{"species":"colza", "culture":"normal"}, 
+							{"species":"pea", "culture":"normal"}
+						],
+
+						"solution": {
+							"perfect": "pea",
+							"acceptables": []
+						}
+					}	
+				}, {
+					"name" : "Parcel9",
+					"surface" : 77,
+					"data" : {
+
+						"state" : "seeds",
+						"plant" : null,
+
+						"rotationHistory" : [ 
+							{"species":"barley", "culture":"normal"}, 
+							{"species":"pasture", "culture":"normal"}, 
+							{"species":"pasture", "culture":"normal"}, 
+							{"species":"pasture", "culture":"normal"}, 
+							{"species":"triticale", "culture":"normal"}
+						],
+
+						"solution": {
+							"perfect": "lupin",
+							"acceptables": []
+						}
+					}	
+				}, {
+					"name" : "Parcel10",
+					"surface" : 77,
+					"data" : {
+
+						"state" : "seeds",
+						"plant" : null,
+
+						"rotationHistory" : [ 
+							{"species":"triticale", "culture":"normal"}, 
+							{"species":"lupin", "culture":"normal"}, 
+							{"species":"wheat", "culture":"normal"}, 
+							{"species":"pasture", "culture":"normal"}, 
+							{"species":"pasture", "culture":"normal"}
+						],
+
+						"solution": {
+							"perfect": "pasture",
+							"acceptables": []
+						}
+					}	
+				}, {
+					"name" : "Parcel11",
+					"surface" : 77,
+					"data" : {
+
+						"state" : "seeds",
+						"plant" : null,
+
+						"rotationHistory" : [ 
+							{"species":"wheat", "culture":"normal"}, 
+							{"species":"colza", "culture":"normal"}, 
+							{"species":"wheat", "culture":"normal"}, 
+							{"species":"sunflower", "culture":"normal"}, 
+							{"species":"barley", "culture":"normal"}
+						],
+
+						"solution": {
+							"perfect": "triticale",
+							"acceptables": []
+						}
 					}	
 				}]
 			}
