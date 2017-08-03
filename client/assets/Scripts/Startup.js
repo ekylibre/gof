@@ -31,7 +31,7 @@ cc.Class({
         var endpoint = '/api';
         var isPreview = location.hostname == 'localhost' && location.port != 3000;
         if(isPreview) {
-            endpoint = 'http://localhost:3000/api'; //'http://gof.julien.dev:3000/api',
+            endpoint = 'http://gof.shinypix.dev:3000/api'; // 'http://localhost:3000/api'; //'http://gof.julien.dev:3000/api',
         }
 
         UIDebug.log('API endpoint: '+endpoint);

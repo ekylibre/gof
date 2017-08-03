@@ -762,7 +762,7 @@
     },
     "_children": [],
     "_tag": -1,
-    "_active": false,
+    "_active": true,
     "_components": [
       {
         "__id__": 24
@@ -989,22 +989,16 @@
       "__id__": 1
     },
     "_enabled": true,
-    "plantAtlas": {
-      "__uuid__": "6536a9c6-3553-49fe-b759-ce5917c4efb6"
-    },
-    "plantDisAtlas": {
-      "__uuid__": "d61de1c5-84e3-405b-b6dc-18c9f287fb48"
-    },
-    "icon": {
+    "iconSpecies": {
       "__id__": 16
     },
-    "species": {
+    "lbSpecies": {
       "__id__": 10
     },
-    "culture": {
+    "lbCulture": {
       "__id__": 13
     },
-    "year": {
+    "lbYear": {
       "__id__": 7
     },
     "btAdd": {
@@ -1012,6 +1006,10 @@
     },
     "btEdit": {
       "__id__": 25
+    },
+    "parcel": null,
+    "year": {
+      "__id__": 7
     }
   },
   {

@@ -33,7 +33,52 @@ var RscPreload = cc.Class({
 
     statics:
     {
-        instance: null
+        instance: null,
+
+        _plantIconId:
+        {
+            'corn': 'mais',
+            'wheat': 'ble',
+            'durum_wheat': 'ble',
+            'soft_wheat': 'ble',
+            'carrot': 'carotte',
+            'sunflower': 'tournesol',
+            'barley': 'orge',
+            'oat': 'avoine',
+            'rye': 'seigle',
+            'buckwheat': 'sarrasin',
+            'pea': 'pois',
+            'beetroot': 'betterave',
+            'field_bean': 'feverole',
+            'soy': 'soja',
+
+            'pasture': 'prairies',
+            'fallow': 'prairies'
+        },
+
+        getPlantIcon: function(_species, _disabled)
+        {
+            if(RscPreload.instance === null)
+            {
+                cc.error('RscPreload not loaded');
+                return null;
+            }
+
+            var id = RscPreload._plantIconId[_species];
+            if (id === undefined)
+            {
+                id = _species;            
+            }
+            
+            if (_disabled)
+            {
+                return RscPreload.instance.plantDisIconsAtlas.getSpriteFrame('ico_'+id);
+            }
+            else
+            {
+                return RscPreload.instance.plantIconsAtlas.getSpriteFrame('ico_'+id);
+            }
+        }
     },
 
     // use this for initialization

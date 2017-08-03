@@ -54,7 +54,7 @@ export default class CPlant
 
             this.buyPrices[mode] = _JSON.pricePerHectare;
 
-            this.sellPrices[mode] = _JSON.pricePerHectare * 100;
+            this.sellPrices[mode] = _JSON.pricePerHectare * 10;
         }        
     }
 
@@ -82,33 +82,9 @@ export default class CPlant
         return this.sellPrices[this._CultureMode(_Mode)];
     }
 
-    static _getIconId(_Species)
+    get isFallow()
     {
-        var t=
-        {
-            'corn': 'mais',
-            'wheat': 'ble',
-            'durum_wheat': 'ble',
-            'soft_wheat': 'ble',
-            'carrot': 'carotte',
-            'sunflower': 'tournesol',
-            'barley': 'orge',
-            'oat': 'avoine',
-            'rye': 'seigle',
-            'buckwheat': 'sarrasin',
-            'pea': 'pois',
-            'beetroot': 'betterave',
-
-            'pasture': 'prairies',
-        };
-
-        var id = t[_Species];
-        if (id === undefined)
-        {
-            id = _Species;            
-        }
-
-        return id;
+        return this.species === 'fallow';
     }
 }
 

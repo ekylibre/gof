@@ -1,11 +1,12 @@
 
 const CParcel = require('Parcel');
 const CPlant = require('Plant');
+const RscPreload = require('RscPreload');
 
 const UISpeciesSelPopup = require('UISpeciesSelPopup');
 const i18n = require('LanguageData');
 
-cc.Class({
+var UIParcelHistoryItem = cc.Class({
     extends: cc.Component,
     editor:
     {
@@ -13,36 +14,25 @@ cc.Class({
     },
 
     properties: {
-        plantAtlas:
-        {
-            default: null,
-            type: cc.SpriteAtlas
-        },
-        plantDisAtlas:
-        {
-            default: null,
-            type: cc.SpriteAtlas
-        },
-
-        icon:
+        iconSpecies:
         {
             default: null,
             type: cc.Sprite
         },
 
-        species:
+        lbSpecies:
         {
             default: null,
             type: cc.Label
         },
 
-        culture:
+        lbCulture:
         {
             default: null,
             type: cc.Label
         },
 
-        year:
+        lbYear:
         {
             default: null,
             type: cc.Label
@@ -59,6 +49,22 @@ cc.Class({
             default: null,
             type: cc.Button
         },
+
+        /**
+         * @property {CParcel} parcel: current parcel
+         */
+        parcel:
+        {
+            default: null,
+            visible: false,
+            type: CParcel
+        },
+
+        year:
+        {
+            default: 0,
+            visible: false,
+        },
     },
 
     // use this for initialization
@@ -66,8 +72,18 @@ cc.Class({
         
     },
 
-    init: function(_Year, _Plant, _CanEdit)
+    /**
+     * @method init Initialize the item
+     * @param {CParcel} _Parcel: current parcel
+     * @param {Number} _Year: year
+     * @param {String: species, String: culture} _Data: the culture data
+     * @param {Boolean} _CanEdit: can the culture be edited
+     */
+    initCulture: function(_Parcel, _Year, _Data, _CanEdit)
     {
+        this.parcel = _Parcel;
+        this.year = _Year;
+
         var y;
         if (_Year <0)
         {
@@ -77,44 +93,43 @@ cc.Class({
         {
             y = '+'+_Year.toString();
         }
-        this.year.string = i18n.t('parcelHistoryYear', { 'val': y});
+        this.lbYear.string = i18n.t('parcel_history_year', { 'val': y});
 
-        if (_Plant === undefined)
+        if (_Data === undefined || _Data === null)
         {
             // "Add" mode
-            this.species.string = i18n.t('new').toUpperCase();
-            this.culture.string = '';
-            this.icon.node.active = false;
+            this.lbSpecies.string = i18n.t('new').toUpperCase();
+            this.lbCulture.string = '';
+            this.iconSpecies.node.active = false;
             this.btAdd.node.active = true;
+            this.btEdit.node.active = false;
         }
-        else if (_Plant.species === 'pasture')
+        else if (_Data.species === 'fallow')
         {
             // Fallow
-            this.species.string = i18n.t('fallow');
-            this.culture.string = '';
-            this.icon.node.active = true;
-            this.icon.spriteFrame = this.plantAtlas.getSpriteFrame('ico_prairies');
+            this.lbSpecies.string = i18n.t('fallow').toUpperCase();
+            this.lbCulture.string = '';
+            this.iconSpecies.node.active = true;
+            this.iconSpecies.spriteFrame = RscPreload.getPlantIcon('fallow');
             this.btAdd.node.active = false;
             this.btEdit.node.active = _CanEdit;
         }
         else
         {
-            var icoId = CPlant._getIconId(_Plant.species);
-
             // Existing plant
-            this.species.string = i18n.t('plant_'+icoId).toUpperCase();
+            this.lbSpecies.string = i18n.t('plant_'+_Data.species).toUpperCase();
            
-            if (_Plant.culture !== undefined)
+            if (_Data.culture !== undefined)
             {
-                this.culture.string = i18n.t('culture_'+_Plant.culture).toUpperCase();
+                this.lbCulture.string = i18n.t('culture_'+_Data.culture).toUpperCase();
             }
             else
             {
-                this.culture.string = i18n.t('culture_normal').toUpperCase();
+                this.lbCulture.string = i18n.t('culture_normal').toUpperCase();
             }
 
-            this.icon.node.active = true;
-            this.icon.spriteFrame = this.plantAtlas.getSpriteFrame('ico_'+icoId);
+            this.iconSpecies.node.active = true;
+            this.iconSpecies.spriteFrame = RscPreload.getPlantIcon(_Data.species);
             this.btAdd.node.active = false;
             this.btEdit.node.active = _CanEdit;
         }
@@ -123,16 +138,17 @@ cc.Class({
 
     onBtAdd: function()
     {
-        //cc.error('UIParcelHistoryItem::onBtAdd: TODO');
-        UISpeciesSelPopup.instance.show();
+        UISpeciesSelPopup.instance.show(this.parcel, this.year);
     },
 
     onBtEdit: function()
     {
-        cc.error('UIParcelHistoryItem::onBtEdit: TODO');
+        UISpeciesSelPopup.instance.show(this.parcel, this.year);
     },
     // called every frame, uncomment this function to activate update callback
     // update: function (dt) {
 
     // },
 });
+
+module.exports = UIParcelHistoryItem;

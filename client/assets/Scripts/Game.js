@@ -210,6 +210,10 @@ export default class CGame
                     for (var i=0; i<json.length; i++)
                     {
                         var jsonPlant = json[i];
+                        if (jsonPlant.species == 'pasture')
+                        {
+                            jsonPlant.species = 'fallow';
+                        }
                         var plant = instance.findPlant(jsonPlant.species);
                         if (plant != null)
                         {

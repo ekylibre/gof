@@ -67,10 +67,10 @@ cc.Class({
     },
 
     /**
-     * @method show to open the popup
+     * @method showPopup to open the popup
      * calls this.onShow callback if present
      */
-    show: function()
+    showPopup: function()
     {
         if (this._hidden)
         {
@@ -101,7 +101,7 @@ cc.Class({
      * @param {Boolean} instant true to close the popup immediately (default is false)
      * calls this.onHide callback if present
      */
-    hide: function(instant=false)
+    hidePopup: function(instant)
     {
         if (!this._hidden)
         {
@@ -155,5 +155,24 @@ cc.Class({
                 this.onHide();
             }            
         }
+    },
+
+    /**
+     * @method show to open the popup
+     * calls this.onShow callback if present
+     */
+    show: function()
+    {
+        this.showPopup();
+    },
+
+    /**
+     * @method hide to close the popup
+     * @param {Boolean} instant true to close the popup immediately (default is false)
+     * calls this.onHide callback if present
+     */
+    hide: function(instant=false)
+    {
+        this.hidePopup(instant);
     },
 });

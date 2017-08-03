@@ -60,11 +60,11 @@ var UIOffice = cc.Class({
         var name = game.farm.name;
         if (name === undefined)
         {
-            name = i18n.t('farmDefaultName');
+            name = i18n.t('farm_default_name');
         }
 
         this.farmName.string = name;
-        this.totalSurface.string = i18n.t('surfaceHectare', {'val': game.farm.totalSurface});
+        this.totalSurface.string = i18n.t('surface_hectare', {'val': game.farm.totalSurface});
         this.nbParcels.string = game.farm.parcels.length.toString();
     },
 
