@@ -12,21 +12,6 @@ function ApiClient(_EndPoint) {
     }
 }
 
-function getCookie(cname) {
-    var name = cname + "=";
-    var ca = document.cookie.split(';');
-    for(var i = 0; i < ca.length; i++) {
-        var c = ca[i];
-        while (c.charAt(0) == ' ') {
-            c = c.substring(1);
-        }
-        if (c.indexOf(name) == 0) {
-            return c.substring(name.length, c.length);
-        }
-    }
-    return "";
-}
-
 function params(payload) {
     if(!payload) {
         return '';
@@ -136,6 +121,21 @@ ApiClient.prototype.getPlant = function(id, callback) {
  */
 ApiClient.prototype.getPlants = function(options, callback) {
     var req = get(this, '/plants', options, callback);
+    req.send();
+}
+
+/**
+ * @method getScenarios
+ * @param uid: The name of the scenario or null/undefined if you want to get the list of scenarios
+ * @param callback: the callback triggered with the response or error
+ */
+ApiClient.prototype.getScenarios = function(uid, callback) {
+    var req = null;
+    if(uid) {
+        req = get(this, '/scenarios/' + encodeURIComponent(uid), null, callback);
+    } else {
+        req = get(this, '/scenarios', null, callback);
+    }
     req.send();
 }
 

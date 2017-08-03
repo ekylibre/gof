@@ -244,14 +244,14 @@ Scenario.prototype.getScenarios = function(request, reply) {
         var fPath = folder + uid + '.json';
         fs.readFile(fPath, 'utf8', function(err,data) {
             if(err) {
-                return Boom.notFound();
+                return reply(Boom.notFound());
             }
             return reply(data);
         });
     } else {
         fs.readdir(folder, {encoding: 'utf8'}, function(err, files) {
             if(err) {
-                return Boom.notFound();
+                return reply(Boom.notFound());
             }
             var scenarios = files.filter( f => f.endsWith('.json'));
             return reply(scenarios.map(s => s.replace('.json', '')));
