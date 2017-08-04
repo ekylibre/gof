@@ -4,9 +4,7 @@
 		"name" : "croprotation",
 
 		"end" : {
-			"condition" : {
-				"parcels.each.rotationPrevision.length" : 1
-			}
+			"condition" : "this.farm.parcels.reduce(function(p1, p2){return p1 + p2.rotationPrevision.length}, 0) == this.farm.parcels.length*this._currPhase.maxPrevisions;"
 		},
 
 		"start": {
@@ -168,11 +166,11 @@
 							{"species":"corn", "culture":"normal"}, 
 							{"species":"corn", "culture":"normal"}, 
 							{"species":"wheat", "culture":"normal"}, 
-							{"species":"buckweat", "culture":"normal"}
+							{"species":"buckwheat", "culture":"normal"}
 						],
 
 						"solution": {
-							"perfect": "buckweat",
+							"perfect": "buckwheat",
 							"acceptables": []
 						}
 					}	
