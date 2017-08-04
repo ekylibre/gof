@@ -4,8 +4,19 @@ const UIPopupBase = require('./UIPopupBase');
 const UIEnv = require('./UIEnv');
 const CGame = require('../Game');
 
+var game = new CGame();
+
+/**
+ * UI controller of the "quest" popup
+ * @class
+ * @name UIQuestInfo
+ */
 var UIQuestInfo = cc.Class({
-    extends: cc.UIPopupBase,
+    extends: UIPopupBase,
+    editor:
+    {
+        menu: 'gof/UIQuestInfo'
+    },
 
     properties: {
         /**
@@ -46,18 +57,32 @@ var UIQuestInfo = cc.Class({
     onLoad: function () {
         UIQuestInfo.instance = this;
         UIEnv.questInfo = this;
-
+        this.initPopup();
     },
 
     onShow: function()
     {
-        var game = new CGame();
-
         if (game.phase != null)
         {
-            
-            //var completion = 
+            this.lbDescription.string = game.phaseGetIntroText();
+            this.lbCompletion.string = game.phaseGetCompletionStr();
+
+            this.btValidate.interactable = game.phaseCanFinish();
         }
+    },
+
+    
+    onBtValidate: function()
+    {
+        cc.error('TODO: Score');
+        if (game.phaseCanFinish())
+        {
+        }
+    },
+
+    onBtClose: function()
+    {
+        this.hide();
     },
 
     // called every frame, uncomment this function to activate update callback
@@ -65,3 +90,5 @@ var UIQuestInfo = cc.Class({
 
     // },
 });
+
+module.exports = UIQuestInfo;
