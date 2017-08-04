@@ -14,11 +14,18 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "cli",
-            "program": "${workspaceRoot}/cli/database.js",
+            "name": "populateDB",
+            "program": "${workspaceRoot}/cli/workflow.js",
             "args": [
                 "-c", "mongodb://localhost:27017/gof",  "-p" 
             ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "buildClientLoc",
+            "program": "${workspaceRoot}/cli/workflow.js",
+            "args": ["-l"]
         },
         {
             "type": "chrome",

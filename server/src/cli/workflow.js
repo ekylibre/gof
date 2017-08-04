@@ -152,6 +152,51 @@ function readSheet(auth, sheet, callback) {
     });
 }
 
+function getLanguageCode(s) {
+    switch(s.toLowerCase()) {
+        case 'french':
+            return 'fr';
+    }
+
+    throw new Error('Unknown language identifier ' + s);
+}
+
+function exportClientLocalisation(auth, callback) {
+    var sheets = google.sheets('v4');
+    sheets.spreadsheets.values.get({
+        auth: auth,
+        spreadsheetId: '1__axFDc3iluBsWWFd-OU3BuYxyoeacCqrRu8cqxg8hY',
+        range: 'Strings',
+        valueRenderOption: 'UNFORMATTED_VALUE'
+    }, function(err, response) {
+        if(err) {
+            console.error(err);
+            callback(err);
+            return;
+        }
+        
+        var rows = response.values;
+        var header = rows[0];
+        for(var c=2;c<header.length;++c) {
+            var langCode = getLanguageCode(header[c]);
+            var stream = fs.createWriteStream('../../client/assets/resources/i18n/' + langCode + '.js');
+            stream.write('if (!window.i18n) window.i18n = {};\n');
+            stream.write('if (!window.i18n.languages) window.i18n.languages = {};\n');
+            stream.write('window.i18n.languages.'+langCode+'={\n');
+            for(var l=1;l<rows.length;++l){
+                if(l > 1) {
+                    stream.write(',\n');
+                }
+                var uid = rows[l][1];
+                var txt = rows[l][c];
+                stream.write('\t"' + uid + '":"' + txt + '"');
+            }
+            stream.write('\n};');
+            stream.end();
+        }
+    });
+}
+
 function readSpreadSheet(auth, callback) {
     var sheets = google.sheets('v4');
     sheets.spreadsheets.get({
@@ -180,21 +225,6 @@ function readSpreadSheet(auth, callback) {
         Promise.all(promises).then(function(){
             callback();
         }).catch(callback);
-
-        /*sheets.forEach(function(element, index, array) {
-            readSheet(auth, element, function sheetRead(err) {
-                if(err) {
-                    if(!errors) {
-                        errors = new Array();
-                    }
-                    errors.push(err);
-                }
-
-                if(index >= array.length-1) {
-                    callback(errors);
-                }
-           }); 
-        });*/
     });
 }
 
@@ -282,6 +312,10 @@ function populateComplete(err) {
     process.exit(0);
 }
 
+function exportLocComplete(err) {
+    var a = 0;
+}
+
 function main() {
 
     program
@@ -289,19 +323,18 @@ function main() {
     .usage('[options]')
     .option('-c, --connection <connection>', 'The mongoDB connection string https://docs.mongodb.com/manual/reference/connection-string/')
     .option('-p, --populate', 'Populate the database with initial data')
+    .option('-l, --localisation', 'Build the client localisation file')
     .parse(process.argv);
 
-    var result = null;
-    if(program.connection) {
-        mongoose.Promise = global.Promise;
-        mongoose.connect(program.connection, {useMongoClient: true},
-            (err) => {
-                if(err) {
-                    console.error(err);
-                    return;
-                }
-
-                if(program.populate) {
+    if(program.populate) {
+        if(program.connection) {
+            mongoose.Promise = global.Promise;
+            mongoose.connect(program.connection, {useMongoClient: true},
+                (err) => {
+                    if(err) {
+                        console.error(err);
+                        return;
+                    }
                     // Load client secrets from a local file.
                     fs.readFile('./cli/client_secret.json', function processClientSecrets(err, content) {
                         if (err) {
@@ -314,7 +347,22 @@ function main() {
                             readSpreadSheet(auth, populateComplete);
                         });
                     });
-                }
+            });
+        }
+    }
+
+    if(program.localisation) {
+        // Load client secrets from a local file.
+        fs.readFile('./cli/client_secret.json', function processClientSecrets(err, content) {
+            if (err) {
+                console.error(err);
+                return;
+            }
+            // Authorize a client with the loaded credentials, then call the
+            // Google Sheets API.
+            authorize(JSON.parse(content), function onAuthorized(auth) {
+                exportClientLocalisation(auth, exportLocComplete);
+            });
         });
     }
 }
