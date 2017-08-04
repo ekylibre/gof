@@ -1,5 +1,6 @@
 // UIPopupBase is a base class to make a popup appear from a side
 //
+// Don't forget to call initPopup in your 'onLoad' method
 
 /**
  * Side from where the popup will appear
@@ -40,9 +41,18 @@ cc.Class({
             default: FromMode.LEFT,
             type: FromMode
         },
+
+        isShown:
+        {
+            visible: false,
+            get: function() {
+                return !this._hidden;
+            }
+        }
             
     },
 
+    _hidden: false,
 
     /**
      * @method initPopup must be called from onLoad

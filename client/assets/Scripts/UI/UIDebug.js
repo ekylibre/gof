@@ -79,3 +79,5 @@ var UIDebug = cc.Class({
         }
     },
 });
+
+module.exports = UIDebug;

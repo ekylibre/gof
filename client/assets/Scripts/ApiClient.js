@@ -1,6 +1,9 @@
 
 
 
+/**
+ * @param {String} _EndPoint: API url
+ */
 function ApiClient(_EndPoint) {
     this.endPoint = _EndPoint;
 

@@ -7,12 +7,12 @@
 // TODO: check language provided by the environment
 
 const CGamePhase = require('./GamePhase');
-const CFarm = require('Farm');
-const CPlant = require('Plant');
+const CFarm = require('./Farm');
+const CPlant = require('./Plant');
 const i18n = require('LanguageData');
 const SharedConsts = require('../../../common/constants');
-const ApiClient = require('ApiClient');
-const UIDebug = require('UIDebug');
+const ApiClient = require('./ApiClient');
+const UIDebug = require('./UI/UIDebug');
 
 const DEBUG = true;
 
@@ -47,11 +47,30 @@ let instance = null;
 export default class CGame
 {
     /**
+     * Game state enum
+     * @enum
+     */
+    static State =
+    {
+        INVALID:        -1,
+        READY:          0,
+        PHASE_SELECT:   10,
+        PHASE_LOAD:     11,
+        PHASE_RUN:      12,
+        PHASE_SCORE:    13
+    };
+
+    /**
      * @private
      * @type {CGamePhase}
      */
     _currPhase = null;
 
+    /**
+     * @private
+     * @type {CGame.State}
+     */
+    state = CGame.State.INVALID;
 
     constructor()
     {
@@ -62,7 +81,6 @@ export default class CGame
 
         instance = this;
 
-        this.isReady = false;
         this.isDebug=DEBUG;
         this.constants = SharedConsts;
 
@@ -131,10 +149,16 @@ export default class CGame
             }
 
             this._currPhase = _Phase;
+            this.state = CGame.State.PHASE_RUN;
+            
         }
         else
         {
-            this._currPhase = null;            
+            this._currPhase = null;
+            if (this.state != CGame.State.INVALID)
+            {
+                this.state = CGame.State.READY;
+            }
         }
     }
 
@@ -184,7 +208,7 @@ export default class CGame
         //                 }
         //             }
 
-        //             instance.isReady = true;
+        //             instance.state = CGame.State.READY;
         //         }
         //     }
         // );
@@ -195,26 +219,26 @@ export default class CGame
             return;
         }
 
-        this.api.getScenarios(null,
-            (error, scenarios) => 
-            {
-                if(error) {
-                    UIDebug.log('Error: Failed to get scenarios: '+error);
-                    return;
-                }
+        // this.api.getScenarios(null,
+        //     (error, scenarios) => 
+        //     {
+        //         if(error) {
+        //             UIDebug.log('Error: Failed to get scenarios: '+error);
+        //             return;
+        //         }
 
-                cc.log(scenarios);
+        //         cc.log(scenarios);
 
-                if(scenarios && Array.isArray(scenarios)) {
-                    this.api.getScenarios(scenarios[0], 
-                        (error, scenario) => {
-                            if(error) {
-                                UIDebug.log('Error: Failed to get scenario with uid: ' + scenarios[0] + ' ' + error);
-                            }
-                            cc.log(scenario);
-                        })
-                }
-            });
+        //         if(scenarios && Array.isArray(scenarios)) {
+        //             this.api.getScenarios(scenarios[0], 
+        //                 (error, scenario) => {
+        //                     if(error) {
+        //                         UIDebug.log('Error: Failed to get scenario with uid: ' + scenarios[0] + ' ' + error);
+        //                     }
+        //                     cc.log(scenario);
+        //                 })
+        //         }
+        //     });
 
         this.api.getPlants(null,
             (error, json, c) =>
@@ -250,7 +274,7 @@ export default class CGame
                         }
                     }
 
-                    instance.isReady = true;
+                    instance.state = CGame.State.READY;
                 }
                 else
                 {
@@ -276,6 +300,8 @@ export default class CGame
 
     loadPhase(uid, callback) 
     {
+        this.state = CGame.State.PHASE_LOAD;
+
         this.api.getScenarios(uid, 
             (error, json) => 
             {
@@ -297,6 +323,7 @@ export default class CGame
                 phase.startMonth = json.scenario.start.date.month;
                 phase.startWeek = json.scenario.start.date.week;
                 phase.startYearDiff = json.scenario.start.date.yearDiff;
+                phase.introTextId = json.scenario.start.introTextId;
                 phase.perfectScore = json.scenario.start.score;
                 phase.endCondition = json.scenario.end.condition;
                 phase.completionStr = json.scenario.end.completionStr;

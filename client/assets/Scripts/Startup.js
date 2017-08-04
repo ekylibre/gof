@@ -5,11 +5,10 @@
 const i18n = require('LanguageData');
 const ApiClient = require('./ApiClient');
 
-const CGame = require('Game');
+const CGame = require('./Game');
 const game = new CGame();
 
-const UIDebug = require('UIDebug');
-
+const UIDebug = require('./UI/UIDebug');
 
 cc.Class({
     extends: cc.Component,
@@ -85,7 +84,6 @@ cc.Class({
         cc.log('Logged-in!')
         game.api = client;
         game.pullDatabase();
-        
 
         // client.getPlants({cultureMode: 'normal', __v:0}, 
         //     (error, response, client) => {
