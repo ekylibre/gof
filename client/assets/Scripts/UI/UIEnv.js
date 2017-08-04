@@ -21,9 +21,14 @@ var UIEnv=
     speciesSelect: null,
 
     /**
-     * @property {UIQuestInfo} parcel: UIQuestInfo instance
+     * @property {UIQuestInfo} questInfo: UIQuestInfo instance
      */
     questInfo: null,
+
+    /**
+     * @property {UIQuestMenu} questMenu: UIQuestMenu instance
+     */
+    questMenu: null,
 };
 
 module.exports = UIEnv;

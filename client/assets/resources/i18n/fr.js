@@ -38,5 +38,15 @@ window.i18n.languages.fr={
 	"cost_hectare": "%{val} € / Ha",
 	"sell_title": "Vente",
 	"sell_ton": "%{val} € / Tn",
-	"objective_croprotation_completion": "%{val} parcelle(s) / %{count}"
+	"surface_total_title": "Superficie totale",
+	"buildings_title": "Bâtiments",
+	"stock_capacity_title": "Capacité de stockage",
+	"vehicles_title": "Véhicules",
+	"employees_title": "Employés",
+	"terrain_type_clay": "Argileux",
+	"terrain_type_calcareous": "Calcaire",
+	"objective_title": "Mon objectif",
+	"objective_validate": "Valider mes choix",
+	"objective_croprotation_completion": "%{val} parcelle(s) / %{count}",
+	"objective_croprotation_intro": "Bonjour, et bienvenue dans la ferme Ekyfarm !\nVous êtes le propriétaire de cette ferme virtuelle et vous allez apprendre pas à pas à gérer vos cultures.\nDans ce premier scénario, vous allez prévoir la campagne à venir. C'est la fin de l'été, et vous voulez préparer votre assolement.\nCommencez par découvrir votre exploitation agricole, son historique, puis choisissez les cultures que vous souhaitez implanter sur les différentes parcelles !",
 };

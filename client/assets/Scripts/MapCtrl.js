@@ -178,43 +178,27 @@ var MapCtrl = cc.Class({
         {
             this.addDebugInfo();
         }
-
-        // Start a phase if needed
-        // if (game.phase === null)
-        // {
-        //     game.phase = new CGamePhase();
-        // }
     },
     
     update: function(dt)
     {
-        if (game.phase === null && game.isReady)
+        switch (game.state)
         {
-            /*UIDebug.log('Game is ready - Starting a random phase');
-            game.createRandomPhase();*/
-
-            game.loadPhase('croprotation', 
-            (error) =>
-            {
-                if(error)
+            case CGame.State.READY:
+                game.loadPhase('croprotation', 
+                (error) =>
                 {
-                    UIDebug.log(error);
-                    return;
-                }
-                UIDebug.log('Game is ready - phase: ' + game.phase.uid);
-            });
+                    if(error)
+                    {
+                        UIDebug.log(error);
+                        return;
+                    }
+                    UIDebug.log('Phase started: ' + game.phase.uid);
+                });
+                break;
+
         }
 
-        if(game.phase && game.isReady)
-        {
-            var s = game.phaseGetCompletionStr();
-            
-            if(game.phaseCanFinish())
-            {
-                //TODO: enable a button that will allow the user to validate its choices
-                
-            }
-        }
     },
 
     /**
