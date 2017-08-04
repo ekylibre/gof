@@ -4,16 +4,18 @@
 		"name" : "croprotation",
 
 		"end" : {
-			"condition" : {
-				"parcels.each.rotationPrevision.length" : 3
-			},
-			
-			"score" : {
-				"max" : 1000
-			}
+			"condition" : "this.farm.parcels.reduce(function(p1, p2){return p1 + p2.rotationPrevision.length}, 0) == this.farm.parcels.length*this._currPhase.maxPrevisions;"
 		},
 
 		"start": {
+			"date" : {
+				"month": 7,
+				"week": 3,
+				"yearDiff": 0
+			},
+			
+			"score": 1000,
+
 			"farm" : {
 				"treasury" : 50000,
 				"tiledmapPrefab" : "gof_map01",
@@ -164,11 +166,11 @@
 							{"species":"corn", "culture":"normal"}, 
 							{"species":"corn", "culture":"normal"}, 
 							{"species":"wheat", "culture":"normal"}, 
-							{"species":"buckweat", "culture":"normal"}
+							{"species":"buckwheat", "culture":"normal"}
 						],
 
 						"solution": {
-							"perfect": "buckweat",
+							"perfect": "buckwheat",
 							"acceptables": []
 						}
 					}	
