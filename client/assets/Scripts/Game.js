@@ -269,6 +269,11 @@ export default class CGame
         return eval(this._currPhase.completionStr);
     }
 
+    phaseGetIntroText()
+    {
+        return i18n.t(this._currPhase.introTextId);
+    }
+
     loadPhase(uid, callback) 
     {
         this.api.getScenarios(uid, 

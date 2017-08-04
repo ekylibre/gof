@@ -18,6 +18,7 @@ export default class CGamePhase {
         this.startMoney = 50000;
         this.startMonth = 7;
         this.startWeek = 3;
+        this.introTextId = null;
         this.startYearDiff = 0;
         this.perfectScore = 0;
         this.maxPrevisions = 1;
