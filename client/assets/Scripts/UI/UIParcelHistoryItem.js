@@ -1,9 +1,11 @@
 
-const CParcel = require('Parcel');
-const CPlant = require('Plant');
-const RscPreload = require('RscPreload');
+const CParcel = require('../Parcel');
+const CPlant = require('../Plant');
+const RscPreload = require('../RscPreload');
 
-const UISpeciesSelPopup = require('UISpeciesSelPopup');
+//const UISpeciesSelPopup = require('UISpeciesSelPopup');
+const UIEnv = require('./UIEnv');
+
 const i18n = require('LanguageData');
 
 var UIParcelHistoryItem = cc.Class({
@@ -138,13 +140,9 @@ var UIParcelHistoryItem = cc.Class({
 
     onBtAdd: function()
     {
-        UISpeciesSelPopup.instance.show(this.parcel, this.year);
+        UIEnv.speciesSelect.show(this.parcel, this.year);
     },
 
-    onBtEdit: function()
-    {
-        UISpeciesSelPopup.instance.show(this.parcel, this.year);
-    },
     // called every frame, uncomment this function to activate update callback
     // update: function (dt) {
 

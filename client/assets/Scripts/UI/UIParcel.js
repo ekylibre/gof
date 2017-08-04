@@ -1,9 +1,9 @@
 
-const UIPopupBase = require('UIPopupBase');
-const CParcel = require('Parcel');
-const UISpeciesSelPopup = require('UISpeciesSelPopup');
-const UIParcelHistoryItem = require('UIParcelHistoryItem');
-const CGame = require('Game');
+const UIPopupBase = require('./UIPopupBase');
+const CParcel = require('../Parcel');
+const UIParcelHistoryItem = require('./UIParcelHistoryItem');
+const CGame = require('../Game');
+const UIEnv = require('./UIEnv');
 
 const i18n = require('LanguageData');
 
@@ -99,8 +99,9 @@ var UIParcel = cc.Class({
     // use this for initialization
     onLoad: function () {
         UIParcel.instance = this;
-        UISpeciesSelPopup.uiParcel = this;
         this.initPopup();
+
+        UIEnv.parcel = this;
     },
 
     onShow: function()
@@ -114,6 +115,7 @@ var UIParcel = cc.Class({
         if (this._parcel != null)
         {
             this.parcelName.string = this._parcel.name;
+            this.parcelGroundType.string = i18n.t('terrain_type_clay').toUpperCase();
             
             this.parcelSurface.string = i18n.t(
                 'surface_hectare',
