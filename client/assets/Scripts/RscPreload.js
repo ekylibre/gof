@@ -96,3 +96,5 @@ var RscPreload = cc.Class({
 
     // },
 });
+
+module.exports = RscPreload;

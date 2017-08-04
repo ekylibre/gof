@@ -6,13 +6,13 @@
 // the singleton also initializes i18n
 // TODO: check language provided by the environment
 
-const CGamePhase = require('GamePhase');
-const CFarm = require('Farm');
-const CPlant = require('Plant');
+const CGamePhase = require('./GamePhase');
+const CFarm = require('./Farm');
+const CPlant = require('./Plant');
 const i18n = require('LanguageData');
 const SharedConsts = require('../../../common/constants');
-const ApiClient = require('ApiClient');
-const UIDebug = require('UIDebug');
+const ApiClient = require('./ApiClient');
+const UIDebug = require('./UI/UIDebug');
 
 const DEBUG = true;
 
@@ -78,7 +78,7 @@ export default class CGame
         i18n.init(this.config.LANGUAGE_DEFAULT);
 
         this.farm = new CFarm();
-
+        
         this.plants = [];
     }
 

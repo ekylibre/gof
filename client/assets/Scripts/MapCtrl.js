@@ -12,14 +12,14 @@
 // 
 
 
-const CGame = require('Game');
-const CGamePhase = require('GamePhase');
-const CFarm = require('Farm');
-const CParcel = require('Parcel');
-const UIParcelButton = require('UIParcelButton');
+const CGame = require('./Game');
+const CGamePhase = require('./GamePhase');
+const CFarm = require('./Farm');
+const CParcel = require('./Parcel');
+const UIParcelButton = require('./UI/UIParcelButton');
 
-const UIOffice = require('UIOffice');
-const UIDebug = require('UIDebug');
+const UIOffice = require('./UI/UIOffice');
+const UIDebug = require('./UI/UIDebug');
 
 const i18n = require('LanguageData');
 
