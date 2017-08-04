@@ -7,12 +7,12 @@
 // TODO: check language provided by the environment
 
 const CGamePhase = require('./GamePhase');
-const CFarm = require('./Farm');
-const CPlant = require('./Plant');
+const CFarm = require('Farm');
+const CPlant = require('Plant');
 const i18n = require('LanguageData');
 const SharedConsts = require('../../../common/constants');
-const ApiClient = require('./ApiClient');
-const UIDebug = require('./UI/UIDebug');
+const ApiClient = require('ApiClient');
+const UIDebug = require('UIDebug');
 
 const DEBUG = true;
 
@@ -78,7 +78,7 @@ export default class CGame
         i18n.init(this.config.LANGUAGE_DEFAULT);
 
         this.farm = new CFarm();
-        
+
         this.plants = [];
     }
 
@@ -231,10 +231,10 @@ export default class CGame
                     for (var i=0; i<json.length; i++)
                     {
                         var jsonPlant = json[i];
-                        if (jsonPlant.species == 'pasture')
+                        /*if (jsonPlant.species == 'pasture')
                         {
                             jsonPlant.species = 'fallow';
-                        }
+                        }*/
                         var plant = instance.findPlant(jsonPlant.species);
                         if (plant != null)
                         {
@@ -257,6 +257,76 @@ export default class CGame
                     UIDebug.log('Error: Invalid response for getPlants: '+json);
                 }
             });
+    }
+
+    phaseCanFinish()
+    {
+        return eval(this._currPhase.endCondition) === true ? true : false;
+    }
+
+    phaseGetCompletionStr()
+    {
+        return eval(this._currPhase.completionStr);
+    }
+
+    phaseGetIntroText()
+    {
+        return i18n.t(this._currPhase.introTextId);
+    }
+
+    loadPhase(uid, callback) 
+    {
+        this.api.getScenarios(uid, 
+            (error, json) => 
+            {
+                if(error)
+                {
+                    callback(new Error('Error: Failed to get scenario with uid:'+uid+' '+ error));
+                    return;
+                }
+
+                if(json.scenario.start.farm.parcels.length > this.farm.parcels.length)
+                {
+                    callback(new Error('Error: the scenario '+uid+' contains more parcels than the current gfx farm'));
+                    return;
+                }
+
+                var phase = new CGamePhase();
+                phase.uid = uid;
+                phase.startMoney = json.scenario.start.farm.treasury;
+                phase.startMonth = json.scenario.start.date.month;
+                phase.startWeek = json.scenario.start.date.week;
+                phase.startYearDiff = json.scenario.start.date.yearDiff;
+                phase.perfectScore = json.scenario.start.score;
+                phase.endCondition = json.scenario.end.condition;
+                phase.completionStr = json.scenario.end.completionStr;
+
+                if(uid === 'croprotation')
+                {
+                    phase.maxPrevisions = 1;
+                }
+                else
+                {
+                    phase.maxPrevisions = 0;
+                }
+
+                for(var i=0;i<json.scenario.start.farm.parcels.length;++i)
+                {
+                    var sParcel = json.scenario.start.farm.parcels[i];
+                    //TODO get parcel from name ?
+                    var parcel = this.farm.parcels[i];
+                    parcel.rotationHistory = new Array();
+                    sParcel.data.rotationHistory.forEach(function(element) {
+
+                        parcel.rotationHistory.push(element);
+                    }, this);
+                }
+
+                
+                this.phase = phase;
+                callback(null);
+            }
+        );
     }
 
     createRandomPhase()

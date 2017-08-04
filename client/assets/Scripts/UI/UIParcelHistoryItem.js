@@ -106,7 +106,7 @@ var UIParcelHistoryItem = cc.Class({
             this.btAdd.node.active = true;
             this.btEdit.node.active = false;
         }
-        else if (_Data.species === 'fallow')
+        else if (_Data.species === 'fallow' || _Data.species === 'pasture')
         {
             // Fallow
             this.lbSpecies.string = i18n.t('fallow').toUpperCase();

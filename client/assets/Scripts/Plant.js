@@ -84,7 +84,7 @@ export default class CPlant
 
     get isFallow()
     {
-        return this.species === 'fallow';
+        return this.species === 'fallow' || this.species === 'pasture';
     }
 }
 

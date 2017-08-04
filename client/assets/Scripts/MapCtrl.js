@@ -190,8 +190,30 @@ var MapCtrl = cc.Class({
     {
         if (game.phase === null && game.isReady)
         {
-            UIDebug.log('Game is ready - Starting a random phase');
-            game.createRandomPhase();
+            /*UIDebug.log('Game is ready - Starting a random phase');
+            game.createRandomPhase();*/
+
+            game.loadPhase('croprotation', 
+            (error) =>
+            {
+                if(error)
+                {
+                    UIDebug.log(error);
+                    return;
+                }
+                UIDebug.log('Game is ready - phase: ' + game.phase.uid);
+            });
+        }
+
+        if(game.phase && game.isReady)
+        {
+            var s = game.phaseGetCompletionStr();
+            
+            if(game.phaseCanFinish())
+            {
+                //TODO: enable a button that will allow the user to validate its choices
+                
+            }
         }
     },
 
