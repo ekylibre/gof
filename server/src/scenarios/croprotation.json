@@ -6,7 +6,7 @@
 		"end" : {
 			"condition" : {
 				"parcels.each.rotationPrevision.length" : 1
-			},
+			}
 		},
 
 		"start": {
