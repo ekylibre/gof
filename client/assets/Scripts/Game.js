@@ -206,7 +206,7 @@ export default class CGame
                 cc.log(scenarios);
 
                 if(scenarios && Array.isArray(scenarios)) {
-                    this.api.getScenarios('saucisse', //scenarios[0], 
+                    this.api.getScenarios(scenarios[0], 
                         (error, scenario) => {
                             if(error) {
                                 UIDebug.log('Error: Failed to get scenario with uid: ' + scenarios[0] + ' ' + error);
