@@ -5,15 +5,19 @@
 
 		"end" : {
 			"condition" : {
-				"parcels.each.rotationPrevision.length" : 3
+				"parcels.each.rotationPrevision.length" : 1
 			},
-			
-			"score" : {
-				"max" : 1000
-			}
 		},
 
 		"start": {
+			"date" : {
+				"month": 7,
+				"week": 3,
+				"yearDiff": 0
+			},
+			
+			"score": 1000,
+
 			"farm" : {
 				"treasury" : 50000,
 				"tiledmapPrefab" : "gof_map01",
