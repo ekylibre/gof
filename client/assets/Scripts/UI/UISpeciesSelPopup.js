@@ -1,6 +1,7 @@
-const UIPopupBase = require('UIPopupBase');
-const CGame = require('Game');
-const UISpeciesSelItem = require('UISpeciesSelItem');
+const UIPopupBase = require('./UIPopupBase');
+const CGame = require('../Game');
+const UISpeciesSelItem = require('./UISpeciesSelItem');
+const UIEnv = require('./UIEnv');
 
 /**
  * UI controller for UISpeciesSelPopup popup
@@ -61,17 +62,6 @@ var UISpeciesSelPopup = cc.Class({
          * @static
          */
         instance: null,
-
-        /**
-         * @property {UIParcel} uiParcel: the UIParcel instance, to avoid circular dependencies
-         * @static
-         */
-        uiParcel:
-        {
-            default: null,
-            visible: false,
-        },
-        
     },
 
     // use this for initialization
@@ -81,6 +71,7 @@ var UISpeciesSelPopup = cc.Class({
             cc.error('An instance of UISpeciesSelPopup already exists');
         }
         UISpeciesSelPopup.instance = this;
+        UIEnv.speciesSelect = this;
 
         this.initPopup();
     },
@@ -168,7 +159,7 @@ var UISpeciesSelPopup = cc.Class({
             self._parcel.rotationPrevision.push(_Data);
         }
 
-        UISpeciesSelPopup.uiParcel.updateRotationPrevisions();
+        UIEnv.parcel.updateRotationPrevisions();           
         self.hide();
     },
 

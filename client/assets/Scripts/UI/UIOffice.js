@@ -1,6 +1,7 @@
 
-import UIPopupBase from 'UIPopupBase'
-import CGame from 'Game'
+const UIPopupBase = require('./UIPopupBase');
+const CGame = require('../Game');
+const UIEnv = require('./UIEnv');
 
 const i18n = require('LanguageData');
 
@@ -51,6 +52,7 @@ var UIOffice = cc.Class({
     onLoad: function () {
 
         UIOffice.instance = this;
+        UIEnv.office = this;
         this.initPopup();
     },
 

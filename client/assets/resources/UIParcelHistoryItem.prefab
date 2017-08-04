@@ -904,7 +904,7 @@
       "__id__": 1
     },
     "component": "UIParcelHistoryItem",
-    "handler": "onBtEdit",
+    "handler": "onBtAdd",
     "customEventData": ""
   },
   {

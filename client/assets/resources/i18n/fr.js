@@ -38,4 +38,11 @@ window.i18n.languages.fr={
 	"cost_hectare": "%{val} € / Ha",
 	"sell_title": "Vente",
 	"sell_ton": "%{val} € / Tn",
+	"surface_total_title": "Superficie totale",
+	"buildings_title": "Bâtiments",
+	"stock_capacity_title": "Capacité de stockage",
+	"vehicles_title": "Véhicules",
+	"employees_title": "Employés",
+	"terrain_type_clay": "Argileux",
+	"terrain_type_calcareous": "Calcaire",
 };
