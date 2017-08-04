@@ -4,7 +4,8 @@
 		"name" : "croprotation",
 
 		"end" : {
-			"condition" : "this.farm.parcels.reduce(function(p1, p2){return p1 + p2.rotationPrevision.length}, 0) == this.farm.parcels.length*this._currPhase.maxPrevisions;"
+			"completionStr" : "i18n.t('objective_croprotation_completion', {'val': this.farm.parcels.reduce(function(p1, p2){return p1 + p2.rotationPrevision.length}, 0), 'count': this.farm.parcels.length});",
+			"condition" : "this.farm.parcels.reduce(function(p1, p2){return p1 + p2.rotationPrevision.length}, 0) == this.farm.parcels.length;"
 		},
 
 		"start": {

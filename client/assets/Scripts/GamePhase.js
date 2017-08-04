@@ -21,6 +21,8 @@ export default class CGamePhase {
         this.startYearDiff = 0;
         this.perfectScore = 0;
         this.maxPrevisions = 1;
+        this.endCondition = 'false';
+        this.completionStr = '';
 
         this.parcels =
             [
