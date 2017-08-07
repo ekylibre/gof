@@ -33,7 +33,7 @@ var UIEnv=
     /**
      * @property {UIScore} score: UIScore instance
      */
-    score: null
+    score: null,
 
         /**
      * @property {UIQuestIntro} questintro: UIQuestIntro instance
