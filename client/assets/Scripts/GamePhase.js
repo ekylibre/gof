@@ -19,6 +19,7 @@ export default class CGamePhase {
         this.startMonth = 7;
         this.startWeek = 3;
         this.introTextId = null;
+        this.objctiveTextId = null;
         this.startYearDiff = 0;
         this.perfectScore = 0;
         this.maxPrevisions = 1;

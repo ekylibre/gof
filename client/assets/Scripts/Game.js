@@ -56,9 +56,15 @@ export default class CGame
         READY:          0,
         PHASE_SELECT:   10,
         PHASE_LOAD:     11,
-        PHASE_RUN:      12,
-        PHASE_SCORE:    13
+        PHASE_READY:    12,
+        PHASE_RUN:      13,
+        PHASE_SCORE:    14
     };
+
+    /**
+     * @type {CGame.State}
+     */
+    state = CGame.State.INVALID;
 
     /**
      * @private
@@ -68,9 +74,9 @@ export default class CGame
 
     /**
      * @private
-     * @type {CGame.State}
+     * @type {Number}
      */
-    state = CGame.State.INVALID;
+    _startYear = 0;
 
     constructor()
     {
@@ -97,6 +103,9 @@ export default class CGame
 
         this.farm = new CFarm();
 
+        var now = new Date(Date.now());
+        this.farm.year =now.getFullYear();
+        
         this.plants = [];
     }
 
@@ -149,7 +158,7 @@ export default class CGame
             }
 
             this._currPhase = _Phase;
-            this.state = CGame.State.PHASE_RUN;
+            this.state = CGame.State.PHASE_READY;
             
         }
         else
@@ -162,6 +171,11 @@ export default class CGame
         }
     }
 
+    /**
+     * Returns plant data of specified species
+     * @param {String} _Species
+     * @return {CPlant} the data, or null
+     */
     findPlant(_Species)
     {        
         if (_Species !== undefined && _Species != null)
@@ -171,74 +185,24 @@ export default class CGame
             {
                 return plant;
             }
-            // for (var i=0; i<this.plants.length; i++)
-            // {
-            //     if (this.plants[i].species == _Species)
-            //     {
-            //         return this.plants[i];
-            //     }
-            // }
         }
 
         return null;
     }
 
+    /**
+     * Pull the database (plants, etc.)
+     * Must be called at least once at startup-
+     * CGame state is set to READY once the database is ok
+     * @async
+     */
     pullDatabase()
     {
-        // cc.loader.loadRes('plantsDb',
-        //     function(err, json)
-        //     {
-        //         if (json && Array.isArray(json))
-        //         {
-        //             for (var i=0; i<json.length; i++)
-        //             {
-        //                 var jsonPlant = json[i];
-        //                 var plant = instance.findPlant(jsonPlant.species);
-        //                 if (plant != null)
-        //                 {
-        //                     plant.updatePrices(jsonPlant);
-        //                 }
-        //                 else
-        //                 {
-        //                     plant = new CPlant(jsonPlant);
-        //                     if (plant._valid)
-        //                     {
-        //                         instance.plants.push(plant);
-        //                     }
-        //                 }
-        //             }
-
-        //             instance.state = CGame.State.READY;
-        //         }
-        //     }
-        // );
-
         if (!this.api)
         {
             cc.error('Please setup CGame.api');
             return;
         }
-
-        // this.api.getScenarios(null,
-        //     (error, scenarios) => 
-        //     {
-        //         if(error) {
-        //             UIDebug.log('Error: Failed to get scenarios: '+error);
-        //             return;
-        //         }
-
-        //         cc.log(scenarios);
-
-        //         if(scenarios && Array.isArray(scenarios)) {
-        //             this.api.getScenarios(scenarios[0], 
-        //                 (error, scenario) => {
-        //                     if(error) {
-        //                         UIDebug.log('Error: Failed to get scenario with uid: ' + scenarios[0] + ' ' + error);
-        //                     }
-        //                     cc.log(scenario);
-        //                 })
-        //         }
-        //     });
 
         this.api.getPlants(null,
             (error, json, c) =>
@@ -278,26 +242,77 @@ export default class CGame
                 }
                 else
                 {
+                    //TODO: retry? display error message?
                     UIDebug.log('Error: Invalid response for getPlants: '+json);
                 }
             });
     }
 
+    /**
+     * Starts current phase
+     */
+    phaseStart()
+    {
+        if (this.state == CGame.State.PHASE_READY)
+        {
+            this.state = CGame.State.PHASE_RUN;
+        }
+        else
+        {
+            cc.error('Invalid state to start a phase: '+Object.keys()[this.state+1]);
+        }
+    }
+
+    /**
+     * Ends current phase
+     */
+    phaseFinish()
+    {
+        //TODO
+    }
+
+    /**
+     * true if current phase ending conditions are done
+     * @return {Boolean}
+     */
     phaseCanFinish()
     {
         return eval(this._currPhase.endCondition) === true ? true : false;
     }
 
+    /**
+     * returns the "completion" string of current phase
+     * @return {String}
+     */
     phaseGetCompletionStr()
     {
         return eval(this._currPhase.completionStr);
     }
 
+    /**
+     * returns the "introduction" string of current phase
+     * @return {String}
+     */
     phaseGetIntroText()
     {
         return i18n.t(this._currPhase.introTextId);
     }
 
+    /**
+     * returns the "objective" string of current phase
+     * @return {String}
+     */
+    phaseGetObjectiveText()
+    {
+        return i18n.t(this._currPhase.objectiveTextId);
+    }
+
+    /**
+     * Loads a new phase
+     * @param {String} uid phase unique indentifier
+     * @param {Function} callback function to call when the phase is loaded
+     * @async
+     */
     loadPhase(uid, callback) 
     {
         this.state = CGame.State.PHASE_LOAD;
@@ -324,6 +339,7 @@ export default class CGame
                 phase.startWeek = json.scenario.start.date.week;
                 phase.startYearDiff = json.scenario.start.date.yearDiff;
                 phase.introTextId = json.scenario.start.introTextId;
+                phase.objectiveTextId = json.scenario.start.objectiveTextId;
                 phase.perfectScore = json.scenario.start.score;
                 phase.endCondition = json.scenario.end.condition;
                 phase.completionStr = json.scenario.end.completionStr;
@@ -356,6 +372,7 @@ export default class CGame
         );
     }
 
+    // DEBUG: creates random rotation history
     createRandomPhase()
     {
         this.phase = new CGamePhase();

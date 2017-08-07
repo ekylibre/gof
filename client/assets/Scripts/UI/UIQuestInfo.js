@@ -64,7 +64,7 @@ var UIQuestInfo = cc.Class({
     {
         if (game.phase != null)
         {
-            this.lbDescription.string = game.phaseGetIntroText();
+            this.lbDescription.string = game.phaseGetObjectiveText();
             this.lbCompletion.string = game.phaseGetCompletionStr();
 
             this.btValidate.interactable = game.phaseCanFinish();

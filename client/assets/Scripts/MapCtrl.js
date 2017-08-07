@@ -18,6 +18,7 @@ const CFarm = require('./Farm');
 const CParcel = require('./Parcel');
 const UIParcelButton = require('./UI/UIParcelButton');
 
+const UIEnv = require('./UI/UIEnv');
 const UIOffice = require('./UI/UIOffice');
 const UIDebug = require('./UI/UIDebug');
 
@@ -180,11 +181,16 @@ var MapCtrl = cc.Class({
         }
     },
     
+    /**
+     * Updates the game state
+     */
     update: function(dt)
     {
         switch (game.state)
         {
             case CGame.State.READY:
+                cc.log('State(ready)='+Object.keys(CGame.State));
+                // CGame is ready, lets load a phase
                 game.loadPhase('croprotation', 
                 (error) =>
                 {
@@ -197,8 +203,11 @@ var MapCtrl = cc.Class({
                 });
                 break;
 
+            case CGame.State.PHASE_READY:
+                // The phase is ready to start, display objective
+                UIEnv.questIntro.show();
+                break;
         }
-
     },
 
     /**
