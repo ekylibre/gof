@@ -1,9 +1,14 @@
 
-import CParcel from 'Parcel'
+const CParcel = require('../Parcel');
+const CPlant = require('../Plant');
+const RscPreload = require('../RscPreload');
+
+//const UISpeciesSelPopup = require('UISpeciesSelPopup');
+const UIEnv = require('./UIEnv');
 
 const i18n = require('LanguageData');
 
-cc.Class({
+var UIParcelHistoryItem = cc.Class({
     extends: cc.Component,
     editor:
     {
@@ -11,52 +16,57 @@ cc.Class({
     },
 
     properties: {
-        plantAtlas:
-        {
-            default: null,
-            type: cc.SpriteAtlas
-        },
-        plantDisAtlas:
-        {
-            default: null,
-            type: cc.SpriteAtlas
-        },
-
-        icon:
+        iconSpecies:
         {
             default: null,
             type: cc.Sprite
         },
 
-        species:
+        lbSpecies:
         {
             default: null,
             type: cc.Label
         },
 
-        culture:
+        lbCulture:
         {
             default: null,
             type: cc.Label
+        },
+
+        lbYear:
+        {
+            default: null,
+            type: cc.Label
+        },
+
+        btAdd:
+        {
+            default: null,
+            type: cc.Button
+        },
+
+        btEdit:
+        {
+            default: null,
+            type: cc.Button
+        },
+
+        /**
+         * @property {CParcel} parcel: current parcel
+         */
+        parcel:
+        {
+            default: null,
+            visible: false,
+            type: CParcel
         },
 
         year:
         {
-            default: null,
-            type: cc.Label
+            default: 0,
+            visible: false,
         },
-
-        // foo: {
-        //    default: null,      // The default value will be used only when the component attaching
-        //                           to a node for the first time
-        //    url: cc.Texture2D,  // optional, default is typeof default
-        //    serializable: true, // optional, default is true
-        //    visible: true,      // optional, default is true
-        //    displayName: 'Foo', // optional
-        //    readonly: false,    // optional, default is false
-        // },
-        // ...
-
     },
 
     // use this for initialization
@@ -64,31 +74,73 @@ cc.Class({
         
     },
 
-    init: function(_Year, _Species, _Culture)
+    /**
+     * @method init Initialize the item
+     * @param {CParcel} _Parcel: current parcel
+     * @param {Number} _Year: year
+     * @param {String: species, String: culture} _Data: the culture data
+     * @param {Boolean} _CanEdit: can the culture be edited
+     */
+    initCulture: function(_Parcel, _Year, _Data, _CanEdit)
     {
-        this.year.string = _Year;
+        this.parcel = _Parcel;
+        this.year = _Year;
 
-        if (_Species == 'fallow')
+        var y;
+        if (_Year <0)
         {
-            this.species.string = i18n.t(_Species);
-            this.culture.string = '';
-            this.icon.spriteFrame = this.plantAtlas.getSpriteFrame('ico_prairies');
+            y = _Year.toString();
         }
         else
         {
-            this.species.string = i18n.t('plant_'+_Species).toUpperCase();
-            
-            if (_Culture !== undefined)
+            y = '+'+_Year.toString();
+        }
+        this.lbYear.string = i18n.t('parcel_history_year', { 'val': y});
+
+        if (_Data === undefined || _Data === null)
+        {
+            // "Add" mode
+            this.lbSpecies.string = i18n.t('new').toUpperCase();
+            this.lbCulture.string = '';
+            this.iconSpecies.node.active = false;
+            this.btAdd.node.active = true;
+            this.btEdit.node.active = false;
+        }
+        else if (_Data.species === 'fallow' || _Data.species === 'pasture')
+        {
+            // Fallow
+            this.lbSpecies.string = i18n.t('fallow').toUpperCase();
+            this.lbCulture.string = '';
+            this.iconSpecies.node.active = true;
+            this.iconSpecies.spriteFrame = RscPreload.getPlantIcon('fallow');
+            this.btAdd.node.active = false;
+            this.btEdit.node.active = _CanEdit;
+        }
+        else
+        {
+            // Existing plant
+            this.lbSpecies.string = i18n.t('plant_'+_Data.species).toUpperCase();
+           
+            if (_Data.culture !== undefined)
             {
-                this.culture.string = i18n.t('culture_'+_Culture).toUpperCase();
+                this.lbCulture.string = i18n.t('culture_'+_Data.culture).toUpperCase();
             }
             else
             {
-                this.culture.string = i18n.t('culture_normal').toUpperCase();
+                this.lbCulture.string = i18n.t('culture_normal').toUpperCase();
             }
 
-            this.icon.spriteFrame = this.plantAtlas.getSpriteFrame('ico_'+_Species);
+            this.iconSpecies.node.active = true;
+            this.iconSpecies.spriteFrame = RscPreload.getPlantIcon(_Data.species);
+            this.btAdd.node.active = false;
+            this.btEdit.node.active = _CanEdit;
         }
+    },
+
+
+    onBtAdd: function()
+    {
+        UIEnv.speciesSelect.show(this.parcel, this.year);
     },
 
     // called every frame, uncomment this function to activate update callback
@@ -96,3 +148,5 @@ cc.Class({
 
     // },
 });
+
+module.exports = UIParcelHistoryItem;

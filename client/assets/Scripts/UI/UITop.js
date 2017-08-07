@@ -16,7 +16,7 @@ cc.Class({
         dateLabel:
         {
             default: null,
-            type: cc.Label
+            type: cc.RichText
         },
         moneyLabel:
         {
@@ -47,7 +47,7 @@ cc.Class({
                 'date_value',
                 {
                     'year': farm.year,
-                    'month': (farm.month+1),
+                    'month': (farm.month+1).toLocaleString(game.config.LANGUAGE_DEFAULT, {minimumIntegerDigits: 2}),
                     'week': (farm.week+1)
                 }
             );

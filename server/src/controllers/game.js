@@ -27,7 +27,7 @@ function GameController(server) {
 
 
 GameController.startGame = function(request, reply) {
-    reply.view('views/game');
+    reply.view('views/game', {accessToken: request.state['access_token']});
 }
 
 module.exports = GameController;

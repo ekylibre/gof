@@ -1,10 +1,14 @@
 
-import UIPopupBase from 'UIPopupBase'
-import CParcel from 'Parcel'
-import UIParcelHistoryItem from 'UIParcelHistoryItem'
+const UIPopupBase = require('./UIPopupBase');
+const CParcel = require('../Parcel');
+const UIParcelHistoryItem = require('./UIParcelHistoryItem');
+const CGame = require('../Game');
+const UIEnv = require('./UIEnv');
 
 const i18n = require('LanguageData');
 
+var game = new CGame();
+        
 /**
  * Parcel UI controller
  * @class
@@ -96,6 +100,8 @@ var UIParcel = cc.Class({
     onLoad: function () {
         UIParcel.instance = this;
         this.initPopup();
+
+        UIEnv.parcel = this;
     },
 
     onShow: function()
@@ -109,30 +115,65 @@ var UIParcel = cc.Class({
         if (this._parcel != null)
         {
             this.parcelName.string = this._parcel.name;
+            this.parcelGroundType.string = i18n.t('terrain_type_clay').toUpperCase();
             
-            var y=-this._parcel.rotationHistory.length;
+            this.parcelSurface.string = i18n.t(
+                'surface_hectare',
+                {
+                    'val': this._parcel.surface.toString()
+                });
+            
+            // rotation history
             for (var i=this._parcel.rotationHistory.length-1; i>=0; i--)
             {
                 var hPrefab = cc.instantiate(this.plantPrefab);
                 hPrefab.setParent(histContent);
 
-                var h = hPrefab.getComponent(UIParcelHistoryItem);                
-                h.init(y, this._parcel.rotationHistory[i]);
-                y++;
+                var h = hPrefab.getComponent(UIParcelHistoryItem);
+                h.initCulture(this._parcel, -(i+1), this._parcel.rotationHistory[i], false);
             }
 
-            this.parcelSurface.string = i18n.t(
-                'surfaceHectare',
-                {
-                    'val': this._parcel.surface.toString()
-                });
+            // rotation previsions
+            this.updateRotationPrevisions();
 
-
-
-            this.historyScrollView.scrollToLeft();
+            this.historyScrollView.scrollToRight();
             this.previsionScrollView.scrollToLeft();
         }
 
+    },
+
+    updateRotationPrevisions: function()
+    {
+        var prevContent = this.previsionScrollView.content;
+        prevContent.removeAllChildren(true);
+
+        // previsions
+        for (var i=0; i<this._parcel.rotationPrevision.length; i++)
+        {
+            var hPrefab = cc.instantiate(this.plantPrefab);
+            hPrefab.setParent(prevContent);
+
+            var h = hPrefab.getComponent(UIParcelHistoryItem);                
+            h.initCulture(this._parcel, i, this._parcel.rotationPrevision[i], true);
+        }
+
+        this.addEmptyPrevision();
+        
+    },
+
+    addEmptyPrevision: function()
+    {
+        if (game.phase != null)
+        {
+            if (this._parcel.rotationPrevision.length < game.phase.maxPrevisions)
+            {
+                var hPrefab = cc.instantiate(this.plantPrefab);
+                hPrefab.setParent(this.previsionScrollView.content);
+
+                var h = hPrefab.getComponent(UIParcelHistoryItem);                
+                h.initCulture(this._parcel, this._parcel.rotationPrevision.length);
+            }
+        }
     },
 
     // called every frame, uncomment this function to activate update callback
@@ -145,3 +186,5 @@ var UIParcel = cc.Class({
         this.hide();
     },
 });
+
+module.exports = UIParcel;
