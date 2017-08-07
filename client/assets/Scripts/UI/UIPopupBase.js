@@ -19,7 +19,7 @@ var FromMode = cc.Enum({
     NONE:4,
 });
 
-cc.Class({
+var UIPopupBase = cc.Class({
     extends: cc.Component,
 
     properties:
@@ -50,6 +50,15 @@ cc.Class({
             }
         }
             
+    },
+
+    statics:
+    {
+        /**
+         * @property {Array:UIPopupBase} Array of currently open popups
+         * @static
+         */
+        popups: []
     },
 
     _hidden: false,
@@ -97,6 +106,13 @@ cc.Class({
             }
 
             this._hidden = false;
+
+            while(UIPopupBase.popups.length)
+            {
+                UIPopupBase.popups[0].hide();
+            }
+
+            UIPopupBase.popups.push(this);
 
             if (this.onShow !== undefined)
             {
@@ -159,6 +175,11 @@ cc.Class({
             }
 
             this._hidden = true;
+            var index = UIPopupBase.popups.indexOf(this);
+            if(index > -1)
+            {
+                UIPopupBase.popups.splice(index, 1);
+            }
 
             if (this.onHide !== undefined)
             {
