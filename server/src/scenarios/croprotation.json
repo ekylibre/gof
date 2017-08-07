@@ -16,6 +16,7 @@
 			},
 			
 			"introTextId": "objective_croprotation_intro",
+			"objectiveTextId": "objective_croprotation_desc",
 			"score": 1000,
 
 			"farm" : {
