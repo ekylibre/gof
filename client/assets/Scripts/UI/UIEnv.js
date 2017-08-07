@@ -29,6 +29,11 @@ var UIEnv=
      * @property {UIQuestMenu} questMenu: UIQuestMenu instance
      */
     questMenu: null,
+
+    /**
+     * @property {UIScore} score: UIScore instance
+     */
+    score: null
 };
 
 module.exports = UIEnv;

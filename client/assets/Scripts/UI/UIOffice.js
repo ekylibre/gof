@@ -56,6 +56,13 @@ var UIOffice = cc.Class({
         this.initPopup();
     },
 
+    show: function() 
+    {
+        UIEnv.parcel.hide();
+        UIEnv.speciesSelect.hide();
+        this.showPopup();
+    },
+
     onShow: function()
     {
         var game = new CGame();

@@ -52,15 +52,6 @@ var UIPopupBase = cc.Class({
             
     },
 
-    statics:
-    {
-        /**
-         * @property {Array:UIPopupBase} Array of currently open popups
-         * @static
-         */
-        popups: []
-    },
-
     _hidden: false,
 
     /**
@@ -106,13 +97,6 @@ var UIPopupBase = cc.Class({
             }
 
             this._hidden = false;
-
-            while(UIPopupBase.popups.length)
-            {
-                UIPopupBase.popups[0].hide();
-            }
-
-            UIPopupBase.popups.push(this);
 
             if (this.onShow !== undefined)
             {
@@ -175,11 +159,6 @@ var UIPopupBase = cc.Class({
             }
 
             this._hidden = true;
-            var index = UIPopupBase.popups.indexOf(this);
-            if(index > -1)
-            {
-                UIPopupBase.popups.splice(index, 1);
-            }
 
             if (this.onHide !== undefined)
             {
