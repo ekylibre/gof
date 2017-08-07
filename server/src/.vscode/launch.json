@@ -12,6 +12,22 @@
             }
         },
         {
+            "type": "node",
+            "request": "launch",
+            "name": "populateDB",
+            "program": "${workspaceRoot}/cli/workflow.js",
+            "args": [
+                "-c", "mongodb://localhost:27017/gof",  "-p" 
+            ]
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "buildClientLoc",
+            "program": "${workspaceRoot}/cli/workflow.js",
+            "args": ["-l"]
+        },
+        {
             "type": "chrome",
             "request": "launch",
             "name": "client",

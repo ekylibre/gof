@@ -1,6 +1,6 @@
 
-import CParcel from 'Parcel'
-import CGamePhase from 'GamePhase'
+const CParcel = require('Parcel');
+const CGamePhase = require('GamePhase');
 
 /**
  * The farm
@@ -102,14 +102,19 @@ export default class CFarm
     {
         if (_UID !== undefined)
         {
-        for (var i=0; i<this.parcels.length; i++)
+            var parcel = this.parcels.find( (p)=> {return p.uid == _UID;} );
+            if (parcel !== undefined)
             {
-                var parcel = this.parcels[i];
-                if (parcel.uid === _UID)
-                {
-                    return parcel;
-                }
+                return parcel;
             }
+            // for (var i=0; i<this.parcels.length; i++)
+            // {
+            //     var parcel = this.parcels[i];
+            //     if (parcel.uid === _UID)
+            //     {
+            //         return parcel;
+            //     }
+            // }
         }
 
         return null;

@@ -12,18 +12,19 @@
 // 
 
 
-import CGame from 'Game';
-import CGamePhase from 'GamePhase';
-import CFarm from 'Farm';
-import CParcel from 'Parcel';
-import UIParcelButton from 'UIParcelButton'
+const CGame = require('./Game');
+const CGamePhase = require('./GamePhase');
+const CFarm = require('./Farm');
+const CParcel = require('./Parcel');
+const UIParcelButton = require('./UI/UIParcelButton');
+
+const UIOffice = require('./UI/UIOffice');
+const UIDebug = require('./UI/UIDebug');
+
+const i18n = require('LanguageData');
 
 const game = new CGame();
 
-const UIOffice = require('UIOffice');
-const UIDebug = require('UIDebug');
-
-const i18n = require('LanguageData');
 
 /**
  * Manages the map scrolling, UI, etc...
@@ -177,14 +178,29 @@ var MapCtrl = cc.Class({
         {
             this.addDebugInfo();
         }
-
-        // Start a phase if needed
-        if (game.phase === null)
-        {
-            game.phase = new CGamePhase();
-        }
     },
     
+    update: function(dt)
+    {
+        switch (game.state)
+        {
+            case CGame.State.READY:
+                game.loadPhase('croprotation', 
+                (error) =>
+                {
+                    if(error)
+                    {
+                        UIDebug.log(error);
+                        return;
+                    }
+                    UIDebug.log('Phase started: ' + game.phase.uid);
+                });
+                break;
+
+        }
+
+    },
+
     /**
      * Initializes touch events
      * @method

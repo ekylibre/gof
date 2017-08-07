@@ -1,7 +1,3 @@
-import CGame from 'Game';
-
-const game = new CGame();
-
 var UIDebug = cc.Class({
     extends: cc.Component,
     editor:
@@ -34,17 +30,6 @@ var UIDebug = cc.Class({
         _log: [],
         log: function(line)
         {
-            // var l = UIDebug._log.length;
-            // if (l == 5)
-            // {
-            //     l = 4;
-            // }
-            // for (var i=l; i>0; i--)
-            // {
-            //     UIDebug._log[i] = UIDebug._log[i-1];
-            // }
-
-            // UIDebug._log[0]=line;
             UIDebug._log.unshift(line);
             if (UIDebug._log.length>5)
             {
@@ -63,16 +48,8 @@ var UIDebug = cc.Class({
         }
         UIDebug.instance = this;
 
-        if (game.isDebug)
-        {
-            UIDebug.log('isDebug='+game.isDebug+'\n'+game.config.SERVICES_URL);
-        }
-        else
-        {
-            this.debugLabel.string = '';
-            this.touchLabel.string = '';
-
-        }
+        this.debugLabel.string = '';
+        this.touchLabel.string = '';
     },
 
     start: function(err)
@@ -81,28 +58,26 @@ var UIDebug = cc.Class({
 
     update: function(dt)
     {
-        if (game.isDebug)
+        if (this.debugLabel != null)
         {
-            if (this.debugLabel != null)
+            this.debugLabel.string = '';
+            for (var i=0; i<UIDebug._log.length; i++)
             {
-                this.debugLabel.string = '';
-                for (var i=0; i<UIDebug._log.length; i++)
-                {
-                    this.debugLabel.string += UIDebug._log[i] + '\n';
-                }
+                this.debugLabel.string += UIDebug._log[i] + '\n';
             }
+        }
 
-            if (this.touchLabel != null)
+        if (this.touchLabel != null)
+        {
+            this.touchLabel.string = UIDebug.touchLog;
+
+            if (this.mapScrollView != null)
             {
-                this.touchLabel.string = UIDebug.touchLog;
-
-                if (this.mapScrollView != null)
-                {
-                    this.touchLabel.string += ' scrollOffset='+this.mapScrollView.getScrollOffset();
-                    this.touchLabel.string += ' zoom='+this.mapScrollView.content.scaleX;
-                }
+                this.touchLabel.string += ' scrollOffset='+this.mapScrollView.getScrollOffset();
+                this.touchLabel.string += ' zoom='+this.mapScrollView.content.scaleX;
             }
-
         }
     },
 });
+
+module.exports = UIDebug;

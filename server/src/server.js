@@ -14,7 +14,7 @@ const AuthController = require('./controllers/auth');
 const PlantsController = require('./controllers/plants');
 const GameController = require('./controllers/game');
 const Api = require('./api/api');
-const DbManager = require('./dbmanager');
+//const DbManager = require('./dbmanager');
 
 function register_plugins(server)
 {
@@ -135,12 +135,11 @@ function main() {
     var dbUrl = Config.get('Database.connectionUrl');
     var dbOptions = Config.get('Database.options');
 
+    Mongoose.Promise = global.Promise;
+    
     Mongoose.connect(dbUrl, dbOptions, 
         (error) => {
             Hoek.assert(!error, error);
-
-            DbManager.initiliaze(true);
-
             var options = Config.get('Server.connectionOptions');
             server.connection(options);
             register_plugins(server);

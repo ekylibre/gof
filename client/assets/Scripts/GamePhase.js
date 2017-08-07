@@ -9,50 +9,39 @@
  * @property {number} startWeek: starting week in month
  * @property {number} startYearDiff: interval of year if not 1st phase
  * @property {number} perfectScore: score received for doing a perfect phase
+ * @property {number} maxPrevisions: maximum number of rotation previsions per parcel
  * @property {array}  parcels: parcels setup data
  */
-export default class CGamePhase
-{
-    constructor()
-    {
-        this.uid='assolement';
-        this.startMoney=50000;
+export default class CGamePhase {
+    constructor() {
+        this.uid = 'assolement';
+        this.startMoney = 50000;
         this.startMonth = 7;
         this.startWeek = 3;
+        this.introTextId = null;
         this.startYearDiff = 0;
-        this.perfectScore=0;
+        this.perfectScore = 0;
+        this.maxPrevisions = 1;
+        this.endCondition = 'false';
+        this.completionStr = '';
 
         this.parcels =
-        [
-            {
-                uid: 'parcel1',
-                history: ['ble', 'ble', 'orge', 'fallow', 'fallow']
-            },
-            {
-                uid: 'parcel2',
-                history: ['pois', 'avoine', 'ble', 'ble', 'fallow']
-            },
-            {
-                uid: 'parcel3',
-                history: ['lupin', 'lupin', 'colza', 'colza', 'fallow']
-            },
-            {
-                uid: 'parcel4',
-                history: ['orge', 'sarrasin', 'seigle', 'sarrasin', 'fallow']
-            },
-            {
-                uid: 'parcel5',
-                history: ['tournesol', 'mais', 'fallow', 'avoine', 'lupin']
-            },
-            {
-                uid: 'parcel6',
-                history: ['fallow', 'fallow', 'carotte', 'pois', 'fallow']
-            },
-            {
-                uid: 'parcel7',
-                history: ['lupin', 'lupin', 'triticale', 'fallow', 'ble']
-            },
-        ];
+            [
+                {
+                    uid: 'parcel1',
+                    history:
+                    [
+                        {
+                            species: 'ble',
+                            culture: 'bio'
+                        },
+                        {
+                            species: 'orge',
+                            culture: 'normal'
+                        },
+                    ]
+                },
+            ];
 
     }
 }

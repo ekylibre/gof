@@ -10,7 +10,7 @@
   },
   {
     "__type__": "cc.Node",
-    "_name": "UIQuest",
+    "_name": "UIQuestMenu",
     "_objFlags": 0,
     "_parent": null,
     "_children": [
@@ -265,7 +265,7 @@
       "__id__": 1
     },
     "asset": {
-      "__id__": 0
+      "__uuid__": "2b181de1-c6e5-46ae-bea4-7e2dd78b18fe"
     },
     "fileId": "51a008O6udJzIq7rHKBxX9k",
     "sync": false
@@ -302,7 +302,7 @@
       "__id__": 1
     },
     "asset": {
-      "__id__": 0
+      "__uuid__": "2b181de1-c6e5-46ae-bea4-7e2dd78b18fe"
     },
     "fileId": "93e22cLbtlPFbkT/JIdstTd",
     "sync": false
@@ -313,7 +313,7 @@
       "__id__": 1
     },
     "asset": {
-      "__id__": 0
+      "__uuid__": "2b181de1-c6e5-46ae-bea4-7e2dd78b18fe"
     },
     "fileId": "8881eG9PJ1LdoH+ODUE7ccQ",
     "sync": false

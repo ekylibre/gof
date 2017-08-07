@@ -1,6 +1,7 @@
 
-import UIPopupBase from 'UIPopupBase'
-import CGame from 'Game'
+const UIPopupBase = require('./UIPopupBase');
+const CGame = require('../Game');
+const UIEnv = require('./UIEnv');
 
 const i18n = require('LanguageData');
 
@@ -51,6 +52,7 @@ var UIOffice = cc.Class({
     onLoad: function () {
 
         UIOffice.instance = this;
+        UIEnv.office = this;
         this.initPopup();
     },
 
@@ -60,11 +62,11 @@ var UIOffice = cc.Class({
         var name = game.farm.name;
         if (name === undefined)
         {
-            name = i18n.t('farmDefaultName');
+            name = i18n.t('farm_default_name');
         }
 
         this.farmName.string = name;
-        this.totalSurface.string = i18n.t('surfaceHectare', {'val': game.farm.totalSurface});
+        this.totalSurface.string = i18n.t('surface_hectare', {'val': game.farm.totalSurface});
         this.nbParcels.string = game.farm.parcels.length.toString();
     },
 

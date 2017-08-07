@@ -7,7 +7,7 @@ const Equipment = require('./models/equipment');
 const Additive = require('./models/additive')
 
 const Constants = require('../../common/constants');
-
+/*
 function DbManager() {
 }
 
@@ -202,4 +202,4 @@ function dbWriteArrayOfModels(elements) {
     }, this);
 }
 
-module.exports = new DbManager();
+module.exports = new DbManager();*/
