@@ -31,6 +31,11 @@ var UIEnv=
     questMenu: null,
 
     /**
+     * @property {UIScore} score: UIScore instance
+     */
+    score: null,
+
+        /**
      * @property {UIQuestIntro} questintro: UIQuestIntro instance
      */
     questIntro: null,
