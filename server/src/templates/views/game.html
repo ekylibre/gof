@@ -1,15 +1,40 @@
-<div class="row" style="text-align: center;">
-  <div id="GameDiv" style="width:1280px; height: 720px;">
-    <canvas id="GameCanvas" width="1280" height="720" style="box-shadow: 0 0 16px #000;" gof-access-token="{{accessToken}}"></canvas>
-    <div id="splash">
-      <div class="progress-bar stripes">
-        <span style="width: 0%"></span>
-      </div>
+<div id="GameDiv" style="width:1280px; height:720px; margin: auto;">
+  <canvas id="GameCanvas" width="1280" height="720" style="width: 1280px; height:720px;" gof-access-token="{{accessToken}}"></canvas>
+  <div id="splash">
+    <div class="progress-bar stripes">
+      <span style="width: 0%"></span>
     </div>
   </div>
-</div>
-<script src="src/settings.js" charset="utf-8"></script>
-<script src="main.js" charset="utf-8"></script>
+  <script src="src/settings.js" charset="utf-8"></script>
+  <script src="main.js" charset="utf-8"></script>
+  <script>
+    function adjustCanvasSize(event) {
+      var canvas = document.getElementById("GameCanvas");
+      var gameDiv = document.getElementById("GameDiv");
+      if(canvas && gameDiv) {
+        var aspectRatio = 16 / 9;
+        var p = canvas.parentElement;
 
-  
+        var preferWidth = window.innerWidth;
+        
+
+        var newWidth = Math.round(preferWidth * 0.66666);
+
+        console.log(newWidth + " => " + preferWidth);
+        var newHeight = Math.round(newWidth / aspectRatio);
+        p.style.width = newWidth + "px";
+        p.style.height = newHeight + "px";
+        
+        gameDiv.style.width = p.style.width;
+        gameDiv.style.height = p.style.height;
+        
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+        gameDiv.style.margin = "auto";
+      }
+    }
+
+    window.addEventListener('resize', adjustCanvasSize, false);
+    window.addEventListener('orientationchange', adjustCanvasSize, false);
+  </script>
 </div>

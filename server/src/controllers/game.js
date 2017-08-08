@@ -25,9 +25,16 @@ function GameController(server) {
     });
 }
 
-
 GameController.startGame = function(request, reply) {
-    reply.view('views/game', {accessToken: request.state['access_token']});
+    if(request.query.fullscreen === "true") {
+        reply.view('views/gamefs', 
+            {accessToken: request.state['access_token']}, 
+            {layout:false});
+    } else {
+        reply.view('views/game', 
+            {accessToken: request.state['access_token']},
+            {layoutPath: './templates/layout/game'});
+    }
 }
 
 module.exports = GameController;

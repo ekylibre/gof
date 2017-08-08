@@ -172,7 +172,7 @@
     "_scaleY": 0.55,
     "_position": {
       "__type__": "cc.Vec2",
-      "x": -1.8,
+      "x": -3,
       "y": -1.2
     },
     "_skewX": 0,
@@ -199,7 +199,7 @@
     },
     "_srcBlendFactor": 770,
     "_dstBlendFactor": 1,
-    "playOnLoad": true,
+    "playOnLoad": false,
     "_autoRemoveOnFinish": false,
     "_totalParticles": 5,
     "_duration": -1,
@@ -611,7 +611,15 @@
     "_enabled": true,
     "btOpen": {
       "__id__": 8
-    }
+    },
+    "highlight": {
+      "__id__": 11
+    },
+    "_hlAnim": null,
+    "fxParticles": {
+      "__id__": 4
+    },
+    "_isAnimated": false
   },
   {
     "__type__": "cc.PrefabInfo",

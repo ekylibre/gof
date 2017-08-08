@@ -525,6 +525,9 @@ var MapCtrl = cc.Class({
                 bt.parcel = parcel;
                 btPrefab.setParent(this.mapUILayer);
                 btPrefab.setPosition(this.tileToUI(parcel.rect.center));
+
+                //DEBUG
+                //parcel.rotationPrevision.push({species: 'carrot', culture: 'normal'});
             }                
         }
         else
