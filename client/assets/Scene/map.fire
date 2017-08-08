@@ -6670,7 +6670,7 @@
       }
     ],
     "_tag": -1,
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 432
@@ -17069,7 +17069,7 @@
     "_position": {
       "__type__": "cc.Vec2",
       "x": -3,
-      "y": 269
+      "y": 273
     },
     "_skewX": 0,
     "_skewY": 0,
@@ -18327,7 +18327,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 88.68,
+      "width": 223.38,
       "height": 40
     },
     "_rotationX": 0,
@@ -18362,7 +18362,7 @@
     "_N$file": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
-    "_N$string": "CAPACITÉ",
+    "_N$string": "CAPACITÉ DE STOCKAGE",
     "_N$horizontalAlign": 0,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
@@ -18707,7 +18707,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 101.67,
+      "width": 103.01,
       "height": 40
     },
     "_rotationX": 0,
@@ -18742,7 +18742,7 @@
     "_N$file": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
-    "_N$string": "BATIMENTS",
+    "_N$string": "BÂTIMENTS",
     "_N$horizontalAlign": 0,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
@@ -21818,7 +21818,7 @@
     "_scaleY": 0.55,
     "_position": {
       "__type__": "cc.Vec2",
-      "x": -1.8,
+      "x": -3,
       "y": -1.2
     },
     "_skewX": 0,
@@ -21845,7 +21845,7 @@
     },
     "_srcBlendFactor": 770,
     "_dstBlendFactor": 1,
-    "playOnLoad": true,
+    "playOnLoad": false,
     "_autoRemoveOnFinish": false,
     "_totalParticles": 5,
     "_duration": -1,
@@ -22257,7 +22257,15 @@
     "_enabled": true,
     "btOpen": {
       "__id__": 638
-    }
+    },
+    "highlight": {
+      "__id__": 641
+    },
+    "_hlAnim": null,
+    "fxParticles": {
+      "__id__": 634
+    },
+    "_isAnimated": false
   },
   {
     "__type__": "cc.PrefabInfo",
@@ -22796,7 +22804,7 @@
     "_position": {
       "__type__": "cc.Vec2",
       "x": -3,
-      "y": 269
+      "y": 273
     },
     "_skewX": 0,
     "_skewY": 0,
@@ -24306,7 +24314,7 @@
     "_position": {
       "__type__": "cc.Vec2",
       "x": -3,
-      "y": 269
+      "y": 273
     },
     "_skewX": 0,
     "_skewY": 0,
