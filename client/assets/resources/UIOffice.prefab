@@ -125,7 +125,7 @@
       }
     ],
     "_tag": -1,
-    "_active": true,
+    "_active": false,
     "_components": [
       {
         "__id__": 116
@@ -562,7 +562,7 @@
     "_position": {
       "__type__": "cc.Vec2",
       "x": -3,
-      "y": 269
+      "y": 273
     },
     "_skewX": 0,
     "_skewY": 0,
@@ -1342,8 +1342,8 @@
     "_cascadeOpacityEnabled": true,
     "_anchorPoint": {
       "__type__": "cc.Vec2",
-      "x": 0.4999999999999996,
-      "y": 0.5212553972046978
+      "x": 0,
+      "y": 0.5
     },
     "_contentSize": {
       "__type__": "cc.Size",
@@ -1356,8 +1356,8 @@
     "_scaleY": 1,
     "_position": {
       "__type__": "cc.Vec2",
-      "x": -100.6,
-      "y": 17.7
+      "x": -154,
+      "y": 18
     },
     "_skewX": 0,
     "_skewY": 0,
@@ -1815,12 +1815,12 @@
     "_cascadeOpacityEnabled": true,
     "_anchorPoint": {
       "__type__": "cc.Vec2",
-      "x": 0.4999999999999996,
-      "y": 0.5212553972046978
+      "x": 0,
+      "y": 0.5
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 88.68,
+      "width": 223.38,
       "height": 40
     },
     "_rotationX": 0,
@@ -1829,8 +1829,8 @@
     "_scaleY": 1,
     "_position": {
       "__type__": "cc.Vec2",
-      "x": -100.6,
-      "y": 17.7
+      "x": -154,
+      "y": 18
     },
     "_skewX": 0,
     "_skewY": 0,
@@ -1855,7 +1855,7 @@
     "_N$file": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
-    "_N$string": "CAPACITÉ",
+    "_N$string": "CAPACITÉ DE STOCKAGE",
     "_N$horizontalAlign": 0,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
@@ -2195,12 +2195,12 @@
     "_cascadeOpacityEnabled": true,
     "_anchorPoint": {
       "__type__": "cc.Vec2",
-      "x": 0.4999999999999996,
-      "y": 0.5212553972046978
+      "x": 0,
+      "y": 0.5
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 101.67,
+      "width": 103.01,
       "height": 40
     },
     "_rotationX": 0,
@@ -2209,8 +2209,8 @@
     "_scaleY": 1,
     "_position": {
       "__type__": "cc.Vec2",
-      "x": -100.6,
-      "y": 17.7
+      "x": -154,
+      "y": 18
     },
     "_skewX": 0,
     "_skewY": 0,
@@ -2235,7 +2235,7 @@
     "_N$file": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
-    "_N$string": "BATIMENTS",
+    "_N$string": "BÂTIMENTS",
     "_N$horizontalAlign": 0,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
@@ -2575,8 +2575,8 @@
     "_cascadeOpacityEnabled": true,
     "_anchorPoint": {
       "__type__": "cc.Vec2",
-      "x": 0.4999999999999996,
-      "y": 0.5212553972046978
+      "x": 0,
+      "y": 0.5
     },
     "_contentSize": {
       "__type__": "cc.Size",
@@ -2589,8 +2589,8 @@
     "_scaleY": 1,
     "_position": {
       "__type__": "cc.Vec2",
-      "x": -100.6,
-      "y": 17.7
+      "x": -154,
+      "y": 18
     },
     "_skewX": 0,
     "_skewY": 0,
@@ -2955,8 +2955,8 @@
     "_cascadeOpacityEnabled": true,
     "_anchorPoint": {
       "__type__": "cc.Vec2",
-      "x": 0.4999999999999996,
-      "y": 0.5212553972046978
+      "x": 0,
+      "y": 0.5
     },
     "_contentSize": {
       "__type__": "cc.Size",
@@ -2969,7 +2969,7 @@
     "_scaleY": 1,
     "_position": {
       "__type__": "cc.Vec2",
-      "x": -98.7,
+      "x": -154,
       "y": 18
     },
     "_skewX": 0,
@@ -3428,8 +3428,8 @@
     "_cascadeOpacityEnabled": true,
     "_anchorPoint": {
       "__type__": "cc.Vec2",
-      "x": 0.4999999999999996,
-      "y": 0.5212553972046978
+      "x": 0,
+      "y": 0.5
     },
     "_contentSize": {
       "__type__": "cc.Size",
@@ -3442,7 +3442,7 @@
     "_scaleY": 1,
     "_position": {
       "__type__": "cc.Vec2",
-      "x": -63,
+      "x": -154,
       "y": 18
     },
     "_skewX": 0,
