@@ -96,7 +96,7 @@ cc.Class({
 
     whenLoggedIn: function(client)
     {
-        cc.log('Logged-in!')
+        //cc.log('Logged-in!')
         game.api = client;
         game.pullDatabase();
 

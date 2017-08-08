@@ -9,6 +9,7 @@ const CGamePhase = require('GamePhase');
  * @property {String}               name: farm name
  * @property {Array:cc.CParcel}     parcels: array of parcels
  * @property {number}               totalSurface: total surface of parcels (hectare)
+ * @property {number}               surfacePerTile: surface per tile (for parcels)
  * @property {Array:strings}        possibleSpecies: list of possible plant species
  * @property {number}               money: current money
  * @property {number}               year: current year delta [0, ?]
@@ -34,6 +35,8 @@ export default class CFarm
         {
             this.totalSurface = _Surface;
         }
+
+        this.surfacePerTile = 1;
 
         this.parcels = [];
         this.possibleSpecies = [];
