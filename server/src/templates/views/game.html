@@ -1,15 +1,100 @@
-<div class="row" style="text-align: center;">
-  <div id="GameDiv" style="width:1280px; height: 720px;">
-    <canvas id="GameCanvas" width="1280" height="720" style="box-shadow: 0 0 16px #000;" gof-access-token="{{accessToken}}"></canvas>
-    <div id="splash">
-      <div class="progress-bar stripes">
-        <span style="width: 0%"></span>
-      </div>
+<style type="text/css">
+  #GameDiv:-moz-full-screen {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    margin: auto;
+    width: 100%;
+    height: 100%;
+    background-color: white;
+  }
+</style>
+
+<div id="GameDiv" style="width:1280px; height:720px; margin: auto;">
+  <canvas id="GameCanvas" width="1280" height="720" style="width: 1280px; height:720px;" gof-access-token="{{accessToken}}"></canvas>
+  <div id="splash">
+    <div class="progress-bar stripes">
+      <span style="width: 0%"></span>
     </div>
   </div>
-</div>
-<script src="src/settings.js" charset="utf-8"></script>
-<script src="main.js" charset="utf-8"></script>
+  <script src="src/settings.js" charset="utf-8"></script>
+  <script src="main.js" charset="utf-8"></script>
+  <script>
+    function doResize(canvas, gameDiv, preferWidth, fs) {
+      var aspectRatio = 16 / 9;
+      var newWidth = Math.round(preferWidth * 0.66666);
+      if(fs) {
+        newWidth = preferWidth;
+      }
 
-  
+      var newHeight = Math.round(newWidth / aspectRatio);
+
+      var p = canvas.parentElement;
+      p.style.width = newWidth + "px";
+      p.style.height = newHeight + "px";
+      
+      gameDiv.style.width = p.style.width;
+      gameDiv.style.height = p.style.height;
+      
+      canvas.width = newWidth;
+      canvas.height = newHeight;
+      gameDiv.style.margin = "auto";
+    }
+
+    function adjustCanvasSize(event) {
+      var canvas = document.getElementById("GameCanvas");
+      var gameDiv = document.getElementById("GameDiv");
+      if(canvas && gameDiv) {
+        var preferWidth = window.innerWidth;
+        doResize(canvas, gameDiv, preferWidth, document.fullscreen || document.mozFullScreen || document.webkitIsFullScreen || document.msFullscreenElement);
+      }
+    }
+
+    function gofs(){
+      var gameDiv = document.getElementById("GameDiv");
+      if (gameDiv.requestFullscreen) {
+        gameDiv.requestFullscreen();
+      }
+      else if (gameDiv.mozRequestFullScreen) {
+        gameDiv.mozRequestFullScreen();
+      }
+      else if (gameDiv.webkitRequestFullScreen) {
+        gameDiv.webkitRequestFullScreen();
+      }
+      else if (gameDiv.msRequestFullscreen) {
+        gameDiv.msRequestFullscreen();
+      }
+    }
+
+    function fsChange(fullscreen) {
+      var canvas = document.getElementById("GameCanvas");
+      var gameDiv = document.getElementById("GameDiv");
+      if(canvas && gameDiv) {
+        doResize(canvas, gameDiv, screen.width, fullscreen);
+      }
+    }
+
+    window.addEventListener('resize', adjustCanvasSize, false);
+    window.addEventListener('orientationchange', adjustCanvasSize, false);
+
+    
+    document.addEventListener("fullscreenchange", function () {
+        fsChange(document.fullscreen);
+    }, false);
+
+    document.addEventListener("mozfullscreenchange", function () {
+        fsChange(document.mozFullScreen);
+    }, false);
+
+    document.addEventListener("webkitfullscreenchange", function () {
+        fsChange(document.webkitIsFullScreen);
+    }, false);
+
+    document.addEventListener("msfullscreenchange", function () {
+        fsChange(document.msFullscreenElement);
+    }, false);
+  </script>
+</div>
+
+<div class="row" style="text-align: center; margin-top:10px;">
+  <button class="btn btn-primary"  onclick="gofs();">{{i18n "game_set_fullscreen"}}</button>
 </div>
