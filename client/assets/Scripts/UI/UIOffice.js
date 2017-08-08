@@ -69,7 +69,7 @@ var UIOffice = cc.Class({
         var name = game.farm.name;
         if (name === undefined)
         {
-            name = i18n.t('farm_default_name');
+            name = i18n.t('farm_default_name').toUpperCase();
         }
 
         this.farmName.string = name;
@@ -78,8 +78,8 @@ var UIOffice = cc.Class({
     },
 
     // called every frame, uncomment this function to activate update callback
-    update: function (dt) {
-    },
+    // update: function (dt) {
+    // },
 
     onBtClose: function()
     {

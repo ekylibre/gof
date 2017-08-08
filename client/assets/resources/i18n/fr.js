@@ -49,7 +49,7 @@ window.i18n.languages.fr={
 	"objective_validate":"Valider mes choix",
 	"objective_croprotation_completion":"%{val} parcelle(s) / %{count}",
 	"objective_croprotation_intro":"Bonjour, et bienvenue dans la ferme Ekyfarm !\n\nVous êtes le propriétaire de cette ferme virtuelle et vous allez apprendre pas à pas à gérer vos cultures.\n\nDans ce premier scénario, vous allez prévoir la campagne à venir.\nC’est la fin de l’été, et vous voulez préparer votre assolement.\n\nCommencez par découvrir votre exploitation agricole, son historique, puis choisissez les cultures que vous souhaitez implanter sur les différentes parcelles !",
-	"objective_croprotation_desc":"Choisissez les cultures que vous souhaitez implanter sur les différentes parcelles.",
+	"objective_croprotation_desc":"Votre objectif est d'organiser la campagne à venir.\n\nNous sommes à la fin de l'été et vous voulez préparer votre assolement.\n\nPourquoi ne pas commencer par découvrir votre exploitation agricole et son historique ?\n\nVous pourrez ainsi choisir les cultures que vous souhaitez implanter sur les différentes parcelles !",
 	"month_1":"Janvier",
 	"month_2":"Février",
 	"month_3":"Mars",
