@@ -189,7 +189,6 @@ var MapCtrl = cc.Class({
         switch (game.state)
         {
             case CGame.State.READY:
-                cc.log('State(ready)='+Object.keys(CGame.State));
                 // CGame is ready, lets load a phase
                 game.loadPhase('croprotation', 
                 (error) =>
@@ -464,7 +463,7 @@ var MapCtrl = cc.Class({
     {
         if (this.mapParcels && this.parcelsGID && this.parcelsGID.length>0)
         {
-            var totalSurface = 0;
+            var totalTiles = 0;
             for (var i=0; i<this.mapParcels.length; i++)
             {
                 var mapSize = this.mapParcels[i].getMapSize();
@@ -495,7 +494,7 @@ var MapCtrl = cc.Class({
                                     game.farm.addParcel(parcel);
                                 }
 
-                                totalSurface++;
+                                totalTiles++;
                                 //DEBUG
                                 //layer.setTileGID(0, x, y);
                             }
@@ -503,17 +502,24 @@ var MapCtrl = cc.Class({
                     }
                 }
 
-                // use number of tiles as a placeholder for surface
-                game.farm.totalSurface = totalSurface;
+                // Compute the surface in Ha of a tile
+                cc.log('TODO: setup the total surface from a metadata in the map?')
+                game.farm.totalSurface = 55;                
+                game.farm.surfacePerTile = game.farm.totalSurface / totalTiles;
             }
         }
 
-        // Display buttons over parcels
+        // Compute parcels surface depending on total farm surface
+        // and display info button over each one
         if (game.farm.parcels.length>0)
         {
             for (var k=0; k<game.farm.parcels.length; k++)
             {
                 var parcel = game.farm.parcels[k];
+
+                // surface in Ha
+                parcel.surface = Math.ceil(parcel.surface *game.farm.surfacePerTile*100) / 100;
+
                 var btPrefab = cc.instantiate(this.parcelButtonPrefab);
                 var bt = btPrefab.getComponent(UIParcelButton);
                 bt.parcel = parcel;
@@ -558,21 +564,21 @@ var MapCtrl = cc.Class({
             }
         }
         
-        cc.log('NbParcels='+game.farm.parcels.length);
-        for (var k=0; k<game.farm.parcels.length; k++)
-        {
-            var parcel = game.farm.parcels[k];
-            cc.log(parcel.name+': '+parcel.tiles.length);
+        // cc.log('NbParcels='+game.farm.parcels.length);
+        // for (var k=0; k<game.farm.parcels.length; k++)
+        // {
+        //     var parcel = game.farm.parcels[k];
+        //     cc.log(parcel.name+': '+parcel.tiles.length);
 
-            // show label at center
-            // var dbg = cc.instantiate(this.debugLabelPrefab);
-            // dbg.setParent(this.mapUILayer);
-            // dbg.setPosition(this.tileToUI(parcel.rect.center));
+        //     // show label at center
+        //     var dbg = cc.instantiate(this.debugLabelPrefab);
+        //     dbg.setParent(this.mapUILayer);
+        //     dbg.setPosition(this.tileToUI(parcel.rect.center));
 
-            // var label = dbg.getComponentInChildren(cc.Label);         
+        //     var label = dbg.getComponentInChildren(cc.Label);         
             
-            // label.string = parcel.name+' s='+parcel.surface+' (c='+parcel.rect.center.x+','+parcel.rect.center.y+')';
-        }
+        //     label.string = parcel.name+' s='+parcel.surface+' (c='+parcel.rect.center.x+','+parcel.rect.center.y+')';
+        // }
     },
 
     // called every frame, uncomment this function to activate update callback
