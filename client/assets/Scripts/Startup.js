@@ -82,16 +82,6 @@ cc.Class({
         var policy = new cc.ResolutionPolicy(cc.ContainerStrategy.PROPORTION_TO_FRAME, cc.ContentStrategy.EXACT_FIT);
         cc.view.setDesignResolutionSize(1280, 720, policy);
         cc.view.resizeWithBrowserSize(true); //required for Chrome
-
-        /*
-        cc.view.enableAutoFullScreen(true);
-        cc.screen.autoFullScreen(cc.container, function() {
-            if(cc.screen.fullScreen()){
-                cc.view.setFrameSize(1920, 1080);
-            } else {
-                cc.view.setFrameSize(1280, 720);
-            }
-        });*/
     },
 
     whenLoggedIn: function(client)
