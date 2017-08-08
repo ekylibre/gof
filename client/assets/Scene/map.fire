@@ -29380,6 +29380,9 @@
     "From": 2,
     "drawingZone": {
       "__id__": 862
+    },
+    "scoreText": {
+      "__id__": 773
     }
   },
   {

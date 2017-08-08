@@ -23,6 +23,12 @@ var UIScore = cc.Class({
         {
             default: null,
             type: cc.Node
+        },
+
+        scoreText:
+        {
+            default: null,
+            type: cc.Label
         }
     },
 
@@ -41,15 +47,15 @@ var UIScore = cc.Class({
         //Add a Graphics component to draw custom shapes
         this.spider = this.drawingZone.addComponent(cc.Graphics);
 
-        this.showPopup();
-
-        this.setScore(Math.random(), Math.random(), Math.random(), Math.random(), Math.random());
+        //this.showPopup();
+        //this.setScore(Math.random(), Math.random(), Math.random(), Math.random(), Math.random());
     },
 
     show: function() 
     {
         UIEnv.parcel.hide();
         UIEnv.speciesSelect.hide();
+        UIEnv.questInfo.hide();
         this.showPopup();
     },
 
@@ -59,10 +65,12 @@ var UIScore = cc.Class({
     },
 
     //each score should be between [0;1]
-    setScore: function(_financial, _rule, _quality, _ecological, _human)
+    setScore: function(_financial, _rule, _quality, _ecological, _human, _text)
     {
+        this.scoreText.string = _text;
+
         var g = this.spider;
-        var center = new cc.Vec2(-154, -72);
+        var center = new cc.Vec2(-151, -66);
         var directions = [
             new cc.Vec2(0, 1),
             new cc.Vec2(150, 42),

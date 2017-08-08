@@ -54,6 +54,7 @@ export default class CParcel
 
         this.rotationHistory = [];
         this.rotationPrevision = [];
+        this.solution = null;
     }
 
     /**
