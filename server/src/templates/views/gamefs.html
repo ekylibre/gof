@@ -1,0 +1,34 @@
+<body style="margin: 0;padding: 0;">
+  <canvas id="GameCanvas" style="width: 100%; height:100%" gof-access-token="{{accessToken}}"></canvas>
+    <div id="splash">
+      <div class="progress-bar stripes">
+        <span style="width: 0%"></span>
+      </div>
+    </div>
+  <script src="src/settings.js" charset="utf-8"></script>
+  <script src="main.js" charset="utf-8"></script>
+  <script>
+    function adjustCanvasSize(event) {
+      var canvas = document.getElementById("GameCanvas");
+      if(canvas) {
+        var aspectRatio = 16 / 9;
+        var ww = window.innerWidth;
+        var wh = window.innerHeight;
+
+        var p = canvas.parentElement;
+
+        var newWidth = Math.round(wh * aspectRatio * 0.9);
+        var newHeight = Math.round(newWidth / aspectRatio);
+        p.style.width = newWidth + "px";
+        p.style.height = newHeight + "px";
+        p.style.padding = "0px";
+
+        canvas.width = newWidth;
+        canvas.height = newHeight;
+      }
+    }
+
+    window.addEventListener('resize', adjustCanvasSize, false);
+    window.addEventListener('orientationchange', adjustCanvasSize, false);
+  </script>
+</body>
