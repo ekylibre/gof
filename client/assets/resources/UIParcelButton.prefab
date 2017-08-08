@@ -654,6 +654,9 @@
     "_enabled": true,
     "parcelName": {
       "__id__": 12
+    },
+    "parcelSpecies": {
+      "__id__": 3
     }
   },
   {

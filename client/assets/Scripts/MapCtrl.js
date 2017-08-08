@@ -439,7 +439,7 @@ var MapCtrl = cc.Class({
     {
         var ts = this._refMap.getTileSize();
         var pos = this._refLayer.getPositionAt(_Pos);
-        //pos.x += ts.width * 0.5;
+        pos.x += ts.width * 0.5;
         pos.y += ts.height * 0.5;
         return this.mapToUI(pos);
     },
