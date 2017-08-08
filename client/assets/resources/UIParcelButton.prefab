@@ -142,7 +142,7 @@
     },
     "_enabled": true,
     "_spriteFrame": {
-      "__uuid__": "789eb97d-425a-48d1-b256-e0d15dcbe9f0"
+      "__uuid__": "7ad3383e-4214-4f32-88ac-5068fad7e4ef"
     },
     "_type": 1,
     "_sizeMode": 0,
@@ -185,10 +185,10 @@
     "duration": 0.1,
     "zoomScale": 1.2,
     "pressedSprite": {
-      "__uuid__": "ada0fb54-c476-461b-a0cf-5d792d71465e"
+      "__uuid__": "f9c50552-7524-4fb1-8316-5aed7a16f239"
     },
     "hoverSprite": {
-      "__uuid__": "41bbe04d-a065-4bdb-9f44-a222bff64d18"
+      "__uuid__": "c551772c-4a08-4379-9b5a-323ddf1cd036"
     },
     "clickEvents": [
       {
@@ -212,10 +212,10 @@
       "a": 255
     },
     "_N$normalSprite": {
-      "__uuid__": "789eb97d-425a-48d1-b256-e0d15dcbe9f0"
+      "__uuid__": "7ad3383e-4214-4f32-88ac-5068fad7e4ef"
     },
     "_N$disabledSprite": {
-      "__uuid__": "ef1117b9-99f6-4ce4-bd2f-c67b053f1623"
+      "__uuid__": "f69406b9-c883-4f76-9939-c74a7db5ca6f"
     },
     "_N$target": {
       "__id__": 2
