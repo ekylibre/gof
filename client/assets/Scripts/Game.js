@@ -358,9 +358,10 @@ export default class CGame
                     var sParcel = json.scenario.start.farm.parcels[i];
                     //TODO get parcel from name ?
                     var parcel = this.farm.parcels[i];
+                    parcel.solution = sParcel.data.solution;
+
                     parcel.rotationHistory = new Array();
                     sParcel.data.rotationHistory.forEach(function(element) {
-
                         parcel.rotationHistory.push(element);
                     }, this);
                 }
