@@ -1168,7 +1168,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 35,
+      "width": 47,
       "height": 30
     },
     "_rotationX": 0,
@@ -1203,7 +1203,7 @@
     "_N$file": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
-    "_N$string": "Normal",
+    "_N$string": "NORMAL",
     "_N$horizontalAlign": 1,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
@@ -1356,7 +1356,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 26,
+      "width": 32,
       "height": 30
     },
     "_rotationX": 0,
@@ -1391,7 +1391,7 @@
     "_N$file": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
-    "_N$string": "Coût:",
+    "_N$string": "COÛT",
     "_N$horizontalAlign": 0,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
@@ -1635,7 +1635,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 26.78,
+      "width": 36,
       "height": 30
     },
     "_rotationX": 0,
@@ -1670,7 +1670,7 @@
     "_N$file": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
-    "_N$string": "Taux:",
+    "_N$string": "VENTE",
     "_N$horizontalAlign": 0,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
@@ -2014,7 +2014,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 15,
+      "width": 19,
       "height": 30
     },
     "_rotationX": 0,
@@ -2049,7 +2049,7 @@
     "_N$file": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
-    "_N$string": "Bio",
+    "_N$string": "BIO",
     "_N$horizontalAlign": 1,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
@@ -2202,7 +2202,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 26,
+      "width": 32,
       "height": 30
     },
     "_rotationX": 0,
@@ -2237,7 +2237,7 @@
     "_N$file": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
-    "_N$string": "Coût:",
+    "_N$string": "COÛT",
     "_N$horizontalAlign": 0,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
@@ -2481,7 +2481,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 26.78,
+      "width": 36,
       "height": 30
     },
     "_rotationX": 0,
@@ -2516,7 +2516,7 @@
     "_N$file": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
-    "_N$string": "Taux:",
+    "_N$string": "VENTE",
     "_N$horizontalAlign": 0,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
@@ -2860,7 +2860,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 65,
+      "width": 89.18,
       "height": 30
     },
     "_rotationX": 0,
@@ -2895,7 +2895,7 @@
     "_N$file": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
-    "_N$string": "Permaculture",
+    "_N$string": "PERMACULTURE",
     "_N$horizontalAlign": 1,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
@@ -3048,7 +3048,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 26,
+      "width": 32,
       "height": 30
     },
     "_rotationX": 0,
@@ -3083,7 +3083,7 @@
     "_N$file": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
-    "_N$string": "Coût:",
+    "_N$string": "COÛT",
     "_N$horizontalAlign": 0,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
@@ -3327,7 +3327,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 26.78,
+      "width": 36,
       "height": 30
     },
     "_rotationX": 0,
@@ -3362,7 +3362,7 @@
     "_N$file": null,
     "_isSystemFontUsed": true,
     "_spacingX": 0,
-    "_N$string": "Taux:",
+    "_N$string": "VENTE",
     "_N$horizontalAlign": 0,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
@@ -3514,7 +3514,7 @@
       }
     ],
     "_tag": -1,
-    "_active": false,
+    "_active": true,
     "_components": [],
     "_prefab": {
       "__id__": 124
@@ -3821,6 +3821,10 @@
     "btAdd": {
       "__id__": 21
     },
+    "hlSelected": {
+      "__id__": 117
+    },
+    "_cultureMode": "normal",
     "selectionCallback": null,
     "validationCallback": null
   },

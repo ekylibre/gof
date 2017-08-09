@@ -1,0 +1,30 @@
+{
+  "ver": "1.0.0",
+  "uuid": "cfd8186a-af96-4002-9699-a1d0e247f506",
+  "type": "sprite",
+  "wrapMode": "clamp",
+  "filterMode": "bilinear",
+  "subMetas": {
+    "terrain_ruches_01": {
+      "ver": "1.0.3",
+      "uuid": "1e365ac9-7348-4ae8-a189-7351acf5d587",
+      "rawTextureUuid": "cfd8186a-af96-4002-9699-a1d0e247f506",
+      "trimType": "auto",
+      "trimThreshold": 1,
+      "rotated": false,
+      "offsetX": 0,
+      "offsetY": -6,
+      "trimX": 0,
+      "trimY": 13,
+      "width": 160,
+      "height": 110,
+      "rawWidth": 160,
+      "rawHeight": 124,
+      "borderTop": 0,
+      "borderBottom": 0,
+      "borderLeft": 0,
+      "borderRight": 0,
+      "subMetas": {}
+    }
+  }
+}

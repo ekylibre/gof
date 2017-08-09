@@ -195,6 +195,13 @@ var MapCtrl = cc.Class({
                 {
                     if(error)
                     {
+                        UIEnv.message.show(
+                            i18n.t('error_connection_failed')+'\n\n('+error+')',
+                            i18n.t('error'),
+                            {
+                                buttons: 'none'
+                            }
+                        );                         
                         UIDebug.log(error);
                         return;
                     }

@@ -62,5 +62,13 @@ window.i18n.languages.fr={
 	"month_10":"Octobre",
 	"month_11":"Novembre",
 	"month_12":"Décembre",
-	"start":"Commencer"
+	"start":"Commencer",
+	"ok":"OK",
+	"cancel":"Annuler",
+	"yes":"Oui",
+	"no":"Non",
+	"message":"Message",
+	"error":"Erreur",
+	"error_auth_missing":"Une erreur d'autentification est survenue.\nVous devez vous re-connecter avec votre compte pour continuer.",
+	"error_connection_failed":"Impossible de se connecter !\nVous pouvez rafraichir la page pour retenter."
 };

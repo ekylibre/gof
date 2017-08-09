@@ -14,6 +14,7 @@ const i18n = require('LanguageData');
 const SharedConsts = require('../../../common/constants');
 const ApiClient = require('./ApiClient');
 const UIDebug = require('./UI/UIDebug');
+const UIEnv = require('./UI/UIEnv');
 
 const DEBUG = true;
 
@@ -211,6 +212,13 @@ export default class CGame
             {
                 if (error)
                 {
+                    UIEnv.message.show(
+                        i18n.t('error_connection_failed') + '\n\n('+error+')',
+                        i18n.t('error'),
+                        {
+                            buttons: 'none'
+                        }
+                    );                    
                     UIDebug.log('Error: Failed to get plants:'+error);
                     return;
                 }
@@ -244,7 +252,13 @@ export default class CGame
                 }
                 else
                 {
-                    //TODO: retry? display error message?
+                    UIEnv.message.show(
+                        i18n.t('error_connection_failed'),
+                        i18n.t('error'),
+                        {
+                            buttons: 'none'
+                        }
+                    ); 
                     UIDebug.log('Error: Invalid response for getPlants: '+json);
                 }
             });
