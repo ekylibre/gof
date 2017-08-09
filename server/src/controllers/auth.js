@@ -47,7 +47,7 @@ function AuthController(server) {
         handler: AuthController.logout
     });
 
-
+    /*
     server.route({
         method: 'GET',
         path: '/auth/check',
@@ -56,6 +56,7 @@ function AuthController(server) {
             auth: 'token'
         }
     });
+    */
 
     server.route({
         method: 'POST',
@@ -133,16 +134,45 @@ AuthController.loginpost = function (request, reply) {
                             expiresIn: '12h',
                         }
                     );
-                    reply().state('access_token', token, cookie_options).redirect('/game/start');
+                    user.apiaccesstoken = token;
+                    user.save(function(err){
+                        if(err) {
+                            return reply(Boom.internal());
+                        }
+                        reply().state('access_token', token, cookie_options).redirect('/game/start');
+                    });
             });
         }
     );
 }
 
 AuthController.logout = function(request, reply) {
-    reply().unstate('access_token', cookie_options).redirect('/');
+    var email = request.auth.credentials.email;
+    User.findOne( {email: email},
+        (error, user) => {
+            if(error) {
+                reply(Boom.unauthorized());
+                return;
+            }
+            
+            if(!user) {
+                reply(Boom.notFound());
+                return;
+            }
+
+            user.apiaccesstoken = "";
+            user.save(function(err) {
+                if(err) {
+                    return reply(Boom.internal());
+                }
+                return reply().unstate('access_token', cookie_options).redirect('/');
+            });
+        }
+    );
+    
 }
 
+/*
 AuthController.check = function (request, reply) {
 
     var email = request.auth.credentials.email;
@@ -163,6 +193,7 @@ AuthController.check = function (request, reply) {
         }
     );
 }
+*/
 
 AuthController.registerget = function(request, reply) {
     reply.view('views/register');

@@ -7,6 +7,7 @@
 // TODO: check language provided by the environment
 
 const CGamePhase = require('./GamePhase');
+const CGameParcel = require('./GameParcel');
 const CFarm = require('./Farm');
 const CPlant = require('./Plant');
 const i18n = require('LanguageData');
@@ -141,6 +142,7 @@ export default class CGame
                     if (parcel != null)
                     {
                         parcel.rotationHistory = setup.history;
+                        parcel.solution = setup.solution;
                     }
                     else
                     {
@@ -353,17 +355,21 @@ export default class CGame
                     phase.maxPrevisions = 0;
                 }
 
+                phase.parcels = new Array();
                 for(var i=0;i<json.scenario.start.farm.parcels.length;++i)
                 {
                     var sParcel = json.scenario.start.farm.parcels[i];
                     //TODO get parcel from name ?
-                    var parcel = this.farm.parcels[i];
+                    var parcel = new CGameParcel();
+                    parcel.uid = sParcel.uid;
                     parcel.solution = sParcel.data.solution;
 
-                    parcel.rotationHistory = new Array();
-                    sParcel.data.rotationHistory.forEach(function(element) {
-                        parcel.rotationHistory.push(element);
-                    }, this);
+                    parcel.history = new Array();
+                    for(var j=0;j<sParcel.data.rotationHistory.length;++j) {
+                        parcel.history.push(sParcel.data.rotationHistory[j]);
+                    }
+
+                    phase.parcels.push(parcel);
                 }
 
                 

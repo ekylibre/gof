@@ -79,33 +79,39 @@ var UIQuestInfo = cc.Class({
         {
             //this score only apply to scenario croprotation
 
-            var score = game.phase.perfectScore;
-            var scorePart = score / game.farm.parcels.length;
+            var score = 0;
+            var scorePart = game.phase.perfectScore / game.farm.parcels.length;
 
             for(var i=0;i<game.farm.parcels.length;++i) 
             {
                 var parcel = game.farm.parcels[i];
                 var solution = parcel.solution;
                 var playerChoice = parcel.rotationPrevision[0];
-                if(playerChoice.species === solution.perfect) 
+                if(solution.perfects .indexOf(playerChoice.species) > -1) 
                 {
-                    //perfect score, no malus
+                    //perfect score
+                    score += scorePart;
                     continue;
-                }
-                if(solution.acceptables.indexOf(playerChoice.species) > -1) 
+                } 
+                else if (solution.acceptables.indexOf(playerChoice.species) > -1) 
                 {
-                    //average malus
-                    score -= (scorePart * 0.5);
+                    //good one
+                    score += (scorePart * 0.8);
                 }
-                else
+                else if (solution.bads.indexOf(playerChoice.species) > -1) 
                 {
-                    //maximum malus
-                    score -= scorePart;
+                    //not that bad, but can be better
+                    score -= (scorePart * 0.4);
                 }
+                //every other answer is bad 0.
             }
 
             score = Math.round(score);
             var normalizedScore = score / game.phase.perfectScore;
+            //clamp if needed
+            if(normalizedScore > 1) {
+                normalizedScore = 1;
+            }
 
             UIEnv.score.setScore(
                 normalizedScore, 

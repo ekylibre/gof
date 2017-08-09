@@ -23,8 +23,9 @@
 				"treasury" : 50000,
 				"tiledmapPrefab" : "gof_map01",
 
+				"excludes": ["lupin", "field_bean"],
 				"parcels" : [ {
-					"name" : "Parcel1",
+					"uid" : "parcel1",
 					"surface" : 42,
 					"data" : {
 						"state" : "growing",
@@ -41,12 +42,13 @@
 						],
 
 						"solution": {
-							"perfect": "barley",
-							"acceptables": []
+							"perfects": ["barley"],
+							"acceptables": ["corn", "sunflower", "soy",	"pasture",	"colza"],
+							"bads": ["wheat", "buckwheat"]
 						}
 					}
 				}, {
-					"name" : "Parcel2",
+					"uid" : "parcel2",
 					"surface" : 96,
 					"data" : {
 
@@ -62,19 +64,20 @@
 						],
 
 						"solution": {
-							"perfect": "barley",
-							"acceptables": []
+							"perfects": ["barley"],
+							"acceptables": ["corn", "sunflower", "soy",	"pasture",	"colza"],
+							"bads": ["wheat", "buckwheat"]
 						}
 					}
 				}, {
-					"name" : "Parcel3",
+					"uid" : "parcel3",
 					"surface" : 120,
 					"data" : {
 
 						"state" : "ready",
 						"plant" : {
 							"species" : "durum_wheat"
-							},
+						},
 
 						"rotationHistory" : [ 
 							{"species":"sunflower", "culture":"normal"}, 
@@ -85,19 +88,20 @@
 						],
 
 						"solution": {
-							"perfect": "wheat",
-							"acceptables": []
+							"perfects": ["wheat"],
+							"acceptables": ["barley", "corn", "pasture"],
+							"bads": ["colza"]
 						}
 					}	
 				}, {
-					"name" : "Parcel4",
+					"uid" : "parcel4",
 					"surface" : 65,
 					"data" : {
 
 						"state" : "ready",
 						"plant" : {
 							"species" : "soft_wheat"
-							},
+						},
 
 						"rotationHistory" : [ 
 							{"species":"barley", "culture":"normal"}, 
@@ -108,19 +112,20 @@
 						],
 
 						"solution": {
-							"perfect": "corn",
-							"acceptables": []
+							"perfects": ["corn"],
+							"acceptables": ["soy", "pasture", "wheat", "buckwheat"],
+							"bads": ["barley"]
 						}
 					}	
 				}, {
-					"name" : "Parcel5",
+					"uid" : "parcel5",
 					"surface" : 77,
 					"data" : {
 
 						"state" : "growing",
 						"plant" : {
 							"species" : "durum_wheat"
-							},
+						},
 
 						"rotationHistory" : [ 
 							{"species":"wheat", "culture":"normal"}, 
@@ -131,12 +136,13 @@
 						],
 
 						"solution": {
-							"perfect": "field_bean",
-							"acceptables": []
+							"perfects": ["field_bean"],
+							"acceptables": ["corn", "sunflower", "soy", "pasture", "colza"],
+							"bads": ["wheat", "buckwheat"]
 						}
 					}	
 				}, {
-					"name" : "Parcel6",
+					"uid" : "parcel6",
 					"surface" : 120,
 					"data" : {
 
@@ -152,12 +158,13 @@
 						],
 
 						"solution": {
-							"perfect": "colza",
-							"acceptables": []
+							"perfects": ["colza"],
+							"acceptables": ["corn", "sunflower", "soy", "pasture"],
+							"bads": ["wheat", "buckwheat"]
 						}
 					}	
 				}, {
-					"name" : "Parcel7",
+					"uid" : "parcel7",
 					"surface" : 77,
 					"data" : {
 
@@ -173,12 +180,13 @@
 						],
 
 						"solution": {
-							"perfect": "buckwheat",
-							"acceptables": []
+							"perfects": ["buckwheat"],
+							"acceptables": ["wheat", "colza"],
+							"bads": ["pea"]
 						}
 					}	
 				}, {
-					"name" : "Parcel8",
+					"uid" : "parcel8",
 					"surface" : 77,
 					"data" : {
 
@@ -194,12 +202,13 @@
 						],
 
 						"solution": {
-							"perfect": "pea",
-							"acceptables": []
+							"perfects": ["pea"],
+							"acceptables": ["soy", "pasture", "wheat", "buckwheat"],
+							"bads": ["barley"]
 						}
 					}	
 				}, {
-					"name" : "Parcel9",
+					"uid" : "parcel9",
 					"surface" : 77,
 					"data" : {
 
@@ -215,12 +224,13 @@
 						],
 
 						"solution": {
-							"perfect": "lupin",
-							"acceptables": []
+							"perfects": ["lupin"],
+							"acceptables": ["soy", "pasture", "wheat", "buckwheat"],
+							"bads": ["barley"]
 						}
 					}	
 				}, {
-					"name" : "Parcel10",
+					"uid" : "parcel10",
 					"surface" : 77,
 					"data" : {
 
@@ -236,12 +246,13 @@
 						],
 
 						"solution": {
-							"perfect": "pasture",
-							"acceptables": []
+							"perfects": ["pasture"],
+							"acceptables": [],
+							"bads": ["triticale"]
 						}
 					}	
 				}, {
-					"name" : "Parcel11",
+					"uid" : "parcel11",
 					"surface" : 77,
 					"data" : {
 
@@ -257,12 +268,13 @@
 						],
 
 						"solution": {
-							"perfect": "triticale",
-							"acceptables": []
+							"perfects": ["triticale"],
+							"acceptables": ["corn",	"sunflower", "soy", "pasture", "colza"],
+							"bads": ["wheat", "buckwheat"]
 						}
 					}	
 				}, {
-					"name" : "Parcel12",
+					"uid" : "parcel12",
 					"surface" : 77,
 					"data" : {
 
@@ -278,12 +290,13 @@
 						],
 
 						"solution": {
-							"perfect": "sunflower",
-							"acceptables": []
+							"perfects": ["sunflower"],
+							"acceptables": [],
+							"bads": []
 						}
 					}	
 				}, {
-					"name" : "Parcel13",
+					"uid" : "parcel13",
 					"surface" : 77,
 					"data" : {
 
@@ -299,12 +312,13 @@
 						],
 
 						"solution": {
-							"perfect": "pea",
-							"acceptables": []
+							"perfects": ["pea"],
+							"acceptables": ["corn",	"sunflower", "soy", "pasture", "colza", "triticale"],
+							"bads": ["wheat","buckwheat"]
 						}
 					}	
 				}, {
-					"name" : "Parcel14",
+					"uid" : "parcel14",
 					"surface" : 77,
 					"data" : {
 
@@ -320,12 +334,13 @@
 						],
 
 						"solution": {
-							"perfect": "pasture",
-							"acceptables": []
+							"perfects": ["pasture"],
+							"acceptables": ["barley", "colza", "sunflower"],
+							"bads": ["soy"]
 						}
 					}	
 				}, {
-					"name" : "Parcel15",
+					"uid" : "parcel15",
 					"surface" : 77,
 					"data" : {
 
@@ -341,8 +356,9 @@
 						],
 
 						"solution": {
-							"perfect": "pasture",
-							"acceptables": []
+							"perfects": ["pasture"],
+							"acceptables": ["barley", "colza", "sunflower"],
+							"bads": ["soy"]
 						}
 					}	
 				}]
