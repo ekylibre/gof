@@ -189,7 +189,7 @@ function exportClientLocalisation(auth, callback) {
                 }
                 var uid = rows[l][1];
                 var txt = rows[l][c];
-                stream.write('\t"' + uid + '":"' + txt + '"');
+                stream.write('\t"' + uid + '":"' + txt.replace(/\n+$/, '') + '"');
             }
             stream.write('\n};');
             stream.end();
