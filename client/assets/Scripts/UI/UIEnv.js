@@ -40,10 +40,17 @@ var UIEnv=
      */
     score: null,
 
+    /**
+     * @property {UIScore_assolement} score_croprotation: UIScore_assolement instance
+     */
+    score_croprotation: null,
+
         /**
      * @property {UIQuestIntro} questintro: UIQuestIntro instance
      */
     questIntro: null,
+
+
 };
 
 module.exports = UIEnv;

@@ -29,6 +29,16 @@ var RscPreload = cc.Class({
             default: null,
             type: cc.SpriteAtlas
         },
+
+        /**
+         * Atlas of icon note
+         */
+
+         noteIconsAtlas:
+         {
+            default: null,
+            type: cc.SpriteAtlas
+         },
     },
 
     statics:
