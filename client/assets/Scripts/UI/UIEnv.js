@@ -6,6 +6,11 @@
 var UIEnv=
 {
     /**
+     * @property {UIMessage} message: UIMessage instance
+     */
+    message: null,
+
+    /**
      * @property {UIOffice} office: UIOffice instance
      */
     office: null,

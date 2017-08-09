@@ -131,6 +131,15 @@ var UISpeciesSelItem = cc.Class({
         },
 
         /**
+         * The highlight if item is currently selected 
+         */
+        hlSelected:
+        {
+            default: null,
+            type: cc.Node
+        },
+
+        /**
          * true if item currently selected
          */
         isSelected:
@@ -190,6 +199,12 @@ var UISpeciesSelItem = cc.Class({
             }
         },
 
+        _cultureMode:
+        {
+            default: SharedConsts.CultureModeEnum.NORMAL,
+            visible: false
+        },
+
         /**
          * Callback when item is selected
          * @param {UISpeciesSelItem} data: the selected item
@@ -217,7 +232,6 @@ var UISpeciesSelItem = cc.Class({
     _plant: null,
     _plantChanged: false,
 
-    _cultureMode: null,
     _cultureChanged: false,
 
     _isSelected: false,
@@ -227,6 +241,7 @@ var UISpeciesSelItem = cc.Class({
     onLoad: function ()
     {
         this.speciesVariety.string ='';
+        this.hlSelected.active = false;
     },
 
     updateUI: function()
@@ -264,6 +279,10 @@ var UISpeciesSelItem = cc.Class({
                     this.sellPriceNormal.string = '';
                     this.sellPriceBio.string = '';
                     this.sellPricePerma.string = '';
+
+                    this.btNormal.node.active = false;
+                    this.btBio.node.active = false;
+                    this.btPerma.node.active = false;
                 }
                 else
                 {
@@ -273,16 +292,17 @@ var UISpeciesSelItem = cc.Class({
                     this.sellPriceNormal.string = this._plant.getSellPrice(SharedConsts.CultureModeEnum.NORMAL).toString();
                     this.sellPriceBio.string = this._plant.getSellPrice(SharedConsts.CultureModeEnum.BIO).toString();
                     this.sellPricePerma.string = this._plant.getSellPrice(SharedConsts.CultureModeEnum.PERMACULTURE).toString();
+
+                    this.btNormal.interactable = this.cultureMode != SharedConsts.CultureModeEnum.NORMAL;
+                    this.btBio.interactable = this.cultureMode != SharedConsts.CultureModeEnum.BIO;
+                    this.btPerma.interactable = this.cultureMode != SharedConsts.CultureModeEnum.PERMACULTURE;
                 }                
+
             }
 
             if (this._selectionChanged)
             {
-                this.btAdd.interactable = this._isSelected || this._plant.isFallow;
-
-                this.btNormal.interactable = !this._isSelected || this.cultureMode != SharedConsts.CultureModeEnum.NORMAL;
-                this.btBio.interactable = !this._isSelected || this.cultureMode != SharedConsts.CultureModeEnum.BIO;
-                this.btPerma.interactable = !this._isSelected || this.cultureMode != SharedConsts.CultureModeEnum.PERMACULTURE;
+                this.hlSelected.active = this._isSelected;
             }
         }        
     },
@@ -297,7 +317,7 @@ var UISpeciesSelItem = cc.Class({
     {
         if (this._plant != null && !this._plant.isFallow)
         {
-            this.isSelected = true;
+            //this.isSelected = true;
             this.cultureMode = SharedConsts.CultureModeEnum.NORMAL;
         }           
     },
@@ -306,7 +326,7 @@ var UISpeciesSelItem = cc.Class({
     {
         if (this._plant != null && !this._plant.isFallow)
         {
-            this.isSelected = true;
+            //this.isSelected = true;
             this.cultureMode = SharedConsts.CultureModeEnum.BIO;
         }           
     },
@@ -315,7 +335,7 @@ var UISpeciesSelItem = cc.Class({
     {
         if (this._plant != null && !this._plant.isFallow)
         {
-            this.isSelected = true;
+            //this.isSelected = true;
             this.cultureMode = SharedConsts.CultureModeEnum.PERMACULTURE;           
         }           
         
