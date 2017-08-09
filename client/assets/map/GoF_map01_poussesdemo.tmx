@@ -65,8 +65,8 @@
  <tileset firstgid="175" name="terrain_bassin" tilewidth="180" tileheight="134" tilecount="1" columns="1">
   <image source="terrain_bassin.png" width="180" height="134"/>
  </tileset>
- <tileset firstgid="176" name="terrain_bords_map" tilewidth="160" tileheight="80" tilecount="8" columns="4">
-  <image source="terrain_bords_map.png" width="640" height="160"/>
+ <tileset firstgid="176" name="terrain_bords_map" tilewidth="160" tileheight="80" tilecount="8" columns="2">
+  <image source="terrain_bords_map.png" width="320" height="320"/>
  </tileset>
  <tileset firstgid="184" name="pousse_demo_planche" tilewidth="160" tileheight="142" tilecount="4" columns="4">
   <image source="pousse_demo_planche.png" width="640" height="142"/>
