@@ -9,6 +9,7 @@ const CGame = require('./Game');
 const game = new CGame();
 
 const UIDebug = require('./UI/UIDebug');
+const UIEnv = require('./UI/UIEnv');
 
 cc.Class({
     extends: cc.Component,
@@ -24,10 +25,6 @@ cc.Class({
     // use this for initialization
     onLoad: function ()
     {
-        //this.whenLoggedIn();
-
-        
-
         // Select REST API endpoint
         var endpoint = '/api';
         var isPreview = location.hostname == 'localhost' && location.port != 3000;
@@ -54,11 +51,25 @@ cc.Class({
                                 }
                                 else
                                 {
+                                    UIEnv.message.show(
+                                        i18n.t('error_connection_failed'),
+                                        'Login failed!',
+                                        {
+                                            onOk: function() {location.reload();}
+                                        }
+                                    );                                    
                                     UIDebug.log('Error: Login failed!');
                                     cc.error('Login failed');
                                 }
                         });
                     } else {
+                        UIEnv.message.show(
+                            i18n.t('error_auth_missing'),
+                            i18n.t('error'),
+                            {
+                                onOk: function() {location.pathname = '/auth/login';}
+                            }
+                        );                        
                         UIDebug.log('Error: you are not logged in!');
                         return;
                     }

@@ -63,10 +63,6 @@ var UIPopupBase = cc.Class({
         {
             this.Popup = this.node;
         }
-        if (!this.Popup.active)
-        {
-            this.Popup.active = true;
-        }
 
         this._hidden = false;
         this._defaultX = this.Popup.x;
