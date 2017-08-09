@@ -32620,7 +32620,7 @@
       "__id__": 981
     },
     "_enabled": true,
-    "transition": 0,
+    "transition": 2,
     "pressedColor": {
       "__type__": "cc.Color",
       "r": 211,
@@ -32637,8 +32637,12 @@
     },
     "duration": 0.1,
     "zoomScale": 1.2,
-    "pressedSprite": null,
-    "hoverSprite": null,
+    "pressedSprite": {
+      "__uuid__": "08f2cb87-67b6-41aa-b6ac-f46e16c4c0c4"
+    },
+    "hoverSprite": {
+      "__uuid__": "74124676-c0cb-4348-9463-5f5fea4273b9"
+    },
     "clickEvents": [
       null
     ],
@@ -32658,8 +32662,12 @@
       "b": 124,
       "a": 255
     },
-    "_N$normalSprite": null,
-    "_N$disabledSprite": null,
+    "_N$normalSprite": {
+      "__uuid__": "4183fd95-b5d3-4893-a7ba-f61ec1be7f90"
+    },
+    "_N$disabledSprite": {
+      "__uuid__": "407ac00a-20de-4b4e-ba5f-249a1a8359a9"
+    },
     "_N$target": {
       "__id__": 981
     }
