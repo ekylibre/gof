@@ -1,0 +1,30 @@
+{
+  "ver": "1.0.0",
+  "uuid": "e8b1e3ec-7f99-4edb-9d8a-6f573d0fcc9e",
+  "type": "sprite",
+  "wrapMode": "clamp",
+  "filterMode": "bilinear",
+  "subMetas": {
+    "anim_abeilles": {
+      "ver": "1.0.3",
+      "uuid": "2b3d1665-4958-4b41-bab0-c1dd8ca6a9f1",
+      "rawTextureUuid": "e8b1e3ec-7f99-4edb-9d8a-6f573d0fcc9e",
+      "trimType": "auto",
+      "trimThreshold": 1,
+      "rotated": false,
+      "offsetX": -1,
+      "offsetY": 3.5,
+      "trimX": 0,
+      "trimY": 0,
+      "width": 484,
+      "height": 445,
+      "rawWidth": 486,
+      "rawHeight": 452,
+      "borderTop": 0,
+      "borderBottom": 0,
+      "borderLeft": 0,
+      "borderRight": 0,
+      "subMetas": {}
+    }
+  }
+}
