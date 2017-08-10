@@ -16,7 +16,7 @@ const ApiClient = require('./ApiClient');
 const UIDebug = require('./UI/UIDebug');
 const UIEnv = require('./UI/UIEnv');
 
-const DEBUG = false;
+const DEBUG = true;
 
 // Game configuration when DEBUG is true
 var ConfigDebug =
