@@ -134,6 +134,7 @@ export default class CGame
                 // First phase
                 // Give money
                 this.farm.money = _Phase.startMoney;
+                this.farm.plantExcludes = _Phase.plantExcludes;
 
                 // Setup parcels history
                 for (var i=0; i<_Phase.parcels.length; i++)
@@ -359,7 +360,8 @@ export default class CGame
                 phase.perfectScore = json.scenario.start.score;
                 phase.endCondition = json.scenario.end.condition;
                 phase.completionStr = json.scenario.end.completionStr;
-
+                phase.plantExcludes = json.scenario.start.farm.excludes;
+                
                 if(uid === 'croprotation')
                 {
                     phase.maxPrevisions = 1;
@@ -386,7 +388,6 @@ export default class CGame
                     phase.parcels.push(parcel);
                 }
 
-                
                 this.phase = phase;
                 callback(null);
             }

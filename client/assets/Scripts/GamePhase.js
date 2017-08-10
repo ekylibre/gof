@@ -10,6 +10,7 @@
  * @property {number} startYearDiff: interval of year if not 1st phase
  * @property {number} perfectScore: score received for doing a perfect phase
  * @property {number} maxPrevisions: maximum number of rotation previsions per parcel
+ * @property {array:string} plantExcludes: array of uid of plants to exclude during this phase
  * @property {array:CGameParcel}  parcels: parcels setup data
  */
 export default class CGamePhase {
@@ -25,6 +26,7 @@ export default class CGamePhase {
         this.maxPrevisions = 1;
         this.endCondition = 'false';
         this.completionStr = '';
+        this.plantExcludes = [];
         this.parcels =
             [
                 {
