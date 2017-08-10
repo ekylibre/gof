@@ -214,6 +214,64 @@ var MapCtrl = cc.Class({
                 UIEnv.questIntro.show();
                 break;
         }
+
+    },
+
+    /**
+     * Checks if the view is going too far outside the map
+     * (if yes, scroll back to a suitable position)
+     */
+    checkMapBorders: function()
+    {
+        // Get center of screen
+        var center = cc.v2(this._mapScrollView.node.width / 2, this._mapScrollView.node.height / 2);
+
+        // convert to map space
+        center = this._refMap.node.convertToNodeSpace(center);
+
+        // convert to tile coordinate
+        center = this.pixelToTile(center, true);
+
+        // check if corresponding tile coordinate is out of range
+        var margin = 1;
+        var mapSize = this._refMap.getMapSize();
+        var delta = 0;
+        if (center.x<-margin)
+        {
+            delta = -center.x+margin;
+            center.x = -margin;
+        }
+        if (center.x>=(mapSize.width+margin))
+        {
+            delta += center.x-(mapSize.width+margin);
+            center.x = mapSize.width+margin-1;
+        }
+        if (center.y<-margin)
+        {
+            delta += -center.y+margin;
+            center.y = -margin;
+        }
+        if (center.y>=(mapSize.height+margin))
+        {
+            delta += center.y-(mapSize.height+margin);
+            center.y = mapSize.height+margin-1;
+        }
+
+        if (delta>0)
+        {
+            // convert tile coordinates to pixel
+            center = this.tileToPixel(center);
+
+            // convert pixel position to scrollview "scroll offset"
+            center = this.pixelToScroll(center);
+
+            // move to center of screen
+            center.x -= this._mapScrollView.node.width / 2;
+            center.y -= this._mapScrollView.node.height / 2;
+
+            // scroll
+            this._mapScrollView.scrollToOffset(center, delta * 0.1);
+        }
     },
 
     /**
@@ -270,6 +328,8 @@ var MapCtrl = cc.Class({
             this.content.height = MapCtrl.instance._refSize.y * scale;
 
             this._stopPropagationIfTargetIsMe(event);
+
+            MapCtrl.instance.checkMapBorders();
         };
 
         // Register touch events
@@ -286,7 +346,19 @@ var MapCtrl = cc.Class({
                 this._scrollLen += cc.pLength(event.touch.getDelta());
             },
             this.node
-        );        
+        );
+        this.node.on(cc.Node.EventType.TOUCH_CANCEL,
+            (event) =>
+            {
+                if (this._scrollLen>2)
+                {
+                    // scrollview is scrolling, ignore touch
+                    this._scrollLen = 0;
+                    MapCtrl.instance.checkMapBorders();
+                    return;
+                }                
+            });
+        
         this.node.on(cc.Node.EventType.TOUCH_END,
             (event) =>
             {
@@ -294,6 +366,7 @@ var MapCtrl = cc.Class({
                 {
                     // scrollview is scrolling, ignore touch
                     this._scrollLen = 0;
+                    MapCtrl.instance.checkMapBorders();
                     return;
                 }
 
@@ -302,6 +375,11 @@ var MapCtrl = cc.Class({
 
                 var loc = this._refMap.node.convertToNodeSpace(touch.getLocation());
                 UIDebug.touchLog = ''+touch.getLocationX()+','+touch.getLocationY()+' => '+loc;
+
+                // var center = this.pixelToScroll(loc);
+                // center.x -= (this._mapScrollView.node.width / 2);
+                // center.y -= (this._mapScrollView.node.height / 2);
+                // this._mapScrollView.scrollToOffset(center);
 
                 if (this.mapObjects && this.mapObjects.length>0)
                 {
@@ -349,9 +427,15 @@ var MapCtrl = cc.Class({
      */
     touchOnMap: function(_Map, _Pos)
     {
-        var mapSize = _Map.getMapSize();
         var layers = _Map.allLayers();
 
+        var tilePos = this.pixelToTile(_Pos);
+        if (tilePos == null)
+        {
+            // not on map
+            return false;
+        }
+        
         // Parse objectsgroups
         var groups = _Map.getObjectGroups();
         for (var i= groups.length-1; i>=0; i--)
@@ -392,48 +476,82 @@ var MapCtrl = cc.Class({
         {
             var layer = layers[i];
 
-            var tw = layer.getMapTileSize().width;
-            var th = layer.getMapTileSize().height;
-            var mw = layer.getLayerSize().width;
-            var mh = layer.getLayerSize().height;
-
-            var x = (_Pos.x) * 1;
-            var y = (_Pos.y) * 1;
-
-            var isox = Math.floor(mh - y/th + x/tw - mw/2);
-            var isoy = Math.floor(mh - y/th - x/tw + mw/2);
-
-            // true only if the coords is with in the map
-            if(isox>=0 && isoy>=0 && isox < mapSize.width && isoy < mapSize.height)
-            {
-                var tilePos = cc.v2(isox,isoy);
-                var tileGid = layer.getTileGIDAt(tilePos);
-                if(tileGid != 0)
+            var tileGid = layer.getTileGIDAt(tilePos);
+            if(tileGid != 0)
+            {           
+                if (game.isDebug)
                 {
-                    // a tile is clicked!
-                    // if (tileGid == 104)
-                    // {
-                    //     layer.setTileGID(102, cc.v2(isox,isoy))                        
-                    // }
-                    
-                    if (game.isDebug)
+                    var debug = 'Clicked on layer '+layer.getLayerName()+' tile('+tilePos.x+','+tilePos.y+') GID='+tileGid;
+                    var parcel = game.farm.findParcelAt(tilePos);
+                    if (parcel != null)
                     {
-                        var debug = 'Clicked on layer '+layer.getLayerName()+' tile('+isox+','+isoy+') GID='+tileGid;
-                        var parcel = game.farm.findParcelAt(tilePos);
-                        if (parcel != null)
-                        {
-                            debug += ' Parcel: '+parcel.name;
-                        }
-
-                        UIDebug.log(debug);
+                        debug += ' Parcel: '+parcel.name;
                     }
-                    return true;
+
+                    UIDebug.log(debug);
                 }
+                return true;
             }
             
         }
 
         return false;
+    },
+
+    /**
+     * Converts a pixel position in map to tile coordinates
+     * @param {cc.Vec2} _Pos: pixel position in map
+     * @param {Boolean} _NoLimit: don't check on maps limits (i.e. always returns a position)
+     * @return {cc.Vec2} tile coordinates (or null if out of map)
+     */
+    pixelToTile: function(_Pos, _NoLimit = false)
+    {
+        var mapSize = this._refMap.getMapSize();
+        
+        var tw = this._refLayer.getMapTileSize().width;
+        var th = this._refLayer.getMapTileSize().height;
+        var mw = this._refLayer.getLayerSize().width;
+        var mh = this._refLayer.getLayerSize().height;
+
+        var x = (_Pos.x) * 1;
+        var y = (_Pos.y) * 1;
+
+        var isox = Math.floor(mh - y/th + x/tw - mw/2);
+        var isoy = Math.floor(mh - y/th - x/tw + mw/2);
+
+        // true only if the coords are within the map
+        if (_NoLimit || (isox>=0 && isoy>=0 && isox < mapSize.width && isoy < mapSize.height))
+        {
+            return cc.v2(isox, isoy);
+        }
+
+        return null;
+    },
+
+    /**
+     * Converts a map pixel position to a scroll offset (for the scrollview)
+     * @param {cc.Vec2} _Pos: pixel position in map
+     * @return {cc.Vec2}
+     */
+    pixelToScroll: function(_Pos)
+    {
+        var scale = this._mapScrollView.content.scaleX;
+        return cc.v2(_Pos.x * scale, (this._refSize.y-_Pos.y)*scale);
+    },
+
+    
+    /**
+     * Converts a tile position to a map pixel position
+     * @param {cc.Vec2} _Pos: tile coordinates
+     * @return {cc.Vec2}
+     */
+    tileToPixel: function(_Pos)
+    {
+        var pos = this._refLayer.getPositionAt(_Pos);
+        // var size = this._refMap.getTileSize();
+        // pos.x+= size.width / 2;
+        // pos.y+= size.height / 2;
+        return pos;
     },
 
     /**
@@ -462,6 +580,7 @@ var MapCtrl = cc.Class({
         return cc.v2(_Pos.x-this.mapUILayer.width*0.5, _Pos.y-this.mapUILayer.height*0.5);
     },
 
+    
     /**
      * Parses the parcels map to create CParcel objects
      * @method

@@ -70,5 +70,5 @@ window.i18n.languages.fr={
 	"message":"Message",
 	"error":"Erreur",
 	"error_auth_missing":"Une erreur d'autentification est survenue.\nVous devez vous re-connecter avec votre compte pour continuer.",
-	"error_connection_failed":"Impossible de se connecter !\nVous pouvez rafraichir la page pour retenter."
+	"error_connection_failed":"Impossible de se connecter !\nVous pouvez rafraîchir la page pour réessayer."
 };
