@@ -113,66 +113,60 @@ AuthController.loginpost = function (request, reply) {
     var email = request.payload.email;
     var password = request.payload.password;
 
-    User.findOne( {email: email},
-        (error, user) => {
-            if(error || !user) {
+    User.findOne( {email: email}, (error, user) => {
+        if(error || !user) {
+            return reply.view('views/login', Validation.buildContext(request, "login_failed"));
+        }
+
+        Bcrypt.compare(password, user.password, (error, same) => {
+            if(error || !same) {
                 return reply.view('views/login', Validation.buildContext(request, "login_failed"));
             }
 
-            Bcrypt.compare(password, user.password,
-                (error, same) => {
-                    if(error || !same) {
-                        return reply.view('views/login', Validation.buildContext(request, "login_failed"));
-                    }
-
-                    //here the user had successfully entered credentials
-                    //let create a token
-                    const token = jwt.sign({
-                            email: user.email,
-                            firstname: user.firstName
-                        }, 
-                        config.get('Jwt.key'),
-                        {
-                            algorithm: 'HS256',
-                            expiresIn: '12h',
-                        }
-                    );
-                    user.apiaccesstoken = token;
-                    user.save(function(err){
-                        if(err) {
-                            return reply(Boom.internal());
-                        }
-                        reply().state('access_token', token, cookie_options).redirect('/game/start');
-                    });
+            //here the user had successfully entered credentials
+            //let create a token
+            const token = jwt.sign({
+                    email: user.email,
+                    firstname: user.firstName
+                }, 
+                config.get('Jwt.key'),
+                {
+                    algorithm: 'HS256',
+                    expiresIn: '12h',
+                }
+            );
+            user.apiaccesstoken = token;
+            user.save(function(err){
+                if(err) {
+                    return reply(Boom.internal());
+                }
+                reply().state('access_token', token, cookie_options).redirect('/game/start');
             });
-        }
-    );
+        });
+    });
 }
 
 AuthController.logout = function(request, reply) {
     var email = request.auth.credentials.email;
-    User.findOne( {email: email},
-        (error, user) => {
-            if(error) {
-                reply(Boom.unauthorized());
-                return;
-            }
-            
-            if(!user) {
-                reply(Boom.notFound());
-                return;
-            }
-
-            user.apiaccesstoken = "";
-            user.save(function(err) {
-                if(err) {
-                    return reply(Boom.internal());
-                }
-                return reply().unstate('access_token', cookie_options).redirect('/');
-            });
+    User.findOne( {email: email}, (error, user) => {
+        if(error) {
+            reply(Boom.unauthorized());
+            return;
         }
-    );
-    
+        
+        if(!user) {
+            reply(Boom.notFound());
+            return;
+        }
+
+        user.apiaccesstoken = "";
+        user.save(function(err) {
+            if(err) {
+                return reply(Boom.internal());
+            }
+            return reply().unstate('access_token', cookie_options).redirect('/');
+        });
+    });
 }
 
 /*
