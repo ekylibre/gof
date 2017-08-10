@@ -346,7 +346,19 @@ var MapCtrl = cc.Class({
                 this._scrollLen += cc.pLength(event.touch.getDelta());
             },
             this.node
-        );        
+        );
+        this.node.on(cc.Node.EventType.TOUCH_CANCEL,
+            (event) =>
+            {
+                if (this._scrollLen>2)
+                {
+                    // scrollview is scrolling, ignore touch
+                    this._scrollLen = 0;
+                    MapCtrl.instance.checkMapBorders();
+                    return;
+                }                
+            });
+        
         this.node.on(cc.Node.EventType.TOUCH_END,
             (event) =>
             {
