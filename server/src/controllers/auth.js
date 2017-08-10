@@ -44,7 +44,10 @@ function AuthController(server) {
     server.route({
         method: 'GET',
         path: '/auth/logout',
-        handler: AuthController.logout
+        handler: AuthController.logout,
+        config: {
+            auth: 'token'
+        }
     });
 
     /*
