@@ -42,12 +42,13 @@ cc.Class({
             var farm = game.farm;
             this.moneyLabel.string = game.farm.money;
             
-            //var m = i18n.t('month'+farm.month);
+            var month = i18n.t('month_'+(farm.month+1));
+
             this.dateLabel.string = i18n.t(
                 'date_value',
                 {
                     'year': farm.year,
-                    'month': (farm.month+1).toLocaleString(game.config.LANGUAGE_DEFAULT, {minimumIntegerDigits: 2}),
+                    'month': month, //(farm.month+1).toLocaleString(game.config.LANGUAGE_DEFAULT, {minimumIntegerDigits: 2}),
                     'week': (farm.week+1)
                 }
             );

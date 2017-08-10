@@ -109,7 +109,12 @@ Auth.prototype.check = function(request, reply) {
             if(!user) {
                 return reply(Boom.unauthorized());
             }
+            var hToken = request.headers.authorization;
+            hToken = hToken.replace('Bearer ', '');
 
+            if(user.apiaccesstoken !== hToken) {
+                return reply(Boom.unauthorized());
+            }
             reply({statusCode: 200, payload: { user: user}});
         }
     );
@@ -145,7 +150,14 @@ Auth.prototype.login = function(request, reply) {
                     expiresIn: '12h',
                 }
             );
-            return reply({statusCode: 200, payload: {accessToken: token}});
+
+            user.apiaccesstoken = token;
+            user.save(function(err) {
+                if(err) {
+                    return reply(Boom.internal());
+                }
+                return reply({statusCode: 200, payload: {accessToken: token}});
+            });
         });
     });
 };

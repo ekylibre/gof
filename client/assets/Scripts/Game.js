@@ -7,12 +7,14 @@
 // TODO: check language provided by the environment
 
 const CGamePhase = require('./GamePhase');
+const CGameParcel = require('./GameParcel');
 const CFarm = require('./Farm');
 const CPlant = require('./Plant');
 const i18n = require('LanguageData');
 const SharedConsts = require('../../../common/constants');
 const ApiClient = require('./ApiClient');
 const UIDebug = require('./UI/UIDebug');
+const UIEnv = require('./UI/UIEnv');
 
 const DEBUG = true;
 
@@ -56,9 +58,15 @@ export default class CGame
         READY:          0,
         PHASE_SELECT:   10,
         PHASE_LOAD:     11,
-        PHASE_RUN:      12,
-        PHASE_SCORE:    13
+        PHASE_READY:    12,
+        PHASE_RUN:      13,
+        PHASE_SCORE:    14
     };
+
+    /**
+     * @type {CGame.State}
+     */
+    state = CGame.State.INVALID;
 
     /**
      * @private
@@ -68,9 +76,9 @@ export default class CGame
 
     /**
      * @private
-     * @type {CGame.State}
+     * @type {Number}
      */
-    state = CGame.State.INVALID;
+    _startYear = 0;
 
     constructor()
     {
@@ -97,6 +105,9 @@ export default class CGame
 
         this.farm = new CFarm();
 
+        var now = new Date(Date.now());
+        this.farm.year =now.getFullYear();
+        
         this.plants = [];
     }
 
@@ -123,6 +134,7 @@ export default class CGame
                 // First phase
                 // Give money
                 this.farm.money = _Phase.startMoney;
+                this.farm.plantExcludes = _Phase.plantExcludes;
 
                 // Setup parcels history
                 for (var i=0; i<_Phase.parcels.length; i++)
@@ -132,6 +144,7 @@ export default class CGame
                     if (parcel != null)
                     {
                         parcel.rotationHistory = setup.history;
+                        parcel.solution = setup.solution;
                     }
                     else
                     {
@@ -149,7 +162,7 @@ export default class CGame
             }
 
             this._currPhase = _Phase;
-            this.state = CGame.State.PHASE_RUN;
+            this.state = CGame.State.PHASE_READY;
             
         }
         else
@@ -162,6 +175,11 @@ export default class CGame
         }
     }
 
+    /**
+     * Returns plant data of specified species
+     * @param {String} _Species
+     * @return {CPlant} the data, or null
+     */
     findPlant(_Species)
     {        
         if (_Species !== undefined && _Species != null)
@@ -171,80 +189,37 @@ export default class CGame
             {
                 return plant;
             }
-            // for (var i=0; i<this.plants.length; i++)
-            // {
-            //     if (this.plants[i].species == _Species)
-            //     {
-            //         return this.plants[i];
-            //     }
-            // }
         }
 
         return null;
     }
 
+    /**
+     * Pull the database (plants, etc.)
+     * Must be called at least once at startup-
+     * CGame state is set to READY once the database is ok
+     * @async
+     */
     pullDatabase()
     {
-        // cc.loader.loadRes('plantsDb',
-        //     function(err, json)
-        //     {
-        //         if (json && Array.isArray(json))
-        //         {
-        //             for (var i=0; i<json.length; i++)
-        //             {
-        //                 var jsonPlant = json[i];
-        //                 var plant = instance.findPlant(jsonPlant.species);
-        //                 if (plant != null)
-        //                 {
-        //                     plant.updatePrices(jsonPlant);
-        //                 }
-        //                 else
-        //                 {
-        //                     plant = new CPlant(jsonPlant);
-        //                     if (plant._valid)
-        //                     {
-        //                         instance.plants.push(plant);
-        //                     }
-        //                 }
-        //             }
-
-        //             instance.state = CGame.State.READY;
-        //         }
-        //     }
-        // );
-
         if (!this.api)
         {
             cc.error('Please setup CGame.api');
             return;
         }
 
-        // this.api.getScenarios(null,
-        //     (error, scenarios) => 
-        //     {
-        //         if(error) {
-        //             UIDebug.log('Error: Failed to get scenarios: '+error);
-        //             return;
-        //         }
-
-        //         cc.log(scenarios);
-
-        //         if(scenarios && Array.isArray(scenarios)) {
-        //             this.api.getScenarios(scenarios[0], 
-        //                 (error, scenario) => {
-        //                     if(error) {
-        //                         UIDebug.log('Error: Failed to get scenario with uid: ' + scenarios[0] + ' ' + error);
-        //                     }
-        //                     cc.log(scenario);
-        //                 })
-        //         }
-        //     });
-
         this.api.getPlants(null,
             (error, json, c) =>
             {
                 if (error)
                 {
+                    UIEnv.message.show(
+                        i18n.t('error_connection_failed') + '\n\n('+error+')',
+                        i18n.t('error'),
+                        {
+                            buttons: 'none'
+                        }
+                    );                    
                     UIDebug.log('Error: Failed to get plants:'+error);
                     return;
                 }
@@ -278,26 +253,83 @@ export default class CGame
                 }
                 else
                 {
+                    UIEnv.message.show(
+                        i18n.t('error_connection_failed'),
+                        i18n.t('error'),
+                        {
+                            buttons: 'none'
+                        }
+                    ); 
                     UIDebug.log('Error: Invalid response for getPlants: '+json);
                 }
             });
     }
 
+    /**
+     * Starts current phase
+     */
+    phaseStart()
+    {
+        if (this.state == CGame.State.PHASE_READY)
+        {
+            this.state = CGame.State.PHASE_RUN;
+        }
+        else
+        {
+            cc.error('Invalid state to start a phase: '+Object.keys()[this.state+1]);
+        }
+    }
+
+    /**
+     * Ends current phase
+     */
+    phaseFinish()
+    {
+        //TODO
+    }
+
+    /**
+     * true if current phase ending conditions are done
+     * @return {Boolean}
+     */
     phaseCanFinish()
     {
         return eval(this._currPhase.endCondition) === true ? true : false;
     }
 
+    /**
+     * returns the "completion" string of current phase
+     * @return {String}
+     */
     phaseGetCompletionStr()
     {
         return eval(this._currPhase.completionStr);
     }
 
+    /**
+     * returns the "introduction" string of current phase
+     * @return {String}
+     */
     phaseGetIntroText()
     {
         return i18n.t(this._currPhase.introTextId);
     }
 
+    /**
+     * returns the "objective" string of current phase
+     * @return {String}
+     */
+    phaseGetObjectiveText()
+    {
+        return i18n.t(this._currPhase.objectiveTextId);
+    }
+
+    /**
+     * Loads a new phase
+     * @param {String} uid phase unique indentifier
+     * @param {Function} callback function to call when the phase is loaded
+     * @async
+     */
     loadPhase(uid, callback) 
     {
         this.state = CGame.State.PHASE_LOAD;
@@ -324,10 +356,12 @@ export default class CGame
                 phase.startWeek = json.scenario.start.date.week;
                 phase.startYearDiff = json.scenario.start.date.yearDiff;
                 phase.introTextId = json.scenario.start.introTextId;
+                phase.objectiveTextId = json.scenario.start.objectiveTextId;
                 phase.perfectScore = json.scenario.start.score;
                 phase.endCondition = json.scenario.end.condition;
                 phase.completionStr = json.scenario.end.completionStr;
-
+                phase.plantExcludes = json.scenario.start.farm.excludes;
+                
                 if(uid === 'croprotation')
                 {
                     phase.maxPrevisions = 1;
@@ -337,25 +371,30 @@ export default class CGame
                     phase.maxPrevisions = 0;
                 }
 
+                phase.parcels = new Array();
                 for(var i=0;i<json.scenario.start.farm.parcels.length;++i)
                 {
                     var sParcel = json.scenario.start.farm.parcels[i];
                     //TODO get parcel from name ?
-                    var parcel = this.farm.parcels[i];
-                    parcel.rotationHistory = new Array();
-                    sParcel.data.rotationHistory.forEach(function(element) {
+                    var parcel = new CGameParcel();
+                    parcel.uid = sParcel.uid;
+                    parcel.solution = sParcel.data.solution;
 
-                        parcel.rotationHistory.push(element);
-                    }, this);
+                    parcel.history = new Array();
+                    for(var j=0;j<sParcel.data.rotationHistory.length;++j) {
+                        parcel.history.push(sParcel.data.rotationHistory[j]);
+                    }
+
+                    phase.parcels.push(parcel);
                 }
 
-                
                 this.phase = phase;
                 callback(null);
             }
         );
     }
 
+    // DEBUG: creates random rotation history
     createRandomPhase()
     {
         this.phase = new CGamePhase();

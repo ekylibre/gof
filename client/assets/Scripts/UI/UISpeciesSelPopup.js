@@ -107,6 +107,11 @@ var UISpeciesSelPopup = cc.Class({
         // generates the plants items
         for (var i=0; i<game.plants.length; i++)
         {
+            //dont show the plant if it should be excluded
+            if(game.farm.plantExcludes.indexOf(game.plants[i].species) > -1) {
+                continue;
+            }
+
             var prefab = cc.instantiate(this.itemPrefab);
             prefab.setParent(content);
 

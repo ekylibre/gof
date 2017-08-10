@@ -19,7 +19,7 @@ var FromMode = cc.Enum({
     NONE:4,
 });
 
-cc.Class({
+var UIPopupBase = cc.Class({
     extends: cc.Component,
 
     properties:
@@ -62,10 +62,6 @@ cc.Class({
         if (this.Popup == null)
         {
             this.Popup = this.node;
-        }
-        if (!this.Popup.active)
-        {
-            this.Popup.active = true;
         }
 
         this._hidden = false;

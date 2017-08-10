@@ -56,13 +56,20 @@ var UIOffice = cc.Class({
         this.initPopup();
     },
 
+    show: function() 
+    {
+        UIEnv.parcel.hide();
+        UIEnv.speciesSelect.hide();
+        this.showPopup();
+    },
+
     onShow: function()
     {
         var game = new CGame();
         var name = game.farm.name;
         if (name === undefined)
         {
-            name = i18n.t('farm_default_name');
+            name = i18n.t('farm_default_name').toUpperCase();
         }
 
         this.farmName.string = name;
@@ -71,8 +78,8 @@ var UIOffice = cc.Class({
     },
 
     // called every frame, uncomment this function to activate update callback
-    update: function (dt) {
-    },
+    // update: function (dt) {
+    // },
 
     onBtClose: function()
     {

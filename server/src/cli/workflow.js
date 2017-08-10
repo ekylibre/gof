@@ -19,6 +19,15 @@ var SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
 var TOKEN_DIR = './cli/.credentials/';
 var TOKEN_PATH = TOKEN_DIR + 'sheets.googleapis.com-nodejs.json';
 
+function deleteDocument(model, conditions, callback) {
+    model.remove(conditions, (err) => {
+        if(err) {
+            callback(err);
+        } else {
+            callback();
+        }
+    });
+}
 function updateOrCreateDocument(model, conditions, header, row, callback) {
     model.findOne(conditions, (err, res) => {
         if(err) {
@@ -67,25 +76,34 @@ function parseData(model, data, callback) {
         if(isNaN(link)) {
             return;
         }
+
         var f = null;
         if(id >= array.length-1) {
             f = function doneParsingData(err) {
                 callback(err);
             } 
         } else {
-            f = function updateOrCreateCallback(err) {
+            f = function documentCallback(err) {
                 if(err) {
                     console.error(err);
                 }
             }
         }
-        updateOrCreateDocument(
-            model, 
-            {linkDbId: link}, 
-            header, 
-            row,
-            f
-        );
+        if(link < 0) {
+            deleteDocument(
+                model,
+                {linkDbId: -link},
+                f
+            );
+        } else {
+            updateOrCreateDocument(
+                model, 
+                {linkDbId: link}, 
+                header, 
+                row,
+                f
+            );
+        }
     });
 }
 
@@ -189,7 +207,7 @@ function exportClientLocalisation(auth, callback) {
                 }
                 var uid = rows[l][1];
                 var txt = rows[l][c];
-                stream.write('\t"' + uid + '":"' + txt + '"');
+                stream.write('\t"' + uid.replace(/\n+$/, '') + '":"' + txt.replace(/\n+$/, '') + '"');
             }
             stream.write('\n};');
             stream.end();

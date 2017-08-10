@@ -104,6 +104,12 @@ var UIParcel = cc.Class({
         UIEnv.parcel = this;
     },
 
+    show: function() 
+    {
+        UIEnv.office.hide();
+        this.showPopup();
+    },
+
     onShow: function()
     {
         //historyScrollView.scrollToOffset(cc.v2(,0));

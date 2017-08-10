@@ -6,6 +6,11 @@
 var UIEnv=
 {
     /**
+     * @property {UIMessage} message: UIMessage instance
+     */
+    message: null,
+
+    /**
      * @property {UIOffice} office: UIOffice instance
      */
     office: null,
@@ -29,6 +34,23 @@ var UIEnv=
      * @property {UIQuestMenu} questMenu: UIQuestMenu instance
      */
     questMenu: null,
+
+    /**
+     * @property {UIScore} score: UIScore instance
+     */
+    score: null,
+
+    /**
+     * @property {UIScore_assolement} score_croprotation: UIScore_assolement instance
+     */
+    score_croprotation: null,
+
+        /**
+     * @property {UIQuestIntro} questintro: UIQuestIntro instance
+     */
+    questIntro: null,
+
+
 };
 
 module.exports = UIEnv;

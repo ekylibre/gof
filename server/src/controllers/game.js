@@ -25,9 +25,10 @@ function GameController(server) {
     });
 }
 
-
 GameController.startGame = function(request, reply) {
-    reply.view('views/game', {accessToken: request.state['access_token']});
+    reply.view('views/game', 
+        {accessToken: request.state['access_token']},
+        {layoutPath: './templates/layout/game'});
 }
 
 module.exports = GameController;

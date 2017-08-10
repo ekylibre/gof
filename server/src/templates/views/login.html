@@ -9,27 +9,27 @@
                 </div>
                 {{/if}}
             {{/if}}
-            <div class="row">
-                <form method="POST" action="/auth/login" class="form-horizontal">
-                    <div class="input-group">
-                        <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
-                        <input type="email" name="email" required="required" class="form-control" id="inputEmail" value="{{error.form.email}}" placeholder="{{i18n 'placeholder_email'}}"/>
-                    </div>
+            <div style="margin: 2%;">
+                <div class="row">
+                    <form method="POST" action="/auth/login" class="form-horizontal">
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
+                            <input type="email" name="email" required="required" class="form-control" id="inputEmail" value="{{error.form.email}}" placeholder="{{i18n 'placeholder_email'}}"/>
+                        </div>
 
-                    <div class="input-group">
-                        <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
-                        <input type="password" name="password" required="required" class="form-control" id="inputPassword" placeholder="{{i18n 'placeholder_password'}}"/>
-                    </div>
-                    <div class="form-group" style="padding-top: 10px;">
-                        <input type="submit" class="btn btn-primary pull-right" value='{{i18n "login"}}'/>
-                    </div>
-                </form>
-            </div>
-            <div class="row" style="padding-top:10px;">
-                <a href="/auth/register" class="btn btn-primary pull-left" role="button">{{i18n "register"}}</a>
-            </div>
-            <div class="row" style="padding-top: 10px;">
-                <a href="/auth/lostpassword">{{i18n "index_lostpassword_link"}}</a>
+                        <div class="input-group">
+                            <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
+                            <input type="password" name="password" required="required" class="form-control" id="inputPassword" placeholder="{{i18n 'placeholder_password'}}"/>
+                        </div>
+                        <input type="submit" class="btn btn-primary pull-right" style="margin-top: 10px;" value='{{i18n "login"}}'/>
+                    </form>
+                </div>
+                <div class="row" style="margin-top:10px;">
+                    <a href="/auth/register" class="btn btn-primary pull-left" role="button">{{i18n "register"}}</a>
+                </div>
+                <div class="row" style="padding-top: 10px;">
+                    <a href="/auth/lostpassword">{{i18n "index_lostpassword_link"}}</a>
+                </div>
             </div>
         </div>
     </div>

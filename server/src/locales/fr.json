@@ -31,5 +31,6 @@
 	"lostpassword_unknown_mail": "Désolé, nous ne connaissons pas cette adresse mail <b>{{error.form.email}}</b>",
 	"ekylibre_copyright": "© 2017 Ekylibre",
 	"generic_error": "Désolé, une erreur est survenue... </br>Veuillez réessayer plus tard",
-	"made_by_ekylibre": "made_by_ekylibre"
+	"made_by_ekylibre": "made_by_ekylibre",
+	"game_set_fullscreen": "Plein écran"
 }
