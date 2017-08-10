@@ -91,10 +91,11 @@ cc.Class({
         {
             UIDebug.instance.node.active = game.isDebug;            
         }
-        
+        /*
         var policy = new cc.ResolutionPolicy(cc.ContainerStrategy.PROPORTION_TO_FRAME, cc.ContentStrategy.EXACT_FIT);
         cc.view.setDesignResolutionSize(1280, 720, policy);
-        cc.view.resizeWithBrowserSize(true); //required for Chrome
+        cc.view.resizeWithBrowserSize(false); //required for Chrome
+        */
     },
 
     whenLoggedIn: function(client)
