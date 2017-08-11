@@ -36321,6 +36321,12 @@
                 ++this.count;
             }
         };
+        Pool.prototype.resize = function(length) {
+            if (length >= 0) {
+                this._pool.length = length;
+                this.count > length && (this.count = length);
+            }
+        };
         js.Pool = Pool;
         cc.js = js;
         module.exports = js;
@@ -42065,6 +42071,7 @@
     } ],
     222: [ (function(require, module, exports) {
         var JS = require("../platform/js");
+        var sys = require("../platform/CCSys");
         var misc = {};
         misc.propertyDefine = function(ctor, sameNameGetSets, diffNameGetSets) {
             function define(np, propName, getter, setter) {
@@ -42113,11 +42120,13 @@
             return this._get() || new Image();
         };
         misc.imagePool._smallImg = "data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=";
+        sys.os === sys.OS_WINDOWS && sys.browser !== sys.BROWSER_TYPE_CHROME && misc.imagePool.resize(0);
         misc.isBuiltinClassId = function(id) {
             return id.startsWith("cc.") || id.startsWith("dragonBones.") || id.startsWith("sp.") || id.startsWith("ccsg.");
         };
         module.exports = misc;
     }), {
+        "../platform/CCSys": 181,
         "../platform/js": 192
     } ],
     223: [ (function(require, module, exports) {
