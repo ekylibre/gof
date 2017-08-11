@@ -155,6 +155,11 @@
       }
     }
 
+    function onFirstSceneLoaded(event) {
+      cc.director.off(cc.Director.EVENT_AFTER_SCENE_LAUNCH, onFirstSceneLoaded);
+      adjustCanvasSize(null);
+    }
+
     window.addEventListener('resize', adjustCanvasSize, false);
     window.addEventListener('orientationchange', adjustCanvasSize, false);
 
@@ -174,6 +179,10 @@
     document.addEventListener("msfullscreenchange", function () {
         fsChange(document.msFullscreenElement);
     }, false);
+
+    window.onload = function() {
+      cc.director.on(cc.Director.EVENT_AFTER_SCENE_LAUNCH, onFirstSceneLoaded);
+    };
   </script>
 </div>
 
