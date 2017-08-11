@@ -1,5 +1,7 @@
 'use strict';
 
+const User = require('../models/user');
+
 function GameController(server) {
 
     //routes for static files
@@ -26,9 +28,20 @@ function GameController(server) {
 }
 
 GameController.startGame = function(request, reply) {
-    reply.view('views/game', 
-        {accessToken: request.state['access_token']},
-        {layoutPath: './templates/layout/game'});
+    var email = request.auth.credentials.email;
+    User.findOne( {email: email}, (error, user) => {
+        if(error) {
+            return reply(Boom.badRequest());
+        }
+        
+        if(!user) {
+            return reply(Boom.unauthorized());
+        }
+
+        reply.view('views/game', 
+            {accessToken: user.apiaccesstoken},
+            {layoutPath: './templates/layout/game'});
+    });
 }
 
 module.exports = GameController;
