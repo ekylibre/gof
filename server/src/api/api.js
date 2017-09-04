@@ -15,7 +15,7 @@ const Rotation = require('../models/rotation');
 const Tool = require('../models/tool');
 
 var CORS = false;
-if(process.env.NODE_ENV === 'development') {
+if(process.env.NODE_ENV !== 'production') {
     //accept Cross Origin Resource Sharing when in dev
     CORS = {
         origin : ['*']
