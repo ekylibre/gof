@@ -1,5 +1,5 @@
 
-const SharedConsts = require('../../../common/constants')
+const SharedConsts = require('./constants')
 
 /**
  * Represents a plant species available in the game
