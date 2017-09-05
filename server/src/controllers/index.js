@@ -34,7 +34,7 @@ IndexController.root = function(request, reply) {
         reply.redirect('/game/start');
         return;
     }
-    reply.redirect('/auth/login');
+    reply.view('views/home', null/*, {layout: false}*/);
 }
 
 module.exports = IndexController;

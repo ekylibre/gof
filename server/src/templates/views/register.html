@@ -39,7 +39,21 @@
                 <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
                 <input type="password" name="password2" required="required" class="form-control" id="inputPassword2"  placeholder="{{i18n 'placeholder_password_confirm'}}"/>
             </div>
-           <!-- {{{ captcha_form }}} -->
+
+            <div class="input-group {{#if error.faults.password2}}has-error{{/if}}">
+                <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
+                <input type="password" name="password2" required="required" class="form-control" id="inputPassword2"  placeholder="{{i18n 'placeholder_password_confirm'}}"/>
+            </div>
+
+            <div class="input-group">
+                <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
+                <select class="form-control" id="role_select">
+                    {{#each roles}}
+                    <option value="{{id}}">{{name}}</option>
+                    {{/each}}
+                </select>
+            </div>
+           
 
            <input type="submit" class="btn btn-primary pull-right" style="margin-top: 10px;"/>
         </form>
