@@ -13,6 +13,8 @@ const IndexController = require('./controllers/index')
 const AuthController = require('./controllers/auth');
 const PlantsController = require('./controllers/plants');
 const GameController = require('./controllers/game');
+const ChannelsController = require('./controllers/channels');
+
 const Api = require('./api/api');
 //const DbManager = require('./dbmanager');
 
@@ -94,6 +96,7 @@ function setup_routes(server) {
     new AuthController(server);
     new PlantsController(server);
     new GameController(server);
+    new ChannelsController(server);
     new Api(server);
 }
 

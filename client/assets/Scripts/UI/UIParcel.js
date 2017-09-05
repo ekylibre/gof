@@ -189,6 +189,7 @@ var UIParcel = cc.Class({
 
     onBtClose: function()
     {
+        game.farm.serialize();
         this.hide();
     },
 });

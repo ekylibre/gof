@@ -137,4 +137,27 @@ export default class CParcel
 
         this.surface++;
     }
+
+    serialize()
+    {
+        var json=
+        {
+            uid: this.uid,
+            state: this.state,
+            rotationPrevision: this.rotationPrevision
+        };
+        return json;
+    }
+
+    deserialize(_JSon)
+    {
+        if (_JSon.uid !== this.uid)
+        {
+            cc.error("Invalid parcel json");
+            return;
+        }
+
+        this.state = _JSon.state;
+        this.rotationPrevision = _JSon.rotationPrevision;
+    }
 }
