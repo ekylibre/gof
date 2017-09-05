@@ -14,5 +14,6 @@
   "sourceMaps": false,
   "template": "default",
   "useDebugKeystore": true,
-  "vsVersion": "auto"
+  "vsVersion": "auto",
+  "includeEruda": false
 }

@@ -23,5 +23,6 @@
   "renderMode": "2",
   "startScene": "b43f2ff1-2473-4a89-a0e7-9f46634d7a41",
   "title": "GameOfFarms",
-  "webOrientation": "auto"
+  "webOrientation": "auto",
+  "md5Cache": false
 }

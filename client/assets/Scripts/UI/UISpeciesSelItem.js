@@ -2,7 +2,7 @@
 const i18n = require('LanguageData');
 const CPlant = require('Plant');
 const RscPreload = require('RscPreload');
-const SharedConsts = require('../../../../common/constants')
+const SharedConsts = require('../constants')
 
 var UISpeciesSelItem = cc.Class({
     extends: cc.Component,

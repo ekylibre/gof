@@ -1,7 +1,7 @@
 
 const CGame = require('../Game');
 const UIDebug = require('./UIDebug');
-const SharedConsts = require('../../../../common/constants');
+const SharedConsts = require('../constants');
 
 var game = new CGame();
 
