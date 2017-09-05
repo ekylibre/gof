@@ -69,7 +69,7 @@ function AuthController(server) {
 
     server.route({
         method: 'GET',
-        path: '/auth/register',
+        path: '/auth/register/{role?}',
         handler: AuthController.registerget
     });
 
@@ -193,7 +193,14 @@ AuthController.check = function (request, reply) {
 */
 
 AuthController.registerget = function(request, reply) {
-    reply.view('views/register');
+    var ctx = {
+        roles:
+        [
+            {id: "truffe", name:"étudiant"},
+            {id: "master", name:"enseignant"}
+        ]
+    };
+    reply.view('views/register', ctx);
 }
 
 AuthController.registerpost = function(request, reply) {

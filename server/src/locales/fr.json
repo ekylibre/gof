@@ -32,5 +32,8 @@
 	"ekylibre_copyright": "© 2017 Ekylibre",
 	"generic_error": "Désolé, une erreur est survenue... </br>Veuillez réessayer plus tard",
 	"made_by_ekylibre": "made_by_ekylibre",
-	"game_set_fullscreen": "Plein écran"
+	"game_set_fullscreen": "Plein écran",
+	"index_game_synopsis": "Game of Farms est un serious game sur la gestion des exploitations agricoles. Développé par la société Ekylibre",
+	"im_a_master": "Je suis enseignant",
+	"im_a_player": "Je suis un joueur"
 }
