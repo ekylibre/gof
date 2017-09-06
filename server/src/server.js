@@ -13,6 +13,9 @@ const IndexController = require('./controllers/index')
 const AuthController = require('./controllers/auth');
 const PlantsController = require('./controllers/plants');
 const GameController = require('./controllers/game');
+const ChannelsController = require('./controllers/channels');
+const DashboardController = require('./controllers/dashboard');
+
 const Api = require('./api/api');
 //const DbManager = require('./dbmanager');
 
@@ -70,8 +73,6 @@ function register_plugins(server)
             }
         });
 
-        
-
         //setup view templates
         server.views({
             engines: {
@@ -94,6 +95,8 @@ function setup_routes(server) {
     new AuthController(server);
     new PlantsController(server);
     new GameController(server);
+    new ChannelsController(server);
+    new DashboardController(server);
     new Api(server);
 }
 
@@ -114,7 +117,7 @@ function preResponseHandler(request, reply) {
         response.source.context = response.source.context || {};
         var ctx = request.i18n;
         ctx.user = {};
-        ctx.user.firstname = request.auth.credentials.firstname;
+        ctx.user.firstname = request.auth.credentials.user.firstname;
         
         var component = request.server.render('views/userblock', ctx, {layout: false},
             (err, rendered, config) => {

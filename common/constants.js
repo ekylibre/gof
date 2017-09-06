@@ -7,4 +7,10 @@ module.exports = Object.freeze({
         PERMACULTURE: 'permaculture'
     },
 
+    UserRoleEnum : {
+        MASTER : 'master',
+        STUDENT: 'student',
+        PROFESSIONAL: 'professional',
+        OTHER: 'other'
+    },
 });

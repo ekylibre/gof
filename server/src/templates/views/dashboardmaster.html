@@ -1,0 +1,7 @@
+<div class="row" style="width: 50%; margin:auto;">
+    <div><ul>
+    {{#each channels}}
+    <li>{{created}}, {{currentPhase}}, {{#if closed}} Terminée {{else}} En cours {{/if}} <a href='/channels/scores/{{_id}}'>Afficher les scores</a></li>
+    {{/each}}
+    </ul></div>
+</div>    

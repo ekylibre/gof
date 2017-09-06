@@ -26,8 +26,6 @@ var Auth = function(server) {
 
     var self = this;
 
-    
-
     server.route({
         method: 'GET',
         path: '/api/auth/check',
@@ -99,7 +97,7 @@ var Auth = function(server) {
 }
 
 Auth.prototype.check = function(request, reply) {
-    var email = request.auth.credentials.email;
+    var email = request.auth.credentials.user.email;
     User.findOne( {email: email}).select('-password -resetpasswordtoken').exec(
         (error, user) => {
             if(error) {

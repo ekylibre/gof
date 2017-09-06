@@ -6,8 +6,9 @@
 // the singleton also initializes i18n
 // TODO: check language provided by the environment
 
+const CGameChannel = require('./GameChannel');
 const CGamePhase = require('./GamePhase');
-const CGameParcel = require('./GameParcel');
+const CParcelSetup = require('./ParcelSetup');
 const CFarm = require('./Farm');
 const CPlant = require('./Plant');
 const i18n = require('LanguageData');
@@ -16,7 +17,7 @@ const ApiClient = require('./ApiClient');
 const UIDebug = require('./UI/UIDebug');
 const UIEnv = require('./UI/UIEnv');
 
-const DEBUG = false;
+const DEBUG = true;
 
 // Game configuration when DEBUG is true
 var ConfigDebug =
@@ -41,6 +42,7 @@ let instance = null;
  * @class
  * @property {Boolean}      isDebug: true if the game is in 'debug' mode
  * @property {Dictionary}   config: current game config
+ * @property {CGameChannel}       canal: active game 'canal'
  * @property {CFarm}        farm: the farm
  * @property {CGamePhase}   phase: active game 'phase'
  * @property {Array:CPlant}        plants: list of known plants
@@ -103,6 +105,7 @@ export default class CGame
 
         i18n.init(this.config.LANGUAGE_DEFAULT);
 
+        this.canal = new CGameChannel();
         this.farm = new CFarm();
 
         var now = new Date(Date.now());
@@ -279,13 +282,17 @@ export default class CGame
             cc.error('Invalid state to start a phase: '+Object.keys()[this.state+1]);
         }
     }
-
+    
     /**
      * Ends current phase
      */
-    phaseFinish()
+    phaseFinish(_Score, _Results)
     {
         //TODO
+        this.canal.openPhase = "";
+        this.canal.phasesResults.push({uid: this.phase.uid, score: _Score, results: _Results});
+
+        cc.log(JSON.stringify(this.canal));
     }
 
     /**
@@ -376,7 +383,7 @@ export default class CGame
                 {
                     var sParcel = json.scenario.start.farm.parcels[i];
                     //TODO get parcel from name ?
-                    var parcel = new CGameParcel();
+                    var parcel = new CParcelSetup();
                     parcel.uid = sParcel.uid;
                     parcel.solution = sParcel.data.solution;
 
