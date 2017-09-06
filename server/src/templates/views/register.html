@@ -15,14 +15,14 @@
             {{/if}}
         {{/if}}
         <form method="POST" action="/auth/register" class="form-horizontal">
-            <div class="input-group {{#if error.faults.firstname}}has-error{{/if}}">
-                <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
-                <input type="text" name="firstname" required="required" class="form-control" id="inputFirstname" value="{{error.form.firstname}}" placeholder="{{i18n 'placeholder_firstname'}}"/>
-            </div>
-            
             <div class="input-group {{#if error.faults.lastname}}has-error{{/if}}">
                 <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
                 <input type="text" name="lastname" required="required" class="form-control" id="inputLastname" value="{{error.form.lastname}}" placeholder="{{i18n 'placeholder_lastname'}}"/>
+            </div>
+
+            <div class="input-group {{#if error.faults.firstname}}has-error{{/if}}">
+                <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
+                <input type="text" name="firstname" required="required" class="form-control" id="inputFirstname" value="{{error.form.firstname}}" placeholder="{{i18n 'placeholder_firstname'}}"/>
             </div>
 
             <div class="input-group {{#if error.faults.email}}has-error{{/if}}">
@@ -40,22 +40,21 @@
                 <input type="password" name="password2" required="required" class="form-control" id="inputPassword2"  placeholder="{{i18n 'placeholder_password_confirm'}}"/>
             </div>
 
-            <div class="input-group {{#if error.faults.password2}}has-error{{/if}}">
-                <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
-                <input type="password" name="password2" required="required" class="form-control" id="inputPassword2"  placeholder="{{i18n 'placeholder_password_confirm'}}"/>
-            </div>
-
             <div class="input-group">
+                <span class="input-group-addon">{{i18n "establishment"}}:</span>
+                <input type="text" name="establishment"  class="form-control" id="inputEstablishment"  placeholder="{{i18n 'placeholder_establishment_confirm'}}"/>
+            </div>
+            
+            <div class="input-group {{#if error.faults.role}}has-error{{/if}}">
                 <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
-                <select class="form-control" id="role_select">
+                <select class="form-control" id="selectRole" name="role" required="required">
                     {{#each roles}}
-                    <option value="{{id}}">{{name}}</option>
+                    <option {{#if selected}} selected="selected" {{/if}} value="{{id}}">{{name}}</option>
                     {{/each}}
                 </select>
             </div>
-           
 
-           <input type="submit" class="btn btn-primary pull-right" style="margin-top: 10px;"/>
+            <input type="submit" class="btn btn-primary pull-right" style="margin-top: 10px;"/>
         </form>
     </div>
     </div>
