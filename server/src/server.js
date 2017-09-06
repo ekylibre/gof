@@ -117,7 +117,7 @@ function preResponseHandler(request, reply) {
         response.source.context = response.source.context || {};
         var ctx = request.i18n;
         ctx.user = {};
-        ctx.user.firstname = request.auth.credentials.firstname;
+        ctx.user.firstname = request.auth.credentials.user.firstname;
         
         var component = request.server.render('views/userblock', ctx, {layout: false},
             (err, rendered, config) => {

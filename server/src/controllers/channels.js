@@ -64,7 +64,7 @@ ChannelsController.get = function(request, reply) {
 }
 
 ChannelsController.create = function(request, reply) {
-    var email = request.auth.credentials.email;
+    var email = request.auth.credentials.user.email;
     User.findOne( {email: email}, (error, user) => {
         if(error) {
             return reply(Boom.badRequest());

@@ -126,8 +126,7 @@ AuthController.loginpost = function (request, reply) {
             //here the user had successfully entered credentials
             //let create a token
             const token = jwt.sign({
-                    email: user.email,
-                    firstname: user.firstName
+                    user: user
                 }, 
                 config.get('Jwt.key'),
                 {
@@ -147,7 +146,7 @@ AuthController.loginpost = function (request, reply) {
 }
 
 AuthController.logout = function(request, reply) {
-    var email = request.auth.credentials.email;
+    var email = request.auth.credentials.user.email;
     User.findOne( {email: email}, (error, user) => {
         if(error) {
             reply(Boom.unauthorized());
@@ -168,29 +167,6 @@ AuthController.logout = function(request, reply) {
         });
     });
 }
-
-/*
-AuthController.check = function (request, reply) {
-
-    var email = request.auth.credentials.email;
-
-    User.findOne( {email: email},
-        (error, user) => {
-            if(error) {
-                reply(Boom.unauthorized());
-                return;
-            }
-            
-            if(!user) {
-                reply(Boom.notFound());
-                return;
-            }
-
-            reply({user:user});
-        }
-    );
-}
-*/
 
 AuthController.registerget = function(request, reply) {
 
