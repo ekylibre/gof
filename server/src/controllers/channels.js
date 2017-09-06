@@ -10,9 +10,7 @@ function ChannelsController(server){
         path: '/channels',
         handler: ChannelsController.getAll/*,
         config: {
-            auth: {
-                strategy: 'token'
-            }
+            auth: 'token'
         }*/
     });
     
@@ -52,9 +50,13 @@ ChannelsController.get = function(request, reply) {
     if (chanId === undefined) {
         return reply(Boom.badRequest());
     }
-    Channel.findOne({_id: chanId}).populate('users').exec(
+    Channel.findOne({_id: chanId}).populate('users.userId').exec(
         (error, chan) => {
-            if(error || !chan) {
+            if (error) {
+                return reply(error.message);
+            }
+
+            if(!chan) {
                 return reply(Boom.badData());
             }
 
@@ -75,17 +77,15 @@ ChannelsController.create = function(request, reply) {
         }
 
         var chan = new Channel();
-        chan.users.push(user.id);
-        chan.datas.push({
-                uid: user.id,
-                phaseActive: 'none',
-                phaseResults: [{
-                    uid: 'assolement',
-                    score: 1234,
-                    details: {}
-                }]
-            }
-        );
+
+        chan.users.push({
+                    userId: user.id,
+                    phaseActive: 'none',
+                    phaseResults: [{
+                        phaseId: 'assolement',
+                        score: 1234,
+                        details: {}
+                    }]});
         chan.save(
             (error, chan) => {
                 if(error) {
@@ -97,17 +97,6 @@ ChannelsController.create = function(request, reply) {
 
     });
 
-    /*
-    var chan = new Channel();
-    chan.save(
-        (error, chan) => {
-            if(error) {
-                return reply(Boom.badRequest());
-            }
-
-            reply(JSON.stringify(chan));
-    });
-    */
 }
 
 module.exports = ChannelsController;
