@@ -18,9 +18,6 @@ function DashboardController(server) {
             auth: 'token'
         }
     });
-
-
-
 }
 
 
@@ -35,9 +32,39 @@ DashboardController.prototype.dashboardGet = function(request, reply) {
 }
 
 DashboardController.prototype.dashboardMaster = function(request, reply) {
-    var user = request.auth.credentials.user;
-
     
+    var email = request.auth.credentials.user.email;
+    User.findOne({email: email}).populate('channels').exec((error, result) => {
+        if(error) {
+            return reply(Boom.internal());
+        }
+        var user = result;
+
+        //find current active phase
+        var minIndexOfPhase = Number.MAX_SAFE_INTEGER;
+        for(var i=0;i<user.channels.length;++i) {
+            var chan = user.channels[i];
+            for(var j=0;j<chan.users.length;++j) {
+                var chanUser = chan.users[j];
+                var index = chan.phases.indexOf(chanUser.phaseActive);
+                if(index > -1) {
+                    minIndexOfPhase = Math.min(minIndexOfPhase, index);
+                }
+            }
+            if(minIndexOfPhase < Number.MAX_SAFE_INTEGER) {
+                chan.currentPhase = chan.phases[minIndexOfPhase];
+                chan.closed = false;
+            } else {
+                chan.currentPhase = 'none';
+                chan.state = 'CLOSED';
+                chan.closed = true;
+                chan.save();
+            }
+        }
+
+        var ctx = { channels: user.channels };
+        return reply.view('views/dashboardmaster', ctx, {layoutPath:'./templates/layout/dashboard'});
+    });
 }
 
 module.exports = DashboardController;
