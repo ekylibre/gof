@@ -193,13 +193,22 @@ AuthController.check = function (request, reply) {
 */
 
 AuthController.registerget = function(request, reply) {
-    var ctx = {
-        roles:
-        [
-            {id: "truffe", name:"étudiant"},
-            {id: "master", name:"enseignant"}
-        ]
+
+    var predefinedRole = request.params.role;
+    var ctx = {roles: []};
+
+    var roleKeys = Object.keys(Constants.UserRoleEnum);
+    for(var i=0; i<roleKeys.length; ++i) {
+        var role = Constants.UserRoleEnum[roleKeys[i]];
+        ctx.roles.push(
+            {id: role, name: request.i18n.__(role)}
+        );
     };
+
+    for(var i=0; i<ctx.roles.length;++i) {
+        ctx.roles[i].selected = ctx.roles[i].id == predefinedRole;
+    }
+
     reply.view('views/register', ctx);
 }
 
@@ -219,7 +228,11 @@ AuthController.registerpost = function(request, reply) {
     var email = request.payload.email;
     var p1 = request.payload.password1;
     var p2 = request.payload.password2;
+
+    var role = request.payload.role;
  
+    var establishment = request.payload.establishment;
+
     User.findOne({email: email}, 
         (error, result) => {
             if(result && result.email == email) {
@@ -236,6 +249,8 @@ AuthController.registerpost = function(request, reply) {
                     u.lastName = last;
                     u.email = email;
                     u.password = encrypted;
+                    u.establishment = establishment;
+                    u.role = role;
                     u.save(
                         (error, user) => {
                             if(error) {

@@ -1,3 +1,4 @@
+const Constants = require('../../../common/constants');
 const Joi = require('joi');
 const Hoek = require('hoek');
 
@@ -48,7 +49,13 @@ module.exports = {
             lastname: Joi.string().required(),
             email: Joi.string().email().required(),
             password1: Joi.string().min(6).max(12).required(),
-            password2: Joi.any().valid(Joi.ref('password1')).required()
+            password2: Joi.any().valid(Joi.ref('password1')).required(),
+            role: Joi.string().valid(
+                Constants.UserRoleEnum.MASTER, 
+                Constants.UserRoleEnum.STUDENT, 
+                Constants.UserRoleEnum.PROFESSIONAL, 
+                Constants.UserRoleEnum.OTHER).required(),
+            establishment: Joi.string()
         });
 
         return Joi.validate(payload, schema);
