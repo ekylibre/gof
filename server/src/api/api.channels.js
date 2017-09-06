@@ -27,7 +27,7 @@ function ApiChannels(server) {
     });
 
     server.route({
-        method: 'POST',
+        method: 'GET',
         path: '/api/channel/setGameData',
         handler: function(request, reply) { self.setGameData(request, reply); },
         config: {
@@ -37,6 +37,11 @@ function ApiChannels(server) {
     });    
 }
 
+
+// @method _getChannelUser
+// @param {Request} request request containing the user's credentials, and the channel id (params.chanId)
+// @param {Callback} cb callback(channel, chanUser): the channel (or a Boom error), and the user's channel data
+//
 ApiChannels.prototype._getChannelUser = function (request, cb) {
     if(!request.auth.credentials.user) {
         return cb(Boom.unauthorized());
@@ -62,31 +67,41 @@ ApiChannels.prototype._getChannelUser = function (request, cb) {
                 return cb(Boom.notFound());
             }
     
-            // Find user in channel and mark as linked if needed
-            var chanUser = null;
-            for (var i=0; i<channel.users.length; i++) {
-                var uid = channel.users[i].userId;
-                if ( uid.equals(user._id)) {
-                    chanUser = channel.users[i];
-                    break;
-                }
-            }    
-
-            if (chanUser) {
-                if (!chanUser.linked) {
-                    if (!user.channels.contains(channel._id)) {
-                        user.channels.push(channel._id);
-                        user.save();
+            try {
+                // Find user in channel and mark as linked if needed
+                var chanUser = null;
+                for (var i=0; i<channel.users.length; i++) {
+                    var uid = channel.users[i].userId;
+                    if (uid.equals(user._id)) {
+                        chanUser = channel.users[i];
+                        break;
                     }
-            
-                    chanUser.linked = true;
-                    channel.save();
-                }
+                }    
 
-                return cb(chanUser);
+                if (chanUser) {
+                    if (!chanUser.linked) {
+                        if (user.channels.indexOf(channel._id)<0) {
+                            user.channels.push(channel._id);
+                            user.save();
+                        }
+                
+                        chanUser.linked = true;
+                        channel.save();
+                    }
+
+                    return cb(channel, chanUser);
+                }
+                else {
+                    return cb(Boom.unauthorized('User not invited in channel'));
+                }
             }
-            else {
-                return cb(Boom.unauthorized('User not invited in channel'));
+            catch (ex) {
+                var err = Boom.badImplementation();
+                if (CORS) {
+                    err.output.payload.error = 'Internal Error: getChannelUser';
+                    err.output.payload.message = ex.message;
+                }
+                return cb(err);
             }
         });
   
@@ -94,27 +109,38 @@ ApiChannels.prototype._getChannelUser = function (request, cb) {
     
 }
 
+/**
+ * Request params:
+ * @param {String(ObjectId)} chanId channel id
+ */
 ApiChannels.prototype.getGameData = function(request, reply) {
-    this._getChannelUser(request, (chanUser) =>  {
-        if (chanUser.isBoom) {
-            return reply(chanUser);
+    this._getChannelUser(request, (channel, chanUser) =>  {
+        if (channel.isBoom) {
+            return reply(channel);
         }
     
         return reply({statusCode: 200, payload: {gameData: chanUser.gameData}});
     });
 }
 
+/**
+ * Request params:
+ * @param {String(ObjectId)} chanId channel id
+ * @param {Object} gameData game data to be stored
+ */
 ApiChannels.prototype.setGameData = function(request, reply) {
+    request.payload = request.query;
+
     if (!request.payload.gameData) {
         return reply(Boom.badRequest());
     }
-    this._getChannelUser(request, (chanUser) =>  {
-        if (chanUser.isBoom) {
-            return reply(chanUser);
+    this._getChannelUser(request, (channel, chanUser) =>  {
+        if (channel.isBoom) {
+            return reply(channel);
         }
     
         chanUser.gameData = request.payload.gameData;
-        chanUser.save();
+        channel.save();
         return reply({statusCode: 200});
     });
 }
