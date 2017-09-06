@@ -20,6 +20,11 @@ var UserSchema = new mongoose.Schema({
     establishment: String,
     resetpasswordtoken: String,
     apiaccesstoken: String,
+
+    channels: [{
+        type: mongoose.Schema.Types.ObjectId, 
+        ref: 'Channel'
+    }]
 });
 
 module.exports = mongoose.model('User', UserSchema);

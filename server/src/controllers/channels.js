@@ -62,7 +62,6 @@ ChannelsController.get = function(request, reply) {
 
             return reply(JSON.stringify(chan));
     });
-
 }
 
 ChannelsController.create = function(request, reply) {
@@ -77,15 +76,18 @@ ChannelsController.create = function(request, reply) {
         }
 
         var chan = new Channel();
+        chan.phases = ['croprotation'];
+        chan.created = new Date();
 
         chan.users.push({
-                    userId: user.id,
-                    phaseActive: 'none',
-                    phaseResults: [{
-                        phaseId: 'assolement',
-                        score: 1234,
-                        details: {}
-                    }]});
+            userId: user.id,
+            phaseActive: 'none',
+            phaseResults: [{
+                phaseId: 'croprotation',
+                score: 1234,
+                details: {}
+            }]});
+
         chan.save(
             (error, chan) => {
                 if(error) {

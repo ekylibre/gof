@@ -33,7 +33,12 @@ var ChannelSchema = new mongoose.Schema({
         ],
         required: true,
         default: 'OPENED'
-    }
+    },
+    phases: [{
+        type: String,
+        required: true
+    }],
+    created: Date
 });
 
 module.exports = mongoose.model('Channel', ChannelSchema);
