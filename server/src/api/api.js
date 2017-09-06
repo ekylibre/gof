@@ -14,6 +14,8 @@ const Equipment = require('../models/equipment');
 const Rotation = require('../models/rotation');
 const Tool = require('../models/tool');
 
+const ApiChannels = require('./api.channels');
+
 var CORS = false;
 if(process.env.NODE_ENV !== 'production') {
     //accept Cross Origin Resource Sharing when in dev
@@ -273,6 +275,7 @@ Scenario.prototype.getScenarios = function(request, reply) {
 function Api(server) {
     this.Auth = new Auth(server);
     this.Scenario = new Scenario(server);
+    this.Channels = new ApiChannels(server);
 }
 
 module.exports = Api;
