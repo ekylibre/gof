@@ -198,8 +198,8 @@ AuthController.registerpost = function(request, reply) {
         });
     }
 
-    var first = request.payload.firstName;
-    var last = request.payload.lastName;
+    var first = request.payload.firstname;
+    var last = request.payload.lastname;
     
     var email = request.payload.email;
     var p1 = request.payload.password1;

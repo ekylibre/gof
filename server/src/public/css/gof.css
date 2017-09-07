@@ -9,3 +9,35 @@ video#bgvid {
 video#bgvid::-webkit-scrollbar {
     display: none;
 }
+
+.gof-scenario-item {
+    position:relative;
+    background-repeat: no-repeat;
+    background-size: 400px 343px;
+    width: 400px;
+    height: 343px;
+}
+
+.gof-scenario-item span {
+    position: absolute;
+    margin: auto;
+    left: 0;
+    bottom: 0;
+    right: 0;
+    color: white; 
+    font: bold 24px/45px Helvetica, Sans-Serif; 
+    
+    background: rgb(0, 0, 0);
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px; 
+}
+
+.gof-scenario-item-outline {
+    position: absolute;
+    left: 0px;
+    top: 0px;
+    right: 0px;
+    bottom: 0px;
+    -moz-box-shadow: inset 0 0px 4px rgba(0, 0, 0, .55);
+    -webkit-box-shadow: inset 0 0px 4px rgba(0, 0, 0, .55);
+}

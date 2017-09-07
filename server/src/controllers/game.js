@@ -19,7 +19,19 @@ function GameController(server) {
 
     server.route({
         method: 'GET',
-        path: '/game/start',
+        path : '/game/start/{file*}',
+        handler: {
+            directory: {
+                path: __dirname + '/../public/web-desktop',
+                listing: false,
+                index: false,
+            }
+        }
+    });
+
+    server.route({
+        method: 'GET',
+        path: '/game/start/{channelId}',
         handler: GameController.startGame,
         config: {
             auth: 'token'
@@ -38,9 +50,14 @@ GameController.startGame = function(request, reply) {
             return reply(Boom.unauthorized());
         }
 
-        reply.view('views/game', 
-            {accessToken: user.apiaccesstoken},
-            {layoutPath: './templates/layout/game'});
+        var channelId = request.params.channelId;
+
+        reply.view('views/game', {
+            accessToken: user.apiaccesstoken,
+            channelId: channelId
+        }, {
+            layoutPath: './templates/layout/game'
+        });
     });
 }
 
