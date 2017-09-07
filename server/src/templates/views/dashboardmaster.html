@@ -1,7 +1,11 @@
 <div class="row" style="width: 50%; margin:auto;">
     <div><ul>
     {{#each channels}}
-    <li>{{created}}, {{currentPhase}}, {{#if closed}} Terminée {{else}} En cours {{/if}} <a href='/channels/scores/{{_id}}'>Afficher les scores</a></li>
+    <li>{{created}}, {{phase}}, {{#if closed}} Terminée {{else}} En cours {{/if}} <a href='/channels/scores/{{_id}}'>Afficher les scores</a></li>
     {{/each}}
     </ul></div>
 </div>    
+
+<div class="row" style="width: 50%; margin:auto;">
+    <a href="/channels/scenarioselection" class="btn btn-primary">{{i18n "create_new_channel"}}</a>
+</div>

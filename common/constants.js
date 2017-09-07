@@ -13,4 +13,9 @@ module.exports = Object.freeze({
         PROFESSIONAL: 'professional',
         OTHER: 'other'
     },
+
+    ChannelStateEnum : {
+        OPENED: 'opened',
+        CLOSED: 'closed'
+    }
 });

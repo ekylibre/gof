@@ -41,5 +41,14 @@
 	"master": "Enseignant",
 	"student": "Etudiant",
 	"professional": "Agriculteur",
-	"other": "Autre"
+	"other": "Autre",
+	"scenario_croprotation": "Assolement",
+	"channelstate_opened": "En cours",
+	"channelstate_closed": "Terminée",
+	"create_new_channel": "Nouvelle partie",
+	"scenario_budgetplan": "Budget prévisionnel",
+	"scenario_itk": "Itinéraire technique",
+	"scenario_selection_ok_master": "Inviter les joueurs",
+	"scenario_selection_ok_player": "Démarrer la partie",
+	"scenario_locked": "scenario_locked"
 }

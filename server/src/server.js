@@ -16,6 +16,8 @@ const GameController = require('./controllers/game');
 const ChannelsController = require('./controllers/channels');
 const DashboardController = require('./controllers/dashboard');
 
+var moment = require('moment');
+
 const Api = require('./api/api');
 //const DbManager = require('./dbmanager');
 
@@ -133,6 +135,9 @@ function preResponseHandler(request, reply) {
 
 //entry point
 function main() {
+
+    moment.locale('fr');
+    
     const server = new Hapi.Server();
 
     var dbUrl = Config.get('Database.connectionUrl');
