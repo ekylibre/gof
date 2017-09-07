@@ -77,7 +77,7 @@
       }
     ],
     "_tag": -1,
-    "_active": true,
+    "_active": false,
     "_components": [],
     "_prefab": {
       "__id__": 39
@@ -482,7 +482,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 109.36,
+      "width": 99.28,
       "height": 20
     },
     "_rotationX": 0,
@@ -514,8 +514,10 @@
     "_fontSize": 16,
     "_lineHeight": 20,
     "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
+    "_N$file": {
+      "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
     "_N$string": "ASSOLEMENT",
     "_N$horizontalAlign": 1,

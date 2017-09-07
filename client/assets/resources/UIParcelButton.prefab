@@ -430,7 +430,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 91.05,
+      "width": 85.36,
       "height": 26
     },
     "_rotationX": 0,
@@ -462,8 +462,10 @@
     "_fontSize": 26,
     "_lineHeight": 26,
     "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
+    "_N$file": {
+      "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
     "_N$string": "parcelle",
     "_N$horizontalAlign": 1,
