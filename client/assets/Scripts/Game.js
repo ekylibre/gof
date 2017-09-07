@@ -305,20 +305,29 @@ export default class CGame
     /**
      * @method saveChannel Save game state in channel
      */
-    saveChannel()
+    saveChannel(callback)
     {
-        if (!this.api || !this.api.channelId || this._saving)
+        if (!this.api || !this.api.channelId)
         {
             return;
         }
 
-        if (this.state >= CGame.State.PHASE_READY && this.state < CGame.State.PHASE_SCORE)
+        if (this._saving)
+        {
+            if (callback)
+            {
+                callback();
+            }
+            return;
+        }
+
+        if (this.state >= CGame.State.PHASE_READY && this.state <= CGame.State.PHASE_SCORE)
         {
             this._saving = true;
 
             var save = {};
             save.date = Date.now();
-            save.phaseId = this.phase.uid;
+            //save.phaseId = this.phase.uid;
             save.phaseState = this.state;
             save.farm = this.farm.serialize();
 
@@ -328,6 +337,10 @@ export default class CGame
                 (err, res, c)=>
             {
                 self._saving = false;
+                if (callback)
+                {
+                    callback();
+                }
                 if (err)
                 {
                     UIEnv.message.show(
@@ -358,12 +371,19 @@ export default class CGame
             {
                 return criticalError(err);
             }
+                
+            if (!res.payload.phase)
+            {
+                return criticalError(new Error('invalid getgamedata result', res.payload));
+            }
+
+            var phaseId = res.payload.phase;
 
             if (res.payload.gameData)
             {
                 // Restore existing game
                 UIDebug.log('Restoring existing game from channel');
-                
+
                 var save = res.payload.gameData;
                 try
                 {
@@ -371,7 +391,7 @@ export default class CGame
                     {
                         save = JSON.parse(res.payload.gameData);
                     }
-                    if (!save || !save.farm || !save.phaseId || !save.phaseState)
+                    if (!save || !save.farm || !save.phaseState)
                     {
                         return criticalError(new Error('Invalid gameData'), res.payload.gameData);
                     }
@@ -383,38 +403,39 @@ export default class CGame
                     return criticalError(new Error('Exception restoring gameData'), _e);
                 }
 
-                self.loadPhase(save.phaseId, (err) =>
+                self.loadPhase(phaseId, (err) =>
                 {
                     if (!err)
                     {
                         self.state = save.phaseState;
                         UIDebug.log('Restoration succeeded - going to state '+self.state);
+
+                        if (self.state == CGame.State.PHASE_SCORE) {
+                            UIEnv.questInfo.onBtValidate();
+                        }
                     }
                     else
                     {
-                        return criticalError(err);
+                        criticalError(err);
                     }
                 });
 
             }
-            else if (res.payload.phase)
+            else
             {
                 //// DEBUG
-                if (self.isDebug && res.payload.phase != 'croprotation')
+                if (self.isDebug && phaseId != 'croprotation')
                 {
-                    res.payload.phase = 'croprotation';
+                    phaseId = 'croprotation';
                 }
                 //////
                     
                 // Starts from the beginning
-                UIDebug.log('Starting phase from channel: '+res.payload.phase);
+                UIDebug.log('Starting phase from channel: '+phaseId);
                 
-                self.loadPhase(res.payload.phase, criticalError);
+                self.loadPhase(phaseId, criticalError);
             }
-            else
-            {
-                criticalError(new Error('invalid getgamedata result', res.payload));
-            }
+
         });
         
     }
@@ -439,8 +460,14 @@ export default class CGame
      */
     phaseFinish(_Score, _Results)
     {
-        //TODO
-        this.state = CGame.State.PHASE_SCORE;
+        if (this.state != CGame.State.PHASE_SCORE)
+        {
+            this.state = CGame.State.PHASE_SCORE;
+            this.saveChannel(() =>
+            {
+                
+            });
+        }
     }
 
     /**

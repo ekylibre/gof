@@ -102,7 +102,7 @@ cc.Class({
     {
         //cc.log('Logged-in!')
         game.api = client;
-        //game.api.channelId = "59afc87321b905095cc086ff";
+        //game.api.channelId = undefined;
         game.pullDatabase();       
 
         // client.getPlants({cultureMode: 'normal', __v:0}, 

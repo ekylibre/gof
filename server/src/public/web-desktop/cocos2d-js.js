@@ -32,10 +32,9 @@
     return newRequire;
 })({
     1: [ (function(require, module, exports) {
-        cc._tmp = cc._tmp || {};
         cc._LogInfos = cc._LogInfos || {};
         var engineVersion;
-        engineVersion = "1.5.2";
+        engineVersion = "1.6.1";
         window["CocosEngine"] = cc.ENGINE_VERSION = engineVersion;
         cc._drawingUtil = null;
         cc._renderContext = null;
@@ -45,119 +44,57 @@
         cc._gameDiv = null;
         require("./cocos2d/core/utils");
         require("./cocos2d/core/platform/CCSys");
-        (function() {
-            var _jsAddedCache = {}, _engineInitCalled = false, _engineLoadedCallback = null;
-            cc._engineLoaded = false;
-            function _determineRenderType(config) {
-                var CONFIG_KEY = cc.game.CONFIG_KEY, userRenderMode = parseInt(config[CONFIG_KEY.renderMode]) || 0;
-                (isNaN(userRenderMode) || userRenderMode > 2 || userRenderMode < 0) && (config[CONFIG_KEY.renderMode] = 0);
+        var _engineInitCalled = false, _engineLoadedCallback = null;
+        cc._engineLoaded = false;
+        function _determineRenderType(config) {
+            var CONFIG_KEY = cc.game.CONFIG_KEY, userRenderMode = parseInt(config[CONFIG_KEY.renderMode]) || 0;
+            (isNaN(userRenderMode) || userRenderMode > 2 || userRenderMode < 0) && (config[CONFIG_KEY.renderMode] = 0);
+            cc._renderType = cc.game.RENDER_TYPE_CANVAS;
+            cc._supportRender = false;
+            if (0 === userRenderMode) {
+                if (cc.sys.capabilities["opengl"]) {
+                    cc._renderType = cc.game.RENDER_TYPE_WEBGL;
+                    cc._supportRender = true;
+                } else if (cc.sys.capabilities["canvas"]) {
+                    cc._renderType = cc.game.RENDER_TYPE_CANVAS;
+                    cc._supportRender = true;
+                }
+            } else if (1 === userRenderMode && cc.sys.capabilities["canvas"]) {
                 cc._renderType = cc.game.RENDER_TYPE_CANVAS;
-                cc._supportRender = false;
-                if (0 === userRenderMode) {
-                    if (cc.sys.capabilities["opengl"]) {
-                        cc._renderType = cc.game.RENDER_TYPE_WEBGL;
-                        cc._supportRender = true;
-                    } else {
-                        if (cc.sys.capabilities["canvas"]) {
-                            cc._renderType = cc.game.RENDER_TYPE_CANVAS;
-                            cc._supportRender = true;
-                        }
-                    }
-                } else {
-                    if (1 === userRenderMode && cc.sys.capabilities["canvas"]) {
-                        cc._renderType = cc.game.RENDER_TYPE_CANVAS;
-                        cc._supportRender = true;
-                    } else {
-                        if (2 === userRenderMode && cc.sys.capabilities["opengl"]) {
-                            cc._renderType = cc.game.RENDER_TYPE_WEBGL;
-                            cc._supportRender = true;
-                        }
-                    }
-                }
+                cc._supportRender = true;
+            } else if (2 === userRenderMode && cc.sys.capabilities["opengl"]) {
+                cc._renderType = cc.game.RENDER_TYPE_WEBGL;
+                cc._supportRender = true;
             }
-            function _getJsListOfModule(moduleMap, moduleName, dir) {
-                if (_jsAddedCache[moduleName]) {
-                    return null;
-                }
-                dir = dir || "";
-                var jsList = [];
-                var tempList = moduleMap[moduleName];
-                if (!tempList) {
-                    throw new Error("can not find module [" + moduleName + "]");
-                }
-                var ccPath = cc.path;
-                for (var i = 0, li = tempList.length; i < li; i++) {
-                    var item = tempList[i];
-                    if (_jsAddedCache[item]) {
-                        continue;
-                    }
-                    var extname = ccPath.extname(item);
-                    if (extname) {
-                        ".js" === extname.toLowerCase() && jsList.push(ccPath.join(dir, item));
-                    } else {
-                        var arr = _getJsListOfModule(moduleMap, item, dir);
-                        arr && (jsList = jsList.concat(arr));
-                    }
-                    _jsAddedCache[item] = 1;
-                }
-                return jsList;
+        }
+        function _afterEngineLoaded() {
+            cc._engineLoaded = true;
+            console.log(cc.ENGINE_VERSION);
+            _engineLoadedCallback && _engineLoadedCallback();
+        }
+        function _windowLoaded() {
+            window.removeEventListener("load", _windowLoaded, false);
+            _afterEngineLoaded();
+        }
+        cc.initEngine = function(config, cb) {
+            if (_engineInitCalled) {
+                var previousCallback = _engineLoadedCallback;
+                _engineLoadedCallback = function() {
+                    previousCallback && previousCallback();
+                    cb && cb();
+                };
+                return;
             }
-            function _afterEngineLoaded() {
-                cc._engineLoaded = true;
-                console.log(cc.ENGINE_VERSION);
-                _engineLoadedCallback && _engineLoadedCallback();
-            }
-            function _load(config) {
-                var CONFIG_KEY = cc.game.CONFIG_KEY, engineDir = config[CONFIG_KEY.engineDir], loader = cc.loader;
-                if (cc._Class) {
-                    _afterEngineLoaded();
-                } else {
-                    var ccModulesPath = cc.path.join(engineDir, "moduleConfig.json");
-                    loader.load(ccModulesPath, (function(err, modulesJson) {
-                        if (err) {
-                            throw new Error(err);
-                        }
-                        var modules = config["modules"] || [];
-                        var moduleMap = modulesJson["module"];
-                        var jsList = [];
-                        cc.sys.capabilities["opengl"] && modules.indexOf("base4webgl") < 0 ? modules.splice(0, 0, "base4webgl") : modules.indexOf("core") < 0 && modules.splice(0, 0, "core");
-                        for (var i = 0, li = modules.length; i < li; i++) {
-                            var arr = _getJsListOfModule(moduleMap, modules[i], engineDir);
-                            arr && (jsList = jsList.concat(arr));
-                        }
-                        loader.load(jsList, (function(err) {
-                            if (err) {
-                                throw new Error(JSON.stringify(err));
-                            }
-                            _afterEngineLoaded();
-                        }));
-                    }));
-                }
-            }
-            function _windowLoaded() {
-                window.removeEventListener("load", _windowLoaded, false);
-                _load(cc.game.config);
-            }
-            cc.initEngine = function(config, cb) {
-                if (_engineInitCalled) {
-                    var previousCallback = _engineLoadedCallback;
-                    _engineLoadedCallback = function() {
-                        previousCallback && previousCallback();
-                        cb && cb();
-                    };
-                    return;
-                }
-                _engineLoadedCallback = cb;
-                !cc.game.config && config ? cc.game.config = config : cc.game.config || cc.game._loadConfig();
-                config = cc.game.config;
-                _determineRenderType(config);
-                document.body ? _load(config) : window.addEventListener("load", _windowLoaded, false);
-                _engineInitCalled = true;
-            };
-        })();
+            _engineLoadedCallback = cb;
+            !cc.game.config && config ? cc.game.config = config : cc.game.config || cc.game._loadConfig();
+            config = cc.game.config;
+            _determineRenderType(config);
+            document.body ? _afterEngineLoaded() : window.addEventListener("load", _windowLoaded, false);
+            _engineInitCalled = true;
+        };
     }), {
         "./cocos2d/core/platform/CCSys": 181,
-        "./cocos2d/core/utils": 221
+        "./cocos2d/core/utils": 222
     } ],
     2: [ (function(require, module, exports) {
         cc._logToWebPage = function(msg) {
@@ -232,21 +169,18 @@
                 mode === cc.DebugMode.INFO_FOR_WEB_PAGE && (cc.log = cc.info = function() {
                     locLog(cc.js.formatStr.apply(null, arguments));
                 });
-            } else {
-                if (console && console.log.apply) {
-                    console.error || (console.error = console.log);
-                    console.warn || (console.warn = console.log);
-                    console.error.bind ? cc.error = console.error.bind(console) : cc.error = function() {
-                        return console.error.apply(console, arguments);
-                    };
-                    cc.assert = function(cond, msg) {
-                        if (!cond) {
-                            msg && (msg = cc.js.formatStr.apply(null, cc.js.shiftArguments.apply(null, arguments)));
-                            debugger;
-                            throw new Error(msg);
-                        }
-                    };
-                }
+            } else if (console && console.log.apply) {
+                console.error || (console.error = console.log);
+                console.warn || (console.warn = console.log);
+                console.error.bind ? cc.error = console.error.bind(console) : cc.error = function() {
+                    return console.error.apply(console, arguments);
+                };
+                cc.assert = function(cond, msg) {
+                    if (!cond) {
+                        msg && (msg = cc.js.formatStr.apply(null, cc.js.shiftArguments.apply(null, arguments)));
+                        throw new Error(msg);
+                    }
+                };
             }
             mode !== cc.DebugMode.ERROR && (console.warn.bind ? cc.warn = console.warn.bind(console) : cc.warn = function() {
                 return console.warn.apply(console, arguments);
@@ -355,6 +289,7 @@
             "1508": "Argument callback must not be empty",
             "1509": "Argument target must be non-nullptr",
             "1510": "cc.Scheduler: Illegal target which doesn't have uuid or instanceId",
+            "1511": "cc.Scheduler: pause state of the scheduled task doesn't match the element pause state in Scheduler, the given paused state will be ignored",
             "1600": "getZOrder is deprecated. Please use getLocalZOrder instead.",
             "1601": "setZOrder is deprecated. Please use setLocalZOrder instead.",
             "1602": "RotationX != RotationY. Don't know which one to return",
@@ -514,7 +449,6 @@
             "3115": "Frame Grabber: could not attach texture to framebuffer",
             "3116": "WebGLRenderingContext.CLAMP_TO_EDGE should be used in NPOT textures",
             "3117": "Mimpap texture only works in POT textures",
-            "3200": "Missing file: %s",
             "3300": "Rect width exceeds maximum margin: %s",
             "3400": "Rect height exceeds maximum margin: %s",
             "3500": "0 priority is forbidden for fixed priority since it's used for scene graph based priority.",
@@ -551,7 +485,7 @@
             "3621": "Unknown type of %s.%s, maybe you want is '%s'.",
             "3622": "Unknown type of %s.%s, property should be defined in 'properties' or 'ctor'",
             "3623": "Can not use 'editor' attribute, '%s' not inherits from Components.",
-            "3624": "'%s' overrided '%s' but '%s' is defined as 'false' so the super method will not be called. You can set '%s' to null to disable this warning.",
+            "3624": "'%s' overwrote '%s' but '%s' is defined as 'false' so the super method will not be called. You can set '%s' to null to disable this warning.",
             "3625": "[isChildClassOf] superclass should be function type, not",
             "3626": "Can't remove '%s' because '%s' depends on it.",
             "3627": "Should not add renderer component (%s) to a Canvas node.",
@@ -563,7 +497,7 @@
             "3633": "Properties function of '%s' should return an object!",
             "3634": "Disallow to use '.' in property name",
             "3635": "Default array must be empty, set default value of %s.%s to [], and initialize in 'onLoad' or 'ctor' please. (just like 'this.%s = [...];')",
-            "3636": "Do not set default value to non-empty object, unless the object defines its own 'clone' function. Set default value of %s.%s to null or {}, and initialize in 'onLoad' or 'ctor' please. (just like 'this.%s = {foo: bar};')",
+            "3636": "Can not set default value to non-empty object, unless the object derived from cc.ValueType and overwrite the 'clone' function. Set default value of %s.%s to null or {}, and initialize in 'onLoad' or 'ctor' please. (just like 'this.%s = {foo: bar};')",
             "3637": "Can not declare %s.%s, it is already defined in the prototype of %s",
             "3638": "'%s': the getter of '%s' is already defined!",
             "3640": "'%s': the setter of '%s' is already defined!",
@@ -576,8 +510,12 @@
             "3647": "The length of range array must be equal or greater than 2",
             "3648": "Can not declare %s.%s method, it is already defined in the properties of %s.",
             "3649": "CCClass %s have conflict between its ctor and __ctor__.",
-            "3650": "No need to specifiy '%s' attribute for '%s' in class \"%s\".",
+            "3650": 'No need to specifiy "%s" attribute for "%s" property in "%s" class.',
             "3651": 'Can not call `_super` or `prototype.ctor` in ES6 Classes "%s", use `super` instead please.',
+            "3652": 'Failed to construct a dummy instance of the "%s" class using `new` behind the scenes. This is for getting default values declared in TypeScript. Please ensure the class will be able to construct during script\'s initialization. %s',
+            "3653": 'Please do not specifiy "default" attribute in decorator of "%s" property in "%s" class.\n  Default value must be initialized at their declaration: 😂\n    // Before:\n    @property({\n      type: cc.Integer\n      default: 0  // <--\n    })\n    value;\n\n    // After:\n    @property({\n      type: cc.Integer\n    })\n    value = 0;    // <--',
+            "3654": 'Please specifiy a default value for "%s" property at its declaration: 😂\n    // Before:\n    @property(...)\n    value;\n\n    // After:\n    @property(...)\n    value = 0;',
+            "3655": 'Can not specifiy "get" or "set"  attribute in decorator for "%s" property in "%s" class.\n  Please use:\n    @property(...)\n    get %s () {\n      ...\n    }\n    @property\n    set %s (value) {\n      ...\n    }',
             "3700": "internal error: _prefab is undefined",
             "3701": "Failed to load prefab asset for node '%s'",
             "3800": "The target can not be made persist because it's not a cc.Node or it doesn't have _id property.",
@@ -654,6 +592,8 @@
             "4918": "cc.LabelBMFont._parseCommonArguments(): only supports 1 page",
             "4919": "cc.LabelBMFont._parseImageFileName() : file could not be found",
             "4920": "Sorry, you shouldn't use id as item identity any more, please use url or uuid instead, the current id is being set as url: (%s)",
+            "4921": "Invalid pipe or invalid index provided!",
+            "4922": "The pipe to be inserted is already in the pipeline!",
             "5000": "object already destroyed",
             "5001": "object not yet destroyed",
             "5100": "Not a plist file!",
@@ -686,7 +626,7 @@
             "5514": "The 'default' value of '%s.%s' should not be used with a 'set' function.",
             "5515": "The 'default' value of '%s.%s' can not be an constructor. Set default to null please.",
             "5516": "Property '%s.%s' must define at least one of 'default', 'get' or 'set'.",
-            "5517": "'%s.%s' hides inherited property '%s.%s'. To make the current property override that implementation, add the `override: true` attribute please.",
+            "5517": "'%s.%s' hides inherited property '%s.%s'. To make the current property overwrite that implementation, add the `override: true` attribute please.",
             "5600": "Argument must be non-nil",
             "5601": "Can not get current scene.",
             "5602": "Scene is destroyed",
@@ -809,7 +749,8 @@
             "8105": "cocos2d: cc.shaderCache._loadDefaultShader, error shader type",
             "8200": "Please set node's active instead of rigidbody's enabled.",
             "8300": "Should only one camera exists, please check your project.",
-            "8301": "Camera does not support Canvas Mode."
+            "8301": "Camera does not support Canvas Mode.",
+            "8400": "Wrong type arguments, 'filePath' must be a String."
         };
         cc._LogInfos = logs;
     }), {} ],
@@ -1033,7 +974,7 @@
             var t2 = t * t;
             var t3 = t2 * t;
             var s = (1 - tension) / 2;
-            var b1 = s * (-t3 + 2 * t2 - t);
+            var b1 = s * (2 * t2 - t3 - t);
             var b2 = s * (-t3 + t2) + (2 * t3 - 3 * t2 + 1);
             var b3 = s * (t3 - 2 * t2 + t) + (-2 * t3 + 3 * t2);
             var b4 = s * (t3 - t2);
@@ -1402,7 +1343,7 @@
         };
         cc.EaseExponentialOut = cc.ActionEase.extend({
             update: function(dt) {
-                this._inner.update(1 === dt ? 1 : -Math.pow(2, -10 * dt) + 1);
+                this._inner.update(1 === dt ? 1 : 1 - Math.pow(2, -10 * dt));
             },
             reverse: function() {
                 return new cc.EaseExponentialIn(this._inner.reverse());
@@ -1415,7 +1356,7 @@
         });
         cc._easeExponentialOutObj = {
             easing: function(dt) {
-                return 1 === dt ? 1 : -Math.pow(2, -10 * dt) + 1;
+                return 1 === dt ? 1 : 1 - Math.pow(2, -10 * dt);
             },
             reverse: function() {
                 return cc._easeExponentialInObj;
@@ -1428,7 +1369,7 @@
             update: function(dt) {
                 if (1 !== dt && 0 !== dt) {
                     dt *= 2;
-                    dt = dt < 1 ? .5 * Math.pow(2, 10 * (dt - 1)) : .5 * (-Math.pow(2, -10 * (dt - 1)) + 2);
+                    dt = dt < 1 ? .5 * Math.pow(2, 10 * (dt - 1)) : .5 * (2 - Math.pow(2, -10 * (dt - 1)));
                 }
                 this._inner.update(dt);
             },
@@ -1445,7 +1386,7 @@
             easing: function(dt) {
                 if (1 !== dt && 0 !== dt) {
                     dt *= 2;
-                    return dt < 1 ? .5 * Math.pow(2, 10 * (dt - 1)) : .5 * (-Math.pow(2, -10 * (dt - 1)) + 2);
+                    return dt < 1 ? .5 * Math.pow(2, 10 * (dt - 1)) : .5 * (2 - Math.pow(2, -10 * (dt - 1)));
                 }
                 return dt;
             },
@@ -2770,7 +2711,7 @@
                 this._last = -1;
             },
             stop: function() {
-                this._last !== -1 && this._actions[this._last].stop();
+                -1 !== this._last && this._actions[this._last].stop();
                 cc.Action.prototype.stop.call(this);
             },
             update: function(dt) {
@@ -2786,7 +2727,7 @@
                 } else {
                     found = 1;
                     new_t = 1 === locSplit ? 1 : (dt - locSplit) / (1 - locSplit);
-                    if (locLast === -1) {
+                    if (-1 === locLast) {
                         locActions[0].startWithTarget(this.target);
                         locActions[0].update(1);
                         locActions[0].stop();
@@ -4073,15 +4014,14 @@
         };
     }), {} ],
     9: [ (function(require, module, exports) {
-        var HashElement = cc._Class.extend({
-            ctor: function() {
-                this.actions = [];
-                this.target = null;
-                this.actionIndex = 0;
-                this.currentAction = null;
-                this.paused = false;
-            }
-        });
+        var HashElement = function() {
+            this.actions = [];
+            this.target = null;
+            this.actionIndex = 0;
+            this.currentAction = null;
+            this.paused = false;
+            this.lock = false;
+        };
         cc.ActionManager = cc._Class.extend({
             _elementPool: [],
             _searchElementByTarget: function(arr, target) {
@@ -4109,6 +4049,8 @@
                 element.actionIndex = 0;
                 element.currentAction = null;
                 element.paused = false;
+                element.target = null;
+                element.lock = false;
                 this._elementPool.push(element);
             },
             addAction: function(action, target, paused) {
@@ -4249,7 +4191,7 @@
             },
             _deleteHashElement: function(element) {
                 var ret = false;
-                if (element && this._hashTargets[element.target.__instanceId]) {
+                if (element && !element.lock && this._hashTargets[element.target.__instanceId]) {
                     delete this._hashTargets[element.target.__instanceId];
                     var targets = this._arrayTargets;
                     for (var i = 0, l = targets.length; i < l; i++) {
@@ -4269,13 +4211,14 @@
                     this._currentTarget = locTargets[elt];
                     locCurrTarget = this._currentTarget;
                     if (!locCurrTarget.paused && locCurrTarget.actions) {
+                        locCurrTarget.lock = true;
                         for (locCurrTarget.actionIndex = 0; locCurrTarget.actionIndex < locCurrTarget.actions.length; locCurrTarget.actionIndex++) {
                             locCurrTarget.currentAction = locCurrTarget.actions[locCurrTarget.actionIndex];
                             if (!locCurrTarget.currentAction) {
                                 continue;
                             }
                             locCurrTarget.currentAction.step(dt * (locCurrTarget.currentAction._speedMethod ? locCurrTarget.currentAction._speed : 1));
-                            if (locCurrTarget.currentAction.isDone()) {
+                            if (locCurrTarget.currentAction && locCurrTarget.currentAction.isDone()) {
                                 locCurrTarget.currentAction.stop();
                                 var action = locCurrTarget.currentAction;
                                 locCurrTarget.currentAction = null;
@@ -4283,6 +4226,7 @@
                             }
                             locCurrTarget.currentAction = null;
                         }
+                        locCurrTarget.lock = false;
                     }
                     0 === locCurrTarget.actions.length && this._deleteHashElement(locCurrTarget) && elt--;
                 }
@@ -4290,19 +4234,19 @@
         });
     }), {} ],
     10: [ (function(require, module, exports) {
-        require("./CCActionManager.js");
-        require("./CCAction.js");
-        require("./CCActionInterval.js");
-        require("./CCActionInstant.js");
-        require("./CCActionEase.js");
-        require("./CCActionCatmullRom.js");
+        require("./CCActionManager");
+        require("./CCAction");
+        require("./CCActionInterval");
+        require("./CCActionInstant");
+        require("./CCActionEase");
+        require("./CCActionCatmullRom");
     }), {
-        "./CCAction.js": 4,
-        "./CCActionCatmullRom.js": 5,
-        "./CCActionEase.js": 6,
-        "./CCActionInstant.js": 7,
-        "./CCActionInterval.js": 8,
-        "./CCActionManager.js": 9
+        "./CCAction": 4,
+        "./CCActionCatmullRom": 5,
+        "./CCActionEase": 6,
+        "./CCActionInstant": 7,
+        "./CCActionInterval": 8,
+        "./CCActionManager": 9
     } ],
     11: [ (function(require, module, exports) {
         var JS = cc.js;
@@ -4413,7 +4357,7 @@
             var nextValue = mainValue;
             var leftIndex = firstDotIndex + 1;
             var rightIndex = propPath.indexOf(".", leftIndex);
-            while (rightIndex !== -1) {
+            while (-1 !== rightIndex) {
                 var nextName = propPath.slice(leftIndex, rightIndex);
                 nextValue = nextValue[nextName];
                 leftIndex = rightIndex + 1;
@@ -4457,7 +4401,7 @@
                 curve.target = target;
                 var propName, propValue;
                 var dotIndex = propPath.indexOf(".");
-                var hasSubProp = dotIndex !== -1;
+                var hasSubProp = -1 !== dotIndex;
                 if (hasSubProp) {
                     propName = propPath.slice(0, dotIndex);
                     propValue = target[propName];
@@ -4681,17 +4625,15 @@
                     index = ~index;
                     if (index <= 0) {
                         value = values[0];
+                    } else if (index >= frameCount) {
+                        value = values[frameCount - 1];
                     } else {
-                        if (index >= frameCount) {
-                            value = values[frameCount - 1];
-                        } else {
-                            var fromRatio = ratios[index - 1];
-                            var toRatio = ratios[index];
-                            var type = this.types[index - 1];
-                            var ratioBetweenFrames = (ratio - fromRatio) / (toRatio - fromRatio);
-                            ratioBetweenFrames = computeRatioByType(ratioBetweenFrames, type);
-                            value = this._calcValue(index, ratioBetweenFrames);
-                        }
+                        var fromRatio = ratios[index - 1];
+                        var toRatio = ratios[index];
+                        var type = this.types[index - 1];
+                        var ratioBetweenFrames = (ratio - fromRatio) / (toRatio - fromRatio);
+                        ratioBetweenFrames = computeRatioByType(ratioBetweenFrames, type);
+                        value = this._calcValue(index, ratioBetweenFrames);
                     }
                 } else {
                     value = values[index];
@@ -4798,34 +4740,30 @@
                 var lastIterations = this._wrapIterations(lastWrappedInfo.iterations);
                 var lastIndex = lastWrappedInfo.frameIndex;
                 var lastDirection = lastWrappedInfo.direction;
-                var interationsChanged = lastIterations !== -1 && currentIterations !== lastIterations;
+                var interationsChanged = -1 !== lastIterations && currentIterations !== lastIterations;
                 if (lastIndex === currentIndex && interationsChanged && 1 === length) {
                     this._fireEvent(0);
-                } else {
-                    if (lastIndex !== currentIndex || interationsChanged) {
-                        direction = lastDirection;
-                        do {
-                            if (lastIndex !== currentIndex) {
-                                if (direction === -1 && 0 === lastIndex && currentIndex > 0) {
-                                    (wrapMode & WrapModeMask.PingPong) === WrapModeMask.PingPong ? direction *= -1 : lastIndex = length;
-                                    lastIterations++;
-                                } else {
-                                    if (1 === direction && lastIndex === length - 1 && currentIndex < length - 1) {
-                                        (wrapMode & WrapModeMask.PingPong) === WrapModeMask.PingPong ? direction *= -1 : lastIndex = -1;
-                                        lastIterations++;
-                                    }
-                                }
-                                if (lastIndex === currentIndex) {
-                                    break;
-                                }
-                                if (lastIterations > currentIterations) {
-                                    break;
-                                }
+                } else if (lastIndex !== currentIndex || interationsChanged) {
+                    direction = lastDirection;
+                    do {
+                        if (lastIndex !== currentIndex) {
+                            if (-1 === direction && 0 === lastIndex && currentIndex > 0) {
+                                (wrapMode & WrapModeMask.PingPong) === WrapModeMask.PingPong ? direction *= -1 : lastIndex = length;
+                                lastIterations++;
+                            } else if (1 === direction && lastIndex === length - 1 && currentIndex < length - 1) {
+                                (wrapMode & WrapModeMask.PingPong) === WrapModeMask.PingPong ? direction *= -1 : lastIndex = -1;
+                                lastIterations++;
                             }
-                            lastIndex += direction;
-                            cc.director.getAnimationManager().pushDelayEvent(this, "_fireEvent", [ lastIndex ]);
-                        } while (lastIndex !== currentIndex && lastIndex > -1 && lastIndex < length);
-                    }
+                            if (lastIndex === currentIndex) {
+                                break;
+                            }
+                            if (lastIterations > currentIterations) {
+                                break;
+                            }
+                        }
+                        lastIndex += direction;
+                        cc.director.getAnimationManager().pushDelayEvent(this, "_fireEvent", [ lastIndex ]);
+                    } while (lastIndex !== currentIndex && lastIndex > -1 && lastIndex < length);
                 }
                 this._lastWrappedInfo.set(currentWrappedInfo);
             },
@@ -4900,7 +4838,7 @@
             destruct: function() {},
             addAnimator: function(animator) {
                 var index = this._animators.array.indexOf(animator);
-                index === -1 && this._animators.push(animator);
+                -1 === index && this._animators.push(animator);
             },
             removeAnimator: function(animator) {
                 var index = this._animators.array.indexOf(animator);
@@ -5025,7 +4963,7 @@
         };
         animProto.addAnimation = function(anim) {
             var index = this._anims.array.indexOf(anim);
-            index === -1 && this._anims.push(anim);
+            -1 === index && this._anims.push(anim);
         };
         animProto.removeAnimation = function(anim) {
             var index = this._anims.array.indexOf(anim);
@@ -5113,14 +5051,12 @@
                         for (var propName in data) {
                             createPropCurve(curves, this.target, propName, data[propName], ratio);
                         }
-                    } else {
-                        if ("comps" === key) {
-                            for (var compName in data) {
-                                var comp = this.target.getComponent(compName);
-                                var compData = data[compName];
-                                for (var propName in compData) {
-                                    createPropCurve(curves, comp, propName, compData[propName], ratio);
-                                }
+                    } else if ("comps" === key) {
+                        for (var compName in data) {
+                            var comp = this.target.getComponent(compName);
+                            var compData = data[compName];
+                            for (var propName in compData) {
+                                createPropCurve(curves, comp, propName, compData[propName], ratio);
                             }
                         }
                     }
@@ -5270,7 +5206,7 @@
                 if ((k *= 2) < 1) {
                     return .5 * Math.pow(1024, k - 1);
                 }
-                return .5 * (-Math.pow(2, -10 * (k - 1)) + 2);
+                return .5 * (2 - Math.pow(2, -10 * (k - 1)));
             },
             circIn: function(k) {
                 return 1 - Math.sqrt(1 - k * k);
@@ -5298,7 +5234,7 @@
                 } else {
                     s = p * Math.asin(1 / a) / (2 * Math.PI);
                 }
-                return -(a * Math.pow(2, 10 * (k -= 1)) * Math.sin((k - s) * (2 * Math.PI) / p));
+                return -a * Math.pow(2, 10 * (k -= 1)) * Math.sin((k - s) * (2 * Math.PI) / p);
             },
             elasticOut: function(k) {
                 var s, a = .1, p = .4;
@@ -5331,7 +5267,7 @@
                     s = p * Math.asin(1 / a) / (2 * Math.PI);
                 }
                 if ((k *= 2) < 1) {
-                    return -.5 * (a * Math.pow(2, 10 * (k -= 1)) * Math.sin((k - s) * (2 * Math.PI) / p));
+                    return a * Math.pow(2, 10 * (k -= 1)) * Math.sin((k - s) * (2 * Math.PI) / p) * -.5;
                 }
                 return a * Math.pow(2, -10 * (k -= 1)) * Math.sin((k - s) * (2 * Math.PI) / p) * .5 + 1;
             },
@@ -5346,7 +5282,7 @@
             backInOut: function(k) {
                 var s = 2.5949095;
                 if ((k *= 2) < 1) {
-                    return .5 * (k * k * ((s + 1) * k - s));
+                    return k * k * ((s + 1) * k - s) * .5;
                 }
                 return .5 * ((k -= 2) * k * ((s + 1) * k + s) + 2);
             },
@@ -5504,7 +5440,7 @@
             var arcLengths = this.getLengths();
             var i = 0, il = arcLengths.length;
             var targetArcLength;
-            targetArcLength = distance ? distance : u * arcLengths[il - 1];
+            targetArcLength = distance || u * arcLengths[il - 1];
             var low = 0, high = il - 1, comparison;
             while (low <= high) {
                 i = Math.floor(low + (high - low) / 2);
@@ -5610,19 +5546,17 @@
                             length = (0 - finalProgress) * bezier.getLength();
                             normal = bezier.start.sub(bezier.endCtrlPoint).normalize();
                             pos = bezier.start.add(normal.mul(length));
+                        } else if (finalProgress > 1) {
+                            bezier = curve.beziers[curve.beziers.length - 1];
+                            length = (finalProgress - 1) * bezier.getLength();
+                            normal = bezier.end.sub(bezier.startCtrlPoint).normalize();
+                            pos = bezier.end.add(normal.mul(length));
                         } else {
-                            if (finalProgress > 1) {
-                                bezier = curve.beziers[curve.beziers.length - 1];
-                                length = (finalProgress - 1) * bezier.getLength();
-                                normal = bezier.end.sub(bezier.startCtrlPoint).normalize();
-                                pos = bezier.end.add(normal.mul(length));
-                            } else {
-                                var bezierIndex = binarySearch(progresses, finalProgress);
-                                bezierIndex < 0 && (bezierIndex = ~bezierIndex);
-                                finalProgress -= bezierIndex > 0 ? progresses[bezierIndex - 1] : 0;
-                                finalProgress /= curve.ratios[bezierIndex];
-                                pos = curve.beziers[bezierIndex].getPointAt(finalProgress);
-                            }
+                            var bezierIndex = binarySearch(progresses, finalProgress);
+                            bezierIndex < 0 && (bezierIndex = ~bezierIndex);
+                            finalProgress -= bezierIndex > 0 ? progresses[bezierIndex - 1] : 0;
+                            finalProgress /= curve.ratios[bezierIndex];
+                            pos = curve.beziers[bezierIndex].getPointAt(finalProgress);
                         }
                         results.push(pos);
                         progress += speed;
@@ -5742,11 +5676,15 @@
             this.direction = 1;
             this.stopped = true;
             this.iterations = 0;
+            this.frameIndex = void 0;
         }
         WrappedInfo.prototype.set = function(info) {
-            for (var k in info) {
-                this[k] = info[k];
-            }
+            this.ratio = info.ratio;
+            this.time = info.time;
+            this.direction = info.direction;
+            this.stopped = info.stopped;
+            this.iterations = info.iterations;
+            this.frameIndex = info.frameIndex;
         };
         function AnimationNodeBase() {
             Playable.call(this);
@@ -5776,7 +5714,7 @@
                 var wrapMode = timingInput.wrapMode;
                 if ("undefined" !== typeof wrapMode) {
                     var isEnum = "number" === typeof wrapMode;
-                    isEnum ? this.wrapMode = wrapMode : this.wrapMode = WrapMode[wrapMode];
+                    this.wrapMode = isEnum ? wrapMode : WrapMode[wrapMode];
                 }
                 var repeatCount = timingInput.repeatCount;
                 "undefined" !== typeof repeatCount ? this.repeatCount = repeatCount : this.wrapMode & WrapModeMask.Loop && (this.repeatCount = 1 / 0);
@@ -5836,11 +5774,9 @@
             if (time > duration) {
                 var tempTime = time % duration;
                 time = 0 === tempTime ? duration : tempTime;
-            } else {
-                if (time < 0) {
-                    time %= duration;
-                    0 !== time && (time += duration);
-                }
+            } else if (time < 0) {
+                time %= duration;
+                0 !== time && (time += duration);
             }
             wrapMode & WrapModeMask.ShouldWrap && needRevers && (time = duration - time);
             ratio = time / duration;
@@ -5968,7 +5904,6 @@
                     this._element = new WebAudioElement(elem, this);
                     this._audioType = Audio.Type.WEBAUDIO;
                 }
-                this._bindEnded();
                 this._state = Audio.State.INITIALZING;
                 this._loaded = true;
             };
@@ -5976,6 +5911,7 @@
                 if (!this._element) {
                     return;
                 }
+                this._bindEnded();
                 this._element.play();
                 this.emit("play");
                 this._state = Audio.State.PLAYING;
@@ -6027,7 +5963,7 @@
                         break;
                     }
                 }
-                this.emit("ended");
+                this._unbindEnded();
                 this.emit("stop");
                 this._state = Audio.State.PAUSED;
             };
@@ -6057,7 +5993,18 @@
                 this._bindEnded(function() {
                     this._bindEnded();
                 }.bind(this));
-                this._element.currentTime = num;
+                try {
+                    this._element.currentTime = num;
+                } catch (err) {
+                    var _element = this._element;
+                    if (_element.addEventListener) {
+                        var func = function() {
+                            _element.removeEventListener("loadedmetadata", func);
+                            _element.currentTime = num;
+                        };
+                        _element.addEventListener("loadedmetadata", func);
+                    }
+                }
             };
             proto.getCurrentTime = function() {
                 return this._element ? this._element.currentTime : 0;
@@ -6149,7 +6096,7 @@
                 if (this._currentSource && this._currentSource.loop) {
                     return false;
                 }
-                if (this._startTime === -1) {
+                if (-1 === this._startTime) {
                     return true;
                 }
                 return this._context.currentTime - this._startTime > this._buffer.duration;
@@ -6197,7 +6144,7 @@
         })(WebAudioElement.prototype);
         module.exports = cc.Audio = Audio;
     }), {
-        "../core/event/event-target": 112
+        "../core/event/event-target": 111
     } ],
     24: [ (function(require, module, exports) {
         var Audio = require("./CCAudio");
@@ -6215,12 +6162,14 @@
                 oldAudio.stop();
             }
             audio = new Audio(path);
-            audio.on("ended", (function() {
+            var callback = function() {
                 var id = this.instanceId;
                 delete id2audio[id];
                 var index = list.indexOf(id);
                 cc.js.array.fastRemoveAt(list, index);
-            }));
+            };
+            audio.on("ended", callback);
+            audio.on("stop", callback);
             id2audio[id] = audio;
             audio.instanceId = id;
             list.push(id);
@@ -6235,10 +6184,15 @@
             _maxAudioInstance: 24,
             _id2audio: id2audio,
             play: function(filePath, loop, volume) {
+                if ("string" !== typeof filePath) {
+                    cc.errorID(8400);
+                    return;
+                }
                 var audio = getAudioFromPath(filePath);
                 var callback = function() {
                     audio.setLoop(loop || false);
-                    audio.setVolume(volume || 1);
+                    ("number" != typeof volume || isNaN(volume)) && (volume = 1);
+                    audio.setVolume(volume);
                     audio.play();
                 };
                 audio.__callback = callback;
@@ -6360,7 +6314,6 @@
                 }
                 audio.off("load", audio.__callback);
                 audio.stop();
-                audio.emit("ended");
                 return true;
             },
             stopAll: function() {
@@ -6369,7 +6322,6 @@
                     if (audio && audio.stop) {
                         audio.stop();
                         audio.off("load", audio.__callback);
-                        audio.emit("ended");
                     }
                 }
             },
@@ -6506,7 +6458,7 @@
             }));
             js.get(audioEngine, "playEffect", (function() {
                 return function(url, loop, volume) {
-                    return audioEngine.play(url, loop, void 0 === volume ? effectsVolume : volume);
+                    return audioEngine.play(url, loop || false, void 0 === volume ? effectsVolume : volume);
                 };
             }));
             js.get(audioEngine, "setEffectsVolume", (function(volume) {
@@ -6895,6 +6847,8 @@
         cc.Codec = {
             name: "Jacob__Codec"
         };
+        cc.Codec.Base64 = require("./base64");
+        cc.Codec.GZip = require("./gzip");
         cc.Codec.unzip = function() {
             return cc.Codec.GZip.gunzip.apply(cc.Codec.GZip, arguments);
         };
@@ -6928,20 +6882,24 @@
             }
             return ar;
         };
-    }), {} ],
+    }), {
+        "./base64": 30,
+        "./gzip": 31
+    } ],
     30: [ (function(require, module, exports) {
-        cc.Codec.Base64 = {
+        var Misc = require("../core/utils/misc");
+        var strValue = Misc.BASE64_VALUES;
+        var Base64 = {
             name: "Jacob__Codec__Base64"
         };
-        cc.Codec.Base64._keyStr = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
-        cc.Codec.Base64.decode = function Jacob__Codec__Base64__decode(input) {
+        Base64.decode = function Jacob__Codec__Base64__decode(input) {
             var output = [], chr1, chr2, chr3, enc1, enc2, enc3, enc4, i = 0;
             input = input.replace(/[^A-Za-z0-9\+\/\=]/g, "");
             while (i < input.length) {
-                enc1 = this._keyStr.indexOf(input.charAt(i++));
-                enc2 = this._keyStr.indexOf(input.charAt(i++));
-                enc3 = this._keyStr.indexOf(input.charAt(i++));
-                enc4 = this._keyStr.indexOf(input.charAt(i++));
+                enc1 = strValue[input.charCodeAt(i++)];
+                enc2 = strValue[input.charCodeAt(i++)];
+                enc3 = strValue[input.charCodeAt(i++)];
+                enc4 = strValue[input.charCodeAt(i++)];
                 chr1 = enc1 << 2 | enc2 >> 4;
                 chr2 = (15 & enc2) << 4 | enc3 >> 2;
                 chr3 = (3 & enc3) << 6 | enc4;
@@ -6952,7 +6910,7 @@
             output = output.join("");
             return output;
         };
-        cc.Codec.Base64.decodeAsArray = function Jacob__Codec__Base64___decodeAsArray(input, bytes) {
+        Base64.decodeAsArray = function Jacob__Codec__Base64___decodeAsArray(input, bytes) {
             var dec = this.decode(input), ar = [], i, j, len;
             for (i = 0, len = dec.length / bytes; i < len; i++) {
                 ar[i] = 0;
@@ -6962,9 +6920,12 @@
             }
             return ar;
         };
-    }), {} ],
+        module.exports = Base64;
+    }), {
+        "../core/utils/misc": 223
+    } ],
     31: [ (function(require, module, exports) {
-        cc.Codec.GZip = function Jacob__GZip(data) {
+        var GZip = function Jacob__GZip(data) {
             this.data = data;
             this.debug = false;
             this.gpflags = void 0;
@@ -6978,7 +6939,7 @@
             this.bits = 0;
             this.nameBuf = [];
             this.fileout = void 0;
-            this.literalTree = new Array(cc.Codec.GZip.LITERALS);
+            this.literalTree = new Array(GZip.LITERALS);
             this.distanceTree = new Array(32);
             this.treepos = 0;
             this.Places = null;
@@ -6988,38 +6949,38 @@
             this.flens = void 0;
             this.fmax = void 0;
         };
-        cc.Codec.GZip.gunzip = function(string) {
+        GZip.gunzip = function(string) {
             string.constructor === Array || string.constructor === String;
-            var gzip = new cc.Codec.GZip(string);
+            var gzip = new GZip(string);
             return gzip.gunzip()[0][0];
         };
-        cc.Codec.GZip.HufNode = function() {
+        GZip.HufNode = function() {
             this.b0 = 0;
             this.b1 = 0;
             this.jump = null;
             this.jumppos = -1;
         };
-        cc.Codec.GZip.LITERALS = 288;
-        cc.Codec.GZip.NAMEMAX = 256;
-        cc.Codec.GZip.bitReverse = [ 0, 128, 64, 192, 32, 160, 96, 224, 16, 144, 80, 208, 48, 176, 112, 240, 8, 136, 72, 200, 40, 168, 104, 232, 24, 152, 88, 216, 56, 184, 120, 248, 4, 132, 68, 196, 36, 164, 100, 228, 20, 148, 84, 212, 52, 180, 116, 244, 12, 140, 76, 204, 44, 172, 108, 236, 28, 156, 92, 220, 60, 188, 124, 252, 2, 130, 66, 194, 34, 162, 98, 226, 18, 146, 82, 210, 50, 178, 114, 242, 10, 138, 74, 202, 42, 170, 106, 234, 26, 154, 90, 218, 58, 186, 122, 250, 6, 134, 70, 198, 38, 166, 102, 230, 22, 150, 86, 214, 54, 182, 118, 246, 14, 142, 78, 206, 46, 174, 110, 238, 30, 158, 94, 222, 62, 190, 126, 254, 1, 129, 65, 193, 33, 161, 97, 225, 17, 145, 81, 209, 49, 177, 113, 241, 9, 137, 73, 201, 41, 169, 105, 233, 25, 153, 89, 217, 57, 185, 121, 249, 5, 133, 69, 197, 37, 165, 101, 229, 21, 149, 85, 213, 53, 181, 117, 245, 13, 141, 77, 205, 45, 173, 109, 237, 29, 157, 93, 221, 61, 189, 125, 253, 3, 131, 67, 195, 35, 163, 99, 227, 19, 147, 83, 211, 51, 179, 115, 243, 11, 139, 75, 203, 43, 171, 107, 235, 27, 155, 91, 219, 59, 187, 123, 251, 7, 135, 71, 199, 39, 167, 103, 231, 23, 151, 87, 215, 55, 183, 119, 247, 15, 143, 79, 207, 47, 175, 111, 239, 31, 159, 95, 223, 63, 191, 127, 255 ];
-        cc.Codec.GZip.cplens = [ 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258, 0, 0 ];
-        cc.Codec.GZip.cplext = [ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0, 99, 99 ];
-        cc.Codec.GZip.cpdist = [ 1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577 ];
-        cc.Codec.GZip.cpdext = [ 0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13 ];
-        cc.Codec.GZip.border = [ 16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15 ];
-        cc.Codec.GZip.prototype.gunzip = function() {
+        GZip.LITERALS = 288;
+        GZip.NAMEMAX = 256;
+        GZip.bitReverse = [ 0, 128, 64, 192, 32, 160, 96, 224, 16, 144, 80, 208, 48, 176, 112, 240, 8, 136, 72, 200, 40, 168, 104, 232, 24, 152, 88, 216, 56, 184, 120, 248, 4, 132, 68, 196, 36, 164, 100, 228, 20, 148, 84, 212, 52, 180, 116, 244, 12, 140, 76, 204, 44, 172, 108, 236, 28, 156, 92, 220, 60, 188, 124, 252, 2, 130, 66, 194, 34, 162, 98, 226, 18, 146, 82, 210, 50, 178, 114, 242, 10, 138, 74, 202, 42, 170, 106, 234, 26, 154, 90, 218, 58, 186, 122, 250, 6, 134, 70, 198, 38, 166, 102, 230, 22, 150, 86, 214, 54, 182, 118, 246, 14, 142, 78, 206, 46, 174, 110, 238, 30, 158, 94, 222, 62, 190, 126, 254, 1, 129, 65, 193, 33, 161, 97, 225, 17, 145, 81, 209, 49, 177, 113, 241, 9, 137, 73, 201, 41, 169, 105, 233, 25, 153, 89, 217, 57, 185, 121, 249, 5, 133, 69, 197, 37, 165, 101, 229, 21, 149, 85, 213, 53, 181, 117, 245, 13, 141, 77, 205, 45, 173, 109, 237, 29, 157, 93, 221, 61, 189, 125, 253, 3, 131, 67, 195, 35, 163, 99, 227, 19, 147, 83, 211, 51, 179, 115, 243, 11, 139, 75, 203, 43, 171, 107, 235, 27, 155, 91, 219, 59, 187, 123, 251, 7, 135, 71, 199, 39, 167, 103, 231, 23, 151, 87, 215, 55, 183, 119, 247, 15, 143, 79, 207, 47, 175, 111, 239, 31, 159, 95, 223, 63, 191, 127, 255 ];
+        GZip.cplens = [ 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 15, 17, 19, 23, 27, 31, 35, 43, 51, 59, 67, 83, 99, 115, 131, 163, 195, 227, 258, 0, 0 ];
+        GZip.cplext = [ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 0, 99, 99 ];
+        GZip.cpdist = [ 1, 2, 3, 4, 5, 7, 9, 13, 17, 25, 33, 49, 65, 97, 129, 193, 257, 385, 513, 769, 1025, 1537, 2049, 3073, 4097, 6145, 8193, 12289, 16385, 24577 ];
+        GZip.cpdext = [ 0, 0, 0, 0, 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7, 7, 8, 8, 9, 9, 10, 10, 11, 11, 12, 12, 13, 13 ];
+        GZip.border = [ 16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15 ];
+        GZip.prototype.gunzip = function() {
             this.outputArr = [];
             this.nextFile();
             return this.unzipped;
         };
-        cc.Codec.GZip.prototype.readByte = function() {
+        GZip.prototype.readByte = function() {
             this.bits += 8;
             return this.bytepos < this.data.length ? this.data.charCodeAt(this.bytepos++) : -1;
         };
-        cc.Codec.GZip.prototype.byteAlign = function() {
+        GZip.prototype.byteAlign = function() {
             this.bb = 1;
         };
-        cc.Codec.GZip.prototype.readBit = function() {
+        GZip.prototype.readBit = function() {
             var carry;
             this.bits++;
             carry = 1 & this.bb;
@@ -7031,23 +6992,23 @@
             }
             return carry;
         };
-        cc.Codec.GZip.prototype.readBits = function(a) {
+        GZip.prototype.readBits = function(a) {
             var res = 0, i = a;
             while (i--) {
                 res = res << 1 | this.readBit();
             }
-            a && (res = cc.Codec.GZip.bitReverse[res] >> 8 - a);
+            a && (res = GZip.bitReverse[res] >> 8 - a);
             return res;
         };
-        cc.Codec.GZip.prototype.flushBuffer = function() {
+        GZip.prototype.flushBuffer = function() {
             this.bIdx = 0;
         };
-        cc.Codec.GZip.prototype.addBuffer = function(a) {
+        GZip.prototype.addBuffer = function(a) {
             this.buf32k[this.bIdx++] = a;
             this.outputArr.push(String.fromCharCode(a));
             32768 === this.bIdx && (this.bIdx = 0);
         };
-        cc.Codec.GZip.prototype.IsPat = function() {
+        GZip.prototype.IsPat = function() {
             while (1) {
                 if (this.fpos[this.len] >= this.fmax) {
                     return -1;
@@ -7058,7 +7019,7 @@
                 this.fpos[this.len]++;
             }
         };
-        cc.Codec.GZip.prototype.Rec = function() {
+        GZip.prototype.Rec = function() {
             var curplace = this.Places[this.treepos];
             var tmp;
             if (17 === this.len) {
@@ -7090,7 +7051,7 @@
             this.len--;
             return 0;
         };
-        cc.Codec.GZip.prototype.CreateTree = function(currentTree, numval, lengths, show) {
+        GZip.prototype.CreateTree = function(currentTree, numval, lengths, show) {
             var i;
             this.Places = currentTree;
             this.treepos = 0;
@@ -7105,7 +7066,7 @@
             }
             return 0;
         };
-        cc.Codec.GZip.prototype.DecodeValue = function(currentTree) {
+        GZip.prototype.DecodeValue = function(currentTree) {
             var len, i, xtreepos = 0, X = currentTree[xtreepos], b;
             while (1) {
                 b = this.readBit();
@@ -7131,7 +7092,7 @@
             }
             return -1;
         };
-        cc.Codec.GZip.prototype.DeflateLoop = function() {
+        GZip.prototype.DeflateLoop = function() {
             var last, c, type, i, len;
             do {
                 last = this.readBit();
@@ -7148,145 +7109,139 @@
                         c = this.readByte();
                         this.addBuffer(c);
                     }
-                } else {
-                    if (1 === type) {
-                        var j;
-                        while (1) {
-                            j = cc.Codec.GZip.bitReverse[this.readBits(7)] >> 1;
-                            if (j > 23) {
+                } else if (1 === type) {
+                    var j;
+                    while (1) {
+                        j = GZip.bitReverse[this.readBits(7)] >> 1;
+                        if (j > 23) {
+                            j = j << 1 | this.readBit();
+                            if (j > 199) {
+                                j -= 128;
                                 j = j << 1 | this.readBit();
-                                if (j > 199) {
-                                    j -= 128;
-                                    j = j << 1 | this.readBit();
-                                } else {
-                                    j -= 48;
-                                    j > 143 && (j += 136);
-                                }
                             } else {
-                                j += 256;
+                                j -= 48;
+                                j > 143 && (j += 136);
                             }
-                            if (j < 256) {
-                                this.addBuffer(j);
+                        } else {
+                            j += 256;
+                        }
+                        if (j < 256) {
+                            this.addBuffer(j);
+                        } else {
+                            if (256 === j) {
+                                break;
+                            }
+                            var len, dist;
+                            j -= 257;
+                            len = this.readBits(GZip.cplext[j]) + GZip.cplens[j];
+                            j = GZip.bitReverse[this.readBits(5)] >> 3;
+                            if (GZip.cpdext[j] > 8) {
+                                dist = this.readBits(8);
+                                dist |= this.readBits(GZip.cpdext[j] - 8) << 8;
                             } else {
-                                if (256 === j) {
-                                    break;
-                                }
-                                var len, dist;
-                                j -= 257;
-                                len = this.readBits(cc.Codec.GZip.cplext[j]) + cc.Codec.GZip.cplens[j];
-                                j = cc.Codec.GZip.bitReverse[this.readBits(5)] >> 3;
-                                if (cc.Codec.GZip.cpdext[j] > 8) {
-                                    dist = this.readBits(8);
-                                    dist |= this.readBits(cc.Codec.GZip.cpdext[j] - 8) << 8;
-                                } else {
-                                    dist = this.readBits(cc.Codec.GZip.cpdext[j]);
-                                }
-                                dist += cc.Codec.GZip.cpdist[j];
-                                for (j = 0; j < len; j++) {
-                                    var c = this.buf32k[this.bIdx - dist & 32767];
-                                    this.addBuffer(c);
-                                }
+                                dist = this.readBits(GZip.cpdext[j]);
+                            }
+                            dist += GZip.cpdist[j];
+                            for (j = 0; j < len; j++) {
+                                var c = this.buf32k[this.bIdx - dist & 32767];
+                                this.addBuffer(c);
                             }
                         }
-                    } else {
-                        if (2 === type) {
-                            var j, n, literalCodes, distCodes, lenCodes;
-                            var ll = new Array(320);
-                            literalCodes = 257 + this.readBits(5);
-                            distCodes = 1 + this.readBits(5);
-                            lenCodes = 4 + this.readBits(4);
-                            for (j = 0; j < 19; j++) {
-                                ll[j] = 0;
-                            }
-                            for (j = 0; j < lenCodes; j++) {
-                                ll[cc.Codec.GZip.border[j]] = this.readBits(3);
-                            }
-                            len = this.distanceTree.length;
-                            for (i = 0; i < len; i++) {
-                                this.distanceTree[i] = new cc.Codec.GZip.HufNode();
-                            }
-                            if (this.CreateTree(this.distanceTree, 19, ll, 0)) {
+                    }
+                } else if (2 === type) {
+                    var j, n, literalCodes, distCodes, lenCodes;
+                    var ll = new Array(320);
+                    literalCodes = 257 + this.readBits(5);
+                    distCodes = 1 + this.readBits(5);
+                    lenCodes = 4 + this.readBits(4);
+                    for (j = 0; j < 19; j++) {
+                        ll[j] = 0;
+                    }
+                    for (j = 0; j < lenCodes; j++) {
+                        ll[GZip.border[j]] = this.readBits(3);
+                    }
+                    len = this.distanceTree.length;
+                    for (i = 0; i < len; i++) {
+                        this.distanceTree[i] = new GZip.HufNode();
+                    }
+                    if (this.CreateTree(this.distanceTree, 19, ll, 0)) {
+                        this.flushBuffer();
+                        return 1;
+                    }
+                    n = literalCodes + distCodes;
+                    i = 0;
+                    var z = -1;
+                    while (i < n) {
+                        z++;
+                        j = this.DecodeValue(this.distanceTree);
+                        if (j < 16) {
+                            ll[i++] = j;
+                        } else if (16 === j) {
+                            var l;
+                            j = 3 + this.readBits(2);
+                            if (i + j > n) {
                                 this.flushBuffer();
                                 return 1;
                             }
-                            n = literalCodes + distCodes;
-                            i = 0;
-                            var z = -1;
-                            while (i < n) {
-                                z++;
-                                j = this.DecodeValue(this.distanceTree);
-                                if (j < 16) {
-                                    ll[i++] = j;
-                                } else {
-                                    if (16 === j) {
-                                        var l;
-                                        j = 3 + this.readBits(2);
-                                        if (i + j > n) {
-                                            this.flushBuffer();
-                                            return 1;
-                                        }
-                                        l = i ? ll[i - 1] : 0;
-                                        while (j--) {
-                                            ll[i++] = l;
-                                        }
-                                    } else {
-                                        j = 17 === j ? 3 + this.readBits(3) : 11 + this.readBits(7);
-                                        if (i + j > n) {
-                                            this.flushBuffer();
-                                            return 1;
-                                        }
-                                        while (j--) {
-                                            ll[i++] = 0;
-                                        }
-                                    }
-                                }
+                            l = i ? ll[i - 1] : 0;
+                            while (j--) {
+                                ll[i++] = l;
                             }
-                            len = this.literalTree.length;
-                            for (i = 0; i < len; i++) {
-                                this.literalTree[i] = new cc.Codec.GZip.HufNode();
-                            }
-                            if (this.CreateTree(this.literalTree, literalCodes, ll, 0)) {
+                        } else {
+                            j = 17 === j ? 3 + this.readBits(3) : 11 + this.readBits(7);
+                            if (i + j > n) {
                                 this.flushBuffer();
                                 return 1;
                             }
-                            len = this.literalTree.length;
-                            for (i = 0; i < len; i++) {
-                                this.distanceTree[i] = new cc.Codec.GZip.HufNode();
+                            while (j--) {
+                                ll[i++] = 0;
                             }
-                            var ll2 = new Array();
-                            for (i = literalCodes; i < ll.length; i++) {
-                                ll2[i - literalCodes] = ll[i];
+                        }
+                    }
+                    len = this.literalTree.length;
+                    for (i = 0; i < len; i++) {
+                        this.literalTree[i] = new GZip.HufNode();
+                    }
+                    if (this.CreateTree(this.literalTree, literalCodes, ll, 0)) {
+                        this.flushBuffer();
+                        return 1;
+                    }
+                    len = this.literalTree.length;
+                    for (i = 0; i < len; i++) {
+                        this.distanceTree[i] = new GZip.HufNode();
+                    }
+                    var ll2 = new Array();
+                    for (i = literalCodes; i < ll.length; i++) {
+                        ll2[i - literalCodes] = ll[i];
+                    }
+                    if (this.CreateTree(this.distanceTree, distCodes, ll2, 0)) {
+                        this.flushBuffer();
+                        return 1;
+                    }
+                    while (1) {
+                        j = this.DecodeValue(this.literalTree);
+                        if (j >= 256) {
+                            var len, dist;
+                            j -= 256;
+                            if (0 === j) {
+                                break;
                             }
-                            if (this.CreateTree(this.distanceTree, distCodes, ll2, 0)) {
-                                this.flushBuffer();
-                                return 1;
+                            j--;
+                            len = this.readBits(GZip.cplext[j]) + GZip.cplens[j];
+                            j = this.DecodeValue(this.distanceTree);
+                            if (GZip.cpdext[j] > 8) {
+                                dist = this.readBits(8);
+                                dist |= this.readBits(GZip.cpdext[j] - 8) << 8;
+                            } else {
+                                dist = this.readBits(GZip.cpdext[j]);
                             }
-                            while (1) {
-                                j = this.DecodeValue(this.literalTree);
-                                if (j >= 256) {
-                                    var len, dist;
-                                    j -= 256;
-                                    if (0 === j) {
-                                        break;
-                                    }
-                                    j--;
-                                    len = this.readBits(cc.Codec.GZip.cplext[j]) + cc.Codec.GZip.cplens[j];
-                                    j = this.DecodeValue(this.distanceTree);
-                                    if (cc.Codec.GZip.cpdext[j] > 8) {
-                                        dist = this.readBits(8);
-                                        dist |= this.readBits(cc.Codec.GZip.cpdext[j] - 8) << 8;
-                                    } else {
-                                        dist = this.readBits(cc.Codec.GZip.cpdext[j]);
-                                    }
-                                    dist += cc.Codec.GZip.cpdist[j];
-                                    while (len--) {
-                                        var c = this.buf32k[this.bIdx - dist & 32767];
-                                        this.addBuffer(c);
-                                    }
-                                } else {
-                                    this.addBuffer(j);
-                                }
+                            dist += GZip.cpdist[j];
+                            while (len--) {
+                                var c = this.buf32k[this.bIdx - dist & 32767];
+                                this.addBuffer(c);
                             }
+                        } else {
+                            this.addBuffer(j);
                         }
                     }
                 }
@@ -7295,7 +7250,7 @@
             this.byteAlign();
             return 0;
         };
-        cc.Codec.GZip.prototype.unzipFile = function(name) {
+        GZip.prototype.unzipFile = function(name) {
             var i;
             this.gunzip();
             for (i = 0; i < this.unzipped.length; i++) {
@@ -7304,7 +7259,7 @@
                 }
             }
         };
-        cc.Codec.GZip.prototype.nextFile = function() {
+        GZip.prototype.nextFile = function() {
             this.outputArr = [];
             this.modeZIP = false;
             var tmp = [];
@@ -7351,7 +7306,7 @@
                     this.nameBuf = [];
                     while (filelen--) {
                         var c = this.readByte();
-                        "/" === c | ":" === c ? i = 0 : i < cc.Codec.GZip.NAMEMAX - 1 && (this.nameBuf[i++] = String.fromCharCode(c));
+                        "/" === c | ":" === c ? i = 0 : i < GZip.NAMEMAX - 1 && (this.nameBuf[i++] = String.fromCharCode(c));
                     }
                     this.fileout || (this.fileout = this.nameBuf);
                     var i = 0;
@@ -7368,7 +7323,7 @@
                 }
             }
         };
-        cc.Codec.GZip.prototype.skipdir = function() {
+        GZip.prototype.skipdir = function() {
             var tmp = [];
             var compSize, size, os, i, c;
             if (8 & this.gpflags) {
@@ -7410,7 +7365,7 @@
                 this.nameBuf = [];
                 while (c = this.readByte()) {
                     "7" !== c && ":" !== c || (i = 0);
-                    i < cc.Codec.GZip.NAMEMAX - 1 && (this.nameBuf[i++] = c);
+                    i < GZip.NAMEMAX - 1 && (this.nameBuf[i++] = c);
                 }
             }
             if (16 & this.gpflags) {
@@ -7427,19 +7382,9 @@
             size |= this.readByte() << 24;
             this.modeZIP && this.nextFile();
         };
+        module.exports = GZip;
     }), {} ],
     32: [ (function(require, module, exports) {
-        require("./ZipUtils");
-        require("./base64");
-        require("./gzip");
-        require("./zlib.min");
-    }), {
-        "./ZipUtils": 29,
-        "./base64": 30,
-        "./gzip": 31,
-        "./zlib.min": 33
-    } ],
-    33: [ (function(require, module, exports) {
         (function() {
             "use strict";
             function i(a) {
@@ -7653,7 +7598,7 @@
                         h = g ? 1 : 0;
                         l[q++] = 0 | h;
                         m = d.length;
-                        j = ~m + 65536 & 65535;
+                        j = 65536 + ~m & 65535;
                         l[q++] = 255 & m;
                         l[q++] = m >>> 8 & 255;
                         l[q++] = 255 & j;
@@ -7681,10 +7626,8 @@
                     for (K = t.length; z < K; z++) {
                         if (A = t[z], J.prototype.d.apply(E, ra[A]), 256 < A) {
                             E.d(t[++z], t[++z], v), E.d(t[++z], 5), E.d(t[++z], t[++z], v);
-                        } else {
-                            if (256 === A) {
-                                break;
-                            }
+                        } else if (256 === A) {
+                            break;
                         }
                     }
                     this.a = E.finish();
@@ -7731,16 +7674,14 @@
                                     L[I++] = G - 3, P[17]++) : (L[I++] = 18, L[I++] = G - 11, P[18]++), w -= G;
                                 }
                             }
+                        } else if (L[I++] = M[u], P[M[u]]++, w--, 3 > w) {
+                            for (;0 < w--; ) {
+                                L[I++] = M[u], P[M[u]]++;
+                            }
                         } else {
-                            if (L[I++] = M[u], P[M[u]]++, w--, 3 > w) {
-                                for (;0 < w--; ) {
-                                    L[I++] = M[u], P[M[u]]++;
-                                }
-                            } else {
-                                for (;0 < w; ) {
-                                    G = 6 > w ? w : 6, G > w - 3 && G < w && (G = w - 3), L[I++] = 16, L[I++] = G - 3, 
-                                    P[16]++, w -= G;
-                                }
+                            for (;0 < w; ) {
+                                G = 6 > w ? w : 6, G > w - 3 && G < w && (G = w - 3), L[I++] = 16, L[I++] = G - 3, 
+                                P[16]++, w -= G;
                             }
                         }
                     }
@@ -7789,10 +7730,8 @@
                     for (Ua = k.length; Q < Ua; ++Q) {
                         if (ga = k[Q], x.d(Va[ga], Wa[ga], v), 256 < ga) {
                             x.d(k[++Q], k[++Q], v), ya = k[++Q], x.d(Xa[ya], Ya[ya], v), x.d(k[++Q], k[++Q], v);
-                        } else {
-                            if (256 === ga) {
-                                break;
-                            }
+                        } else if (256 === ga) {
+                            break;
                         }
                     }
                     this.a = x.finish();
@@ -8185,7 +8124,7 @@
                 var c = new (H ? Uint16Array : Array)(a.length), b = [], e = [], f = 0, d, g, h, m;
                 d = 0;
                 for (g = a.length; d < g; d++) {
-                    b[a[d]] = (0 | b[a[d]]) + 1;
+                    b[a[d]] = 1 + (0 | b[a[d]]);
                 }
                 d = 1;
                 for (g = 16; d <= g; d++) {
@@ -8530,7 +8469,7 @@
             V.prototype.J = function(a) {
                 var c, b = this.input.length / this.c + 1 | 0, e, f, d, g = this.input, h = this.a;
                 a && ("number" === typeof a.v && (b = a.v), "number" === typeof a.F && (b += a.F));
-                2 > b ? (e = (g.length - this.c) / this.u[2], d = 258 * (e / 2) | 0, f = d < h.length ? h.length + d : h.length << 1) : f = h.length * b;
+                2 > b ? (e = (g.length - this.c) / this.u[2], d = e / 2 * 258 | 0, f = d < h.length ? h.length + d : h.length << 1) : f = h.length * b;
                 H ? (c = new Uint8Array(f), c.set(h)) : c = h;
                 return this.a = c;
             };
@@ -8621,15 +8560,15 @@
             S(vb);
             var Ea = 8;
         }).call(window);
-        var _p = window;
-        _p = window.Zlib = _p["Zlib"];
+        var _p = window.Zlib;
         _p.Deflate = _p["Deflate"];
         _p.Deflate.compress = _p.Deflate["compress"];
         _p.Inflate = _p["Inflate"];
         _p.Inflate.BufferType = _p.Inflate["BufferType"];
         _p.Inflate.prototype.decompress = _p.Inflate.prototype["decompress"];
+        module.exports = _p;
     }), {} ],
-    34: [ (function(require, module, exports) {
+    33: [ (function(require, module, exports) {
         cc.configuration = {
             ERROR: 0,
             STRING: 1,
@@ -8751,7 +8690,7 @@
             }
         };
     }), {} ],
-    35: [ (function(require, module, exports) {
+    34: [ (function(require, module, exports) {
         var EventTarget = require("./event/event-target");
         var Class = require("./platform/_CCClass");
         var AutoReleaseUtils = require("./load-pipeline/auto-release-utils");
@@ -8849,11 +8788,11 @@
                 this._lastUpdate = now;
             },
             convertToGL: function(uiPoint) {
-                var docElem = document.documentElement;
+                var container = cc.game.container;
                 var view = cc.view;
-                var box = docElem.getBoundingClientRect();
-                var left = box.left + window.pageXOffset - docElem.clientLeft;
-                var top = box.top + window.pageYOffset - docElem.clientTop;
+                var box = container.getBoundingClientRect();
+                var left = box.left + window.pageXOffset - container.clientLeft;
+                var top = box.top + window.pageYOffset - container.clientTop;
                 var x = view._devicePixelRatio * (uiPoint.x - left);
                 var y = view._devicePixelRatio * (top + box.height - uiPoint.y);
                 return view._isRotated ? {
@@ -8865,11 +8804,11 @@
                 };
             },
             convertToUI: function(glPoint) {
-                var docElem = document.documentElement;
+                var container = cc.game.container;
                 var view = cc.view;
-                var box = docElem.getBoundingClientRect();
-                var left = box.left + window.pageXOffset - docElem.clientLeft;
-                var top = box.top + window.pageYOffset - docElem.clientTop;
+                var box = container.getBoundingClientRect();
+                var left = box.left + window.pageXOffset - container.clientLeft;
+                var top = box.top + window.pageYOffset - container.clientTop;
                 var uiPoint = {
                     x: 0,
                     y: 0
@@ -8878,8 +8817,8 @@
                     uiPoint.x = left + glPoint.y / view._devicePixelRatio;
                     uiPoint.y = top + box.height - (view._viewPortRect.width - glPoint.x) / view._devicePixelRatio;
                 } else {
-                    uiPoint.x = left + glPoint.x / view._devicePixelRatio;
-                    uiPoint.y = top + box.height - glPoint.y / view._devicePixelRatio;
+                    uiPoint.x = left + glPoint.x * view._devicePixelRatio;
+                    uiPoint.y = top + box.height - glPoint.y * view._devicePixelRatio;
                 }
                 return uiPoint;
             },
@@ -8933,6 +8872,7 @@
             },
             purgeCachedData: function() {
                 cc.textureCache._clear();
+                cc.loader.releaseAll();
             },
             purgeDirector: function() {
                 this.getScheduler().unscheduleAll();
@@ -8950,7 +8890,6 @@
                 this._scenesStack.length = 0;
                 this.stopAnimation();
                 this.purgeCachedData();
-                cc.checkGLErrorDebug();
             },
             reset: function() {
                 this.purgeDirector();
@@ -8968,40 +8907,53 @@
                 this._nextScene = scene;
             },
             runSceneImmediate: function(scene, onBeforeLoadScene, onLaunched) {
-                var id, node, game = cc.game;
-                var persistNodes = game._persistRootNodes;
-                scene instanceof cc.Scene && scene._load();
-                for (id in persistNodes) {
-                    node = persistNodes[id];
+                if (scene instanceof cc.Scene) {
+                    console.time("InitScene");
+                    scene._load();
+                    console.timeEnd("InitScene");
+                }
+                var game = cc.game;
+                var persistNodeList = Object.keys(game._persistRootNodes).map((function(x) {
+                    return game._persistRootNodes[x];
+                }));
+                for (var _i = 0; _i < persistNodeList.length; _i++) {
+                    var node = persistNodeList[_i];
                     game._ignoreRemovePersistNode = node;
                     node.parent = null;
                     game._ignoreRemovePersistNode = null;
                 }
                 var oldScene = this._scene;
+                console.time("AutoRelease");
                 var autoReleaseAssets = oldScene && oldScene.autoReleaseAssets && oldScene.dependAssets;
-                AutoReleaseUtils.autoRelease(cc.loader, autoReleaseAssets, scene.dependAssets);
+                AutoReleaseUtils.autoRelease(autoReleaseAssets, scene.dependAssets, persistNodeList);
+                console.timeEnd("AutoRelease");
+                console.time("Destroy");
                 cc.isValid(oldScene) && oldScene.destroy();
                 this._scene = null;
                 cc.Object._deferredDestroy();
+                console.timeEnd("Destroy");
                 onBeforeLoadScene && onBeforeLoadScene();
                 this.emit(cc.Director.EVENT_BEFORE_SCENE_LAUNCH, scene);
                 var sgScene = scene;
                 if (scene instanceof cc.Scene) {
                     this._scene = scene;
                     sgScene = scene._sgNode;
-                    for (id in persistNodes) {
-                        node = persistNodes[id];
-                        var existNode = scene.getChildByUuid(id);
+                    for (var _i2 = 0; _i2 < persistNodeList.length; _i2++) {
+                        var _node = persistNodeList[_i2];
+                        console.time("AttachPersist");
+                        var existNode = scene.getChildByUuid(_node.uuid);
                         if (existNode) {
                             var index = existNode.getSiblingIndex();
                             existNode._destroyImmediate();
-                            node.parent = scene;
-                            node.setSiblingIndex(index);
+                            scene.insertChild(_node, index);
                         } else {
-                            node.parent = scene;
+                            _node.parent = scene;
                         }
                     }
+                    console.timeEnd("AttachPersist");
+                    console.time("Activate");
                     scene._activate();
+                    console.timeEnd("Activate");
                 }
                 if (this._runningScene) {
                     var i = this._scenesStack.length;
@@ -9034,15 +8986,13 @@
                             return info;
                         }
                     }
-                } else {
-                    if ("number" === typeof key) {
-                        if (0 <= key && key < scenes.length) {
-                            return scenes[key];
-                        }
-                        cc.errorID(1206, key);
-                    } else {
-                        cc.errorID(1207, key);
+                } else if ("number" === typeof key) {
+                    if (0 <= key && key < scenes.length) {
+                        return scenes[key];
                     }
+                    cc.errorID(1206, key);
+                } else {
+                    cc.errorID(1207, key);
                 }
                 return null;
             },
@@ -9083,7 +9033,9 @@
                 }
             },
             _loadSceneByUuid: function(uuid, onLaunched, onUnloaded, dontRunScene) {
+                console.time("LoadScene " + uuid);
                 cc.AssetLibrary.loadAsset(uuid, (function(error, sceneAsset) {
+                    console.timeEnd("LoadScene " + uuid);
                     var self = cc.director;
                     self._loadingScene = "";
                     if (error) {
@@ -9261,29 +9213,27 @@
                 if (this._purgeDirectorInNextLoop) {
                     this._purgeDirectorInNextLoop = false;
                     this.purgeDirector();
-                } else {
-                    if (!this.invalid) {
-                        this.calculateDeltaTime();
-                        if (!this._paused) {
-                            this.emit(cc.Director.EVENT_BEFORE_UPDATE);
-                            this._compScheduler.startPhase();
-                            this._compScheduler.updatePhase(this._deltaTime);
-                            this._scheduler.update(this._deltaTime);
-                            this._compScheduler.lateUpdatePhase(this._deltaTime);
-                            this.emit(cc.Director.EVENT_AFTER_UPDATE);
-                            cc.Object._deferredDestroy();
-                        }
-                        this._nextScene && this.setNextScene();
-                        this.emit(cc.Director.EVENT_BEFORE_VISIT);
-                        this._visitScene();
-                        this.emit(cc.Director.EVENT_AFTER_VISIT);
-                        cc.g_NumberOfDraws = 0;
-                        cc.renderer.clear();
-                        cc.renderer.rendering(cc._renderContext);
-                        this._totalFrames++;
-                        this.emit(cc.Director.EVENT_AFTER_DRAW);
-                        cc.eventManager.frameUpdateListeners();
+                } else if (!this.invalid) {
+                    this.calculateDeltaTime();
+                    if (!this._paused) {
+                        this.emit(cc.Director.EVENT_BEFORE_UPDATE);
+                        this._compScheduler.startPhase();
+                        this._compScheduler.updatePhase(this._deltaTime);
+                        this._scheduler.update(this._deltaTime);
+                        this._compScheduler.lateUpdatePhase(this._deltaTime);
+                        this.emit(cc.Director.EVENT_AFTER_UPDATE);
+                        cc.Object._deferredDestroy();
                     }
+                    this._nextScene && this.setNextScene();
+                    this.emit(cc.Director.EVENT_BEFORE_VISIT);
+                    this._visitScene();
+                    this.emit(cc.Director.EVENT_AFTER_VISIT);
+                    cc.g_NumberOfDraws = 0;
+                    cc.renderer.clear();
+                    cc.renderer.rendering(cc._renderContext);
+                    this._totalFrames++;
+                    this.emit(cc.Director.EVENT_AFTER_DRAW);
+                    cc.eventManager.frameUpdateListeners();
                 }
             },
             stopAnimation: function() {
@@ -9322,14 +9272,14 @@
         cc.Director.PROJECTION_CUSTOM = 3;
         cc.Director.PROJECTION_DEFAULT = cc.Director.PROJECTION_2D;
     }), {
-        "./component-scheduler": 71,
-        "./event/event-listeners": 111,
-        "./event/event-target": 112,
-        "./load-pipeline/auto-release-utils": 133,
+        "./component-scheduler": 69,
+        "./event/event-listeners": 110,
+        "./event/event-target": 111,
+        "./load-pipeline/auto-release-utils": 132,
         "./node-activator": 144,
         "./platform/_CCClass": 184
     } ],
-    36: [ (function(require, module, exports) {
+    35: [ (function(require, module, exports) {
         require("./CCDirector");
         require("./CCGame");
         cc.game.once(cc.game.EVENT_RENDERER_INITED, (function() {
@@ -9362,10 +9312,10 @@
             }
         }));
     }), {
-        "./CCDirector": 35,
-        "./CCGame": 40
+        "./CCDirector": 34,
+        "./CCGame": 39
     } ],
-    37: [ (function(require, module, exports) {
+    36: [ (function(require, module, exports) {
         require("./CCDirector");
         require("./CCGame");
         require("../kazmath");
@@ -9489,11 +9439,11 @@
             };
         }));
     }), {
-        "../kazmath": 243,
-        "./CCDirector": 35,
-        "./CCGame": 40
+        "../kazmath": 244,
+        "./CCDirector": 34,
+        "./CCGame": 39
     } ],
-    38: [ (function(require, module, exports) {
+    37: [ (function(require, module, exports) {
         cc.DrawingPrimitiveCanvas = cc._Class.extend({
             _cacheArray: [],
             ctor: function(renderContext) {
@@ -9568,8 +9518,8 @@
                 var locScaleX = cc.view.getScaleX(), locScaleY = cc.view.getScaleY();
                 locContext.beginPath();
                 var endAngle = angle - 2 * Math.PI;
-                locContext.arc(0 | center.x * locScaleX, 0 | -(center.y * locScaleY), radius * locScaleX, -angle, -endAngle, false);
-                drawLineToCenter && locContext.lineTo(0 | center.x * locScaleX, 0 | -(center.y * locScaleY));
+                locContext.arc(0 | center.x * locScaleX, 0 | -center.y * locScaleY, radius * locScaleX, -angle, -endAngle, false);
+                drawLineToCenter && locContext.lineTo(0 | center.x * locScaleX, 0 | -center.y * locScaleY);
                 locContext.stroke();
             },
             drawQuadBezier: function(origin, control, destination, segments) {
@@ -9705,7 +9655,7 @@
             }
         });
     }), {} ],
-    39: [ (function(require, module, exports) {
+    38: [ (function(require, module, exports) {
         var macro = cc.macro;
         cc.DrawingPrimitiveWebGL = cc._Class.extend({
             _initialized: false,
@@ -9958,7 +9908,7 @@
             }
         });
     }), {} ],
-    40: [ (function(require, module, exports) {
+    39: [ (function(require, module, exports) {
         var EventTarget = require("./event/event-target");
         var View;
         View = require("./platform/CCView");
@@ -9976,7 +9926,6 @@
             CONFIG_KEY: {
                 width: "width",
                 height: "height",
-                engineDir: "engineDir",
                 debugMode: "debugMode",
                 exposeClassName: "exposeClassName",
                 showFPS: "showFPS",
@@ -10036,9 +9985,14 @@
                 return this._paused;
             },
             restart: function() {
-                cc.director.popToSceneStackLevel(0);
-                cc.audioEngine && cc.audioEngine.uncacheAll();
-                game.onStart();
+                cc.director.once(cc.Director.EVENT_AFTER_DRAW, (function() {
+                    cc.director.getScene().destroy();
+                    cc.Object._deferredDestroy();
+                    cc.director.purgeDirector();
+                    cc.audioEngine && cc.audioEngine.uncacheAll();
+                    cc.director.reset();
+                    game.onStart();
+                }));
             },
             end: function() {
                 close();
@@ -10201,7 +10155,6 @@
                 "number" !== typeof config[CONFIG_KEY.renderMode] && (config[CONFIG_KEY.renderMode] = 0);
                 "boolean" !== typeof config[CONFIG_KEY.registerSystemEvent] && (config[CONFIG_KEY.registerSystemEvent] = true);
                 config[CONFIG_KEY.showFPS] = !(CONFIG_KEY.showFPS in config) || !!config[CONFIG_KEY.showFPS];
-                config[CONFIG_KEY.engineDir] = config[CONFIG_KEY.engineDir] || "frameworks/cocos2d-html5";
                 this._sceneInfos = config[CONFIG_KEY.scenes] || [];
                 this.collisionMatrix = config.collisionMatrix || [];
                 this.groupList = config.groupList || [];
@@ -10311,10 +10264,10 @@
         cc.game = module.exports = game;
     }), {
         "../audio/CCAudioEngine": 24,
-        "./event/event-target": 112,
+        "./event/event-target": 111,
         "./platform/CCView": 182
     } ],
-    41: [ (function(require, module, exports) {
+    40: [ (function(require, module, exports) {
         "use strict";
         var PrefabHelper = require("./utils/prefab-helper");
         var SgHelper = require("./utils/scene-graph-helper");
@@ -10328,6 +10281,7 @@
         var CHILD_REORDER = "child-reorder";
         var ERR_INVALID_NUMBER = false;
         var Misc = require("./utils/misc");
+        var Event = require("./event/event");
         var ActionManagerExist = !!cc.ActionManager;
         var emptyFunc = function() {};
         var EventType = cc.Enum({
@@ -10376,9 +10330,9 @@
             var pos = event.getLocation();
             var node = this.owner;
             if (node._hitTest(pos, this)) {
+                event.stopPropagation();
                 event.type = EventType.MOUSE_DOWN;
                 node.dispatchEvent(event);
-                event.stopPropagation();
             }
         };
         var _mouseMoveHandler = function(event) {
@@ -10399,22 +10353,20 @@
                 }
                 event.type = EventType.MOUSE_MOVE;
                 node.dispatchEvent(event);
-            } else {
-                if (this._previousIn) {
-                    event.type = EventType.MOUSE_LEAVE;
-                    node.dispatchEvent(event);
-                    this._previousIn = false;
-                    _currentHovered = null;
-                }
+            } else if (this._previousIn) {
+                event.type = EventType.MOUSE_LEAVE;
+                node.dispatchEvent(event);
+                this._previousIn = false;
+                _currentHovered = null;
             }
         };
         var _mouseUpHandler = function(event) {
             var pos = event.getLocation();
             var node = this.owner;
             if (node._hitTest(pos, this)) {
+                event.stopPropagation();
                 event.type = EventType.MOUSE_UP;
                 node.dispatchEvent(event);
-                event.stopPropagation();
             }
         };
         var _mouseWheelHandler = function(event) {
@@ -10624,7 +10576,6 @@
                     set: function(value) {
                         if (!this._color.equals(value)) {
                             this._color.fromColor(value);
-                            255 !== value.a && cc.warnID(1626);
                             this._sizeProvider instanceof _ccsg.Node && this._sizeProvider.setColor(value);
                         }
                     }
@@ -10695,20 +10646,6 @@
                         }
                     }
                 },
-                _ignoreAnchor: {
-                    get: function() {
-                        return this.__ignoreAnchor;
-                    },
-                    set: function(value) {
-                        if (this.__ignoreAnchor !== value) {
-                            this.__ignoreAnchor = value;
-                            this._sgNode.ignoreAnchor = value;
-                            var sizeProvider = this._sizeProvider;
-                            sizeProvider instanceof _ccsg.Node && sizeProvider !== this._sgNode && (sizeProvider.ignoreAnchor = value);
-                            this.emit(ANCHOR_CHANGED);
-                        }
-                    }
-                },
                 zIndex: {
                     get: function() {
                         return this._localZOrder;
@@ -10726,7 +10663,6 @@
                 var sgNode = this._sgNode = new _ccsg.Node();
                 cc.game._isCloning || (sgNode.cascadeOpacity = true);
                 this._sizeProvider = null;
-                this.__ignoreAnchor = false;
                 this._reorderChildDirty = false;
                 this._widget = null;
                 this._touchListener = null;
@@ -10804,7 +10740,7 @@
             },
             on: function(type, callback, target, useCapture) {
                 var newAdded = false;
-                if (_touchEvents.indexOf(type) !== -1) {
+                if (-1 !== _touchEvents.indexOf(type)) {
                     if (!this._touchListener) {
                         this._touchListener = cc.EventListener.create({
                             event: cc.EventListener.TOUCH_ONE_BY_ONE,
@@ -10818,21 +10754,19 @@
                         cc.eventManager.addListener(this._touchListener, this);
                         newAdded = true;
                     }
-                } else {
-                    if (_mouseEvents.indexOf(type) !== -1 && !this._mouseListener) {
-                        this._mouseListener = cc.EventListener.create({
-                            event: cc.EventListener.MOUSE,
-                            _previousIn: false,
-                            owner: this,
-                            mask: _searchMaskInParent(this),
-                            onMouseDown: _mouseDownHandler,
-                            onMouseMove: _mouseMoveHandler,
-                            onMouseUp: _mouseUpHandler,
-                            onMouseScroll: _mouseWheelHandler
-                        });
-                        cc.eventManager.addListener(this._mouseListener, this);
-                        newAdded = true;
-                    }
+                } else if (-1 !== _mouseEvents.indexOf(type) && !this._mouseListener) {
+                    this._mouseListener = cc.EventListener.create({
+                        event: cc.EventListener.MOUSE,
+                        _previousIn: false,
+                        owner: this,
+                        mask: _searchMaskInParent(this),
+                        onMouseDown: _mouseDownHandler,
+                        onMouseMove: _mouseMoveHandler,
+                        onMouseUp: _mouseUpHandler,
+                        onMouseScroll: _mouseWheelHandler
+                    });
+                    cc.eventManager.addListener(this._mouseListener, this);
+                    newAdded = true;
                 }
                 newAdded && !this._activeInHierarchy && cc.director.getScheduler().schedule((function() {
                     this._activeInHierarchy || cc.eventManager.pauseTarget(this);
@@ -10841,7 +10775,7 @@
             },
             off: function(type, callback, target, useCapture) {
                 this._EventTargetOff(type, callback, target, useCapture);
-                _touchEvents.indexOf(type) !== -1 ? this._checkTouchListeners() : _mouseEvents.indexOf(type) !== -1 && this._checkMouseListeners();
+                -1 !== _touchEvents.indexOf(type) ? this._checkTouchListeners() : -1 !== _mouseEvents.indexOf(type) && this._checkMouseListeners();
             },
             targetOff: function(target) {
                 this._EventTargetTargetOff(target);
@@ -11235,19 +11169,12 @@
                 if ("undefined" === typeof tag) {
                     tag = void 0;
                     name = child._name;
-                } else {
-                    if (cc.js.isString(tag)) {
-                        name = tag;
-                        tag = void 0;
-                    } else {
-                        if (cc.js.isNumber(tag)) {
-                            setTag = true;
-                            name = "";
-                        }
-                    }
-                }
-                if (!cc.Node.isNode(child)) {
-                    return cc.errorID(1634, cc.js.getClassName(child));
+                } else if (cc.js.isString(tag)) {
+                    name = tag;
+                    tag = void 0;
+                } else if (cc.js.isNumber(tag)) {
+                    setTag = true;
+                    name = "";
                 }
                 cc.assertID(child, 1606);
                 cc.assertID(null === child._parent, 1605);
@@ -11306,7 +11233,6 @@
                 sgNode.setScale(self._scaleX, self._scaleY);
                 sgNode.setSkewX(self._skewX);
                 sgNode.setSkewY(self._skewY);
-                sgNode.setIgnoreAnchorPointForPosition(self.__ignoreAnchor);
                 var arrivalOrder = sgNode._arrivalOrder;
                 sgNode.setLocalZOrder(self._localZOrder);
                 sgNode._arrivalOrder = arrivalOrder;
@@ -11347,12 +11273,13 @@
         Node.EventType = EventType;
         cc.Node = module.exports = Node;
     }), {
+        "./event/event": 112,
         "./utils/base-node": 218,
-        "./utils/misc": 222,
-        "./utils/prefab-helper": 224,
-        "./utils/scene-graph-helper": 225
+        "./utils/misc": 223,
+        "./utils/prefab-helper": 225,
+        "./utils/scene-graph-helper": 226
     } ],
-    42: [ (function(require, module, exports) {
+    41: [ (function(require, module, exports) {
         var NIL = function() {};
         cc.Scene = cc.Class({
             name: "cc.Scene",
@@ -11388,9 +11315,9 @@
         });
         module.exports = cc.Scene;
     }), {
-        "./CCNode": 41
+        "./CCNode": 40
     } ],
-    43: [ (function(require, module, exports) {
+    42: [ (function(require, module, exports) {
         var MAX_POOL_SIZE = 20;
         var ListEntry = function(prev, next, callback, target, priority, paused, markedForDeletion) {
             this.prev = prev;
@@ -11512,7 +11439,7 @@
             this._interval = interval;
         };
         proto.update = function(dt) {
-            if (this._elapsed === -1) {
+            if (-1 === this._elapsed) {
                 this._elapsed = 0;
                 this._timesExecuted = 0;
             } else {
@@ -11530,12 +11457,10 @@
                             this._timesExecuted += 1;
                             this._useDelay = false;
                         }
-                    } else {
-                        if (this._elapsed >= this._interval) {
-                            this.trigger();
-                            this._elapsed = 0;
-                            this._timesExecuted += 1;
-                        }
+                    } else if (this._elapsed >= this._interval) {
+                        this.trigger();
+                        this._elapsed = 0;
+                        this._timesExecuted += 1;
                     }
                     this._callback && !this._runForever && this._timesExecuted > this._repeat && this.cancel();
                 }
@@ -11681,7 +11606,7 @@
                     target = tmp;
                 }
                 if (4 === arguments.length || 5 === arguments.length) {
-                    paused = repeat;
+                    paused = !!repeat;
                     repeat = cc.macro.REPEAT_FOREVER;
                     delay = 0;
                 }
@@ -11690,7 +11615,7 @@
                 cc.assertID(instanceId, 1510);
                 var element = this._hashForTimers[instanceId];
                 if (element) {
-                    cc.assert(element.paused === paused, "");
+                    element.paused !== paused && cc.warnID(1511);
                 } else {
                     element = HashTimerEntry.get(null, target, 0, null, null, paused);
                     this._arrayForTimers.push(element);
@@ -11950,7 +11875,7 @@
         cc.Scheduler.PRIORITY_SYSTEM = 1 << 31;
         cc.Scheduler.PRIORITY_NON_SYSTEM = cc.Scheduler.PRIORITY_SYSTEM + 1;
     }), {} ],
-    44: [ (function(require, module, exports) {
+    43: [ (function(require, module, exports) {
         var RawAsset = require("./CCRawAsset");
         cc.Asset = cc.Class({
             name: "cc.Asset",
@@ -11960,7 +11885,7 @@
                     get: function() {
                         if (this._rawFiles) {
                             if (cc.AssetLibrary) {
-                                return cc.AssetLibrary.getImportedDir(this._uuid) + "/" + this._uuid + "/" + this._rawFiles[0];
+                                return cc.AssetLibrary.getLibUrlNoExt(this._uuid) + "/" + this._rawFiles[0];
                             }
                             cc.errorID(6400);
                         }
@@ -11972,7 +11897,7 @@
                     get: function() {
                         if (this._rawFiles) {
                             if (cc.AssetLibrary) {
-                                var dir = cc.AssetLibrary.getImportedDir(this._uuid) + "/" + this._uuid + "/";
+                                var dir = cc.AssetLibrary.getLibUrlNoExt(this._uuid) + "/";
                                 return this._rawFiles.map((function(filename) {
                                     return dir + filename;
                                 }));
@@ -12002,9 +11927,9 @@
         });
         module.exports = cc.Asset;
     }), {
-        "./CCRawAsset": 50
+        "./CCRawAsset": 49
     } ],
-    45: [ (function(require, module, exports) {
+    44: [ (function(require, module, exports) {
         var AudioClip = cc.Class({
             name: "cc.AudioClip",
             extends: cc.RawAsset
@@ -12012,7 +11937,7 @@
         cc.AudioClip = AudioClip;
         module.exports = AudioClip;
     }), {} ],
-    46: [ (function(require, module, exports) {
+    45: [ (function(require, module, exports) {
         var BitmapFont = cc.Class({
             name: "cc.BitmapFont",
             extends: cc.Font,
@@ -12033,7 +11958,7 @@
         cc.BitmapFont = BitmapFont;
         module.exports = BitmapFont;
     }), {} ],
-    47: [ (function(require, module, exports) {
+    46: [ (function(require, module, exports) {
         var Font = cc.Class({
             name: "cc.Font",
             extends: cc.Asset
@@ -12041,7 +11966,7 @@
         cc.Font = Font;
         module.exports = Font;
     }), {} ],
-    48: [ (function(require, module, exports) {
+    47: [ (function(require, module, exports) {
         var LabelAtlas = cc.Class({
             name: "cc.LabelAtlas",
             extends: cc.BitmapFont
@@ -12049,7 +11974,7 @@
         cc.LabelAtlas = LabelAtlas;
         module.exports = LabelAtlas;
     }), {} ],
-    49: [ (function(require, module, exports) {
+    48: [ (function(require, module, exports) {
         var Prefab = cc.Class({
             name: "cc.Prefab",
             extends: cc.Asset,
@@ -12082,7 +12007,7 @@
     }), {
         "../platform/instantiate-jit": 190
     } ],
-    50: [ (function(require, module, exports) {
+    49: [ (function(require, module, exports) {
         var CCObject = require("../platform/CCObject");
         cc.RawAsset = cc.Class({
             name: "cc.RawAsset",
@@ -12106,7 +12031,7 @@
     }), {
         "../platform/CCObject": 178
     } ],
-    51: [ (function(require, module, exports) {
+    50: [ (function(require, module, exports) {
         var Scene = cc.Class({
             name: "cc.SceneAsset",
             extends: cc.Asset,
@@ -12118,7 +12043,7 @@
         cc.SceneAsset = Scene;
         module.exports = Scene;
     }), {} ],
-    52: [ (function(require, module, exports) {
+    51: [ (function(require, module, exports) {
         var Script = cc.Class({
             name: "cc.Script",
             extends: cc.Asset
@@ -12140,7 +12065,7 @@
         });
         cc._TypeScript = TypeScript;
     }), {} ],
-    53: [ (function(require, module, exports) {
+    52: [ (function(require, module, exports) {
         var SpriteAtlas = cc.Class({
             name: "cc.SpriteAtlas",
             extends: cc.Asset,
@@ -12172,7 +12097,7 @@
         cc.SpriteAtlas = SpriteAtlas;
         module.exports = SpriteAtlas;
     }), {} ],
-    54: [ (function(require, module, exports) {
+    53: [ (function(require, module, exports) {
         var TTFFont = cc.Class({
             name: "cc.TTFFont",
             extends: cc.Font
@@ -12180,7 +12105,7 @@
         cc.TTFFont = TTFFont;
         module.exports = TTFFont;
     }), {} ],
-    55: [ (function(require, module, exports) {
+    54: [ (function(require, module, exports) {
         require("./CCRawAsset");
         require("./CCAsset");
         require("./CCFont");
@@ -12195,55 +12120,22 @@
         require("./CCBitmapFont");
         require("./CCLabelAtlas");
     }), {
-        "../sprites/CCSpriteFrame": 210,
+        "../sprites/CCSpriteFrame": 211,
         "../textures/CCTexture2D": 212,
-        "./CCAsset": 44,
-        "./CCAudioClip": 45,
-        "./CCBitmapFont": 46,
-        "./CCFont": 47,
-        "./CCLabelAtlas": 48,
-        "./CCPrefab": 49,
-        "./CCRawAsset": 50,
-        "./CCSceneAsset": 51,
-        "./CCScripts": 52,
-        "./CCSpriteAtlas": 53,
-        "./CCTTFFont": 54
+        "./CCAsset": 43,
+        "./CCAudioClip": 44,
+        "./CCBitmapFont": 45,
+        "./CCFont": 46,
+        "./CCLabelAtlas": 47,
+        "./CCPrefab": 48,
+        "./CCRawAsset": 49,
+        "./CCSceneAsset": 50,
+        "./CCScripts": 51,
+        "./CCSpriteAtlas": 52,
+        "./CCTTFFont": 53
     } ],
-    56: [ (function(require, module, exports) {
-        cc._tmp.PrototypeCCNode = function() {
-            var _p = _ccsg.Node.prototype;
-            cc.defineGetterSetter(_p, "x", _p.getPositionX, _p.setPositionX);
-            cc.defineGetterSetter(_p, "y", _p.getPositionY, _p.setPositionY);
-            cc.defineGetterSetter(_p, "width", _p._getWidth, _p._setWidth);
-            cc.defineGetterSetter(_p, "height", _p._getHeight, _p._setHeight);
-            cc.defineGetterSetter(_p, "anchorX", _p._getAnchorX, _p._setAnchorX);
-            cc.defineGetterSetter(_p, "anchorY", _p._getAnchorY, _p._setAnchorY);
-            cc.defineGetterSetter(_p, "skewX", _p.getSkewX, _p.setSkewX);
-            cc.defineGetterSetter(_p, "skewY", _p.getSkewY, _p.setSkewY);
-            cc.defineGetterSetter(_p, "zIndex", _p.getLocalZOrder, _p.setLocalZOrder);
-            cc.defineGetterSetter(_p, "vertexZ", _p.getVertexZ, _p.setVertexZ);
-            cc.defineGetterSetter(_p, "rotation", _p.getRotation, _p.setRotation);
-            cc.defineGetterSetter(_p, "rotationX", _p.getRotationX, _p.setRotationX);
-            cc.defineGetterSetter(_p, "rotationY", _p.getRotationY, _p.setRotationY);
-            cc.defineGetterSetter(_p, "scale", _p.getScale, _p.setScale);
-            cc.defineGetterSetter(_p, "scaleX", _p.getScaleX, _p.setScaleX);
-            cc.defineGetterSetter(_p, "scaleY", _p.getScaleY, _p.setScaleY);
-            cc.defineGetterSetter(_p, "children", _p.getChildren);
-            cc.defineGetterSetter(_p, "childrenCount", _p.getChildrenCount);
-            cc.defineGetterSetter(_p, "parent", _p.getParent, _p.setParent);
-            cc.defineGetterSetter(_p, "visible", _p.isVisible, _p.setVisible);
-            cc.defineGetterSetter(_p, "running", _p.isRunning);
-            cc.defineGetterSetter(_p, "ignoreAnchor", _p.isIgnoreAnchorPointForPosition, _p.setIgnoreAnchorPointForPosition);
-            cc.defineGetterSetter(_p, "scheduler", _p.getScheduler, _p.setScheduler);
-            cc.defineGetterSetter(_p, "shaderProgram", _p.getShaderProgram, _p.setShaderProgram);
-            cc.defineGetterSetter(_p, "opacity", _p.getOpacity, _p.setOpacity);
-            cc.defineGetterSetter(_p, "opacityModifyRGB", _p.isOpacityModifyRGB);
-            cc.defineGetterSetter(_p, "cascadeOpacity", _p.isCascadeOpacityEnabled, _p.setCascadeOpacityEnabled);
-            cc.defineGetterSetter(_p, "color", _p.getColor, _p.setColor);
-            cc.defineGetterSetter(_p, "cascadeColor", _p.isCascadeColorEnabled, _p.setCascadeColorEnabled);
-        };
-    }), {} ],
-    57: [ (function(require, module, exports) {
+    55: [ (function(require, module, exports) {
+        var Misc = require("../utils/misc");
         var ActionManagerExist = !!cc.ActionManager;
         var emptyFunc = function() {};
         cc.s_globalOrderOfArrival = 1;
@@ -12271,7 +12163,6 @@
                 _parent: null,
                 _ignoreAnchorPointForPosition: false,
                 tag: cc.macro.NODE_TAG_INVALID,
-                _showNode: false,
                 _name: "",
                 _realOpacity: 255,
                 _realColor: cc.Color.WHITE,
@@ -12600,16 +12491,12 @@
                 var name, setTag = false;
                 if (void 0 === tag) {
                     name = child._name;
-                } else {
-                    if ("string" === typeof tag) {
-                        name = tag;
-                        tag = void 0;
-                    } else {
-                        if ("number" === typeof tag) {
-                            setTag = true;
-                            name = "";
-                        }
-                    }
+                } else if ("string" === typeof tag) {
+                    name = tag;
+                    tag = void 0;
+                } else if ("number" === typeof tag) {
+                    setTag = true;
+                    name = "";
                 }
                 cc.assertID(child, 1606);
                 cc.assertID(null === child._parent, 1605);
@@ -12695,7 +12582,7 @@
             },
             reorderChild: function(child, zOrder) {
                 cc.assertID(child, 1617);
-                if (this._children.indexOf(child) === -1) {
+                if (-1 === this._children.indexOf(child)) {
                     cc.logID(1635);
                     return;
                 }
@@ -12882,43 +12769,35 @@
                         repeat = cc.macro.REPEAT_FOREVER;
                         delay = 0;
                         key = this.__instanceId;
-                    } else {
-                        if (2 === len) {
-                            if ("number" === typeof interval) {
-                                repeat = cc.macro.REPEAT_FOREVER;
-                                delay = 0;
-                                key = this.__instanceId;
-                            } else {
-                                key = interval;
-                                interval = 0;
-                                repeat = cc.macro.REPEAT_FOREVER;
-                                delay = 0;
-                            }
+                    } else if (2 === len) {
+                        if ("number" === typeof interval) {
+                            repeat = cc.macro.REPEAT_FOREVER;
+                            delay = 0;
+                            key = this.__instanceId;
                         } else {
-                            if (3 === len) {
-                                if ("string" === typeof repeat) {
-                                    key = repeat;
-                                    repeat = cc.macro.REPEAT_FOREVER;
-                                } else {
-                                    key = this.__instanceId;
-                                }
-                                delay = 0;
-                            } else {
-                                4 === len && (key = this.__instanceId);
-                            }
-                        }
-                    }
-                } else {
-                    if (1 === len) {
-                        interval = 0;
-                        repeat = cc.macro.REPEAT_FOREVER;
-                        delay = 0;
-                    } else {
-                        if (2 === len) {
+                            key = interval;
+                            interval = 0;
                             repeat = cc.macro.REPEAT_FOREVER;
                             delay = 0;
                         }
+                    } else if (3 === len) {
+                        if ("string" === typeof repeat) {
+                            key = repeat;
+                            repeat = cc.macro.REPEAT_FOREVER;
+                        } else {
+                            key = this.__instanceId;
+                        }
+                        delay = 0;
+                    } else {
+                        4 === len && (key = this.__instanceId);
                     }
+                } else if (1 === len) {
+                    interval = 0;
+                    repeat = cc.macro.REPEAT_FOREVER;
+                    delay = 0;
+                } else if (2 === len) {
+                    repeat = cc.macro.REPEAT_FOREVER;
+                    delay = 0;
                 }
                 cc.assertID(callback, 1619);
                 cc.assertID(interval >= 0, 1620);
@@ -13184,11 +13063,27 @@
         };
         _ccsg.Node._performStacks = [ [] ];
         _ccsg.Node._performing = 0;
-        cc.assertID("function" === typeof cc._tmp.PrototypeCCNode, 3200, "BaseNodesPropertyDefine.js");
-        cc._tmp.PrototypeCCNode();
-        delete cc._tmp.PrototypeCCNode;
-    }), {} ],
-    58: [ (function(require, module, exports) {
+        var SameNameGetSets = [ "skewX", "skewY", "vertexZ", "rotation", "rotationX", "rotationY", "scale", "scaleX", "scaleY", "children", "childrenCount", "parent", "scheduler", "shaderProgram", "opacity", "color" ];
+        var DiffNameGetSets = {
+            x: [ "getPositionX", "setPositionX" ],
+            y: [ "getPositionY", "setPositionY" ],
+            width: [ "_getWidth", "_setWidth" ],
+            height: [ "_getHeight", "_setHeight" ],
+            anchorX: [ "_getAnchorX", "_setAnchorX" ],
+            anchorY: [ "_getAnchorY", "_setAnchorY" ],
+            zIndex: [ "getLocalZOrder", "setLocalZOrder" ],
+            visible: [ "isVisible", "setVisible" ],
+            running: [ "isRunning" ],
+            ignoreAnchor: [ "isIgnoreAnchorPointForPosition", "setIgnoreAnchorPointForPosition" ],
+            opacityModifyRGB: [ "isOpacityModifyRGB", "setOpacityModifyRGB" ],
+            cascadeOpacity: [ "isCascadeOpacityEnabled", "setCascadeOpacityEnabled" ],
+            cascadeColor: [ "isCascadeColorEnabled", "setCascadeColorEnabled" ]
+        };
+        Misc.propertyDefine(_ccsg.Node, SameNameGetSets, DiffNameGetSets);
+    }), {
+        "../utils/misc": 223
+    } ],
+    56: [ (function(require, module, exports) {
         cc.CustomRenderCmd = function(target, func) {
             this._needDraw = true;
             this._target = target;
@@ -13621,7 +13516,7 @@
             return blendFunc ? blendFunc.src === cc.macro.SRC_ALPHA && blendFunc.dst === cc.macro.ONE || blendFunc.src === cc.macro.ONE && blendFunc.dst === cc.macro.ONE ? "lighter" : blendFunc.src === cc.macro.ZERO && blendFunc.dst === cc.macro.SRC_ALPHA ? "destination-in" : blendFunc.src === cc.macro.ZERO && blendFunc.dst === cc.macro.ONE_MINUS_SRC_ALPHA ? "destination-out" : "source-over" : "source-over";
         };
     }), {} ],
-    59: [ (function(require, module, exports) {
+    57: [ (function(require, module, exports) {
         _ccsg.Node.WebGLRenderCmd = function(renderable) {
             this._ctor(renderable);
             this._shaderProgram = null;
@@ -13637,7 +13532,7 @@
             return this._shaderProgram;
         };
     }), {} ],
-    60: [ (function(require, module, exports) {
+    58: [ (function(require, module, exports) {
         var TOP = 1;
         var MID = 2;
         var BOT = 4;
@@ -13787,14 +13682,8 @@
         function visitNode(node) {
             var widget = node._widget;
             if (widget) {
-                var target = widget._target;
-                if (target) {
-                    var isParent = node !== target && node.isChildOf(target);
-                    if (!isParent) {
-                        cc.errorID(6500);
-                        widget._target = null;
-                    }
-                }
+                var target;
+                var isParent;
                 align(node, widget);
                 widget.isAlignOnce ? widget.enabled = false : activeWidgets.push(widget);
             }
@@ -13861,7 +13750,7 @@
             updateAlignment: updateAlignment
         };
     }), {} ],
-    61: [ (function(require, module, exports) {
+    59: [ (function(require, module, exports) {
         var transformDirtyFlag;
         transformDirtyFlag = _ccsg.Node._dirtyFlags.transformDirty;
         require("./CCSGCameraNode");
@@ -13873,6 +13762,7 @@
                 this.invertViewMatrix = cc.affineTransformMake();
                 this._lastViewMatrix = cc.affineTransformMake();
                 this._sgTarges = [];
+                this._checkedTimes = 0;
                 this.visibleRect = {
                     left: cc.v2(),
                     right: cc.v2(),
@@ -13906,11 +13796,14 @@
             _addSgTargetInSg: function(target) {
                 var sgNode;
                 target instanceof cc.Node ? sgNode = target._sgNode : target instanceof _ccsg.Node && (sgNode = target);
-                if (!sgNode) {
+                if (!sgNode || sgNode._cameraInfo) {
                     return;
                 }
+                sgNode._cameraInfo = {
+                    touched: this._checkedTimes
+                };
                 this._sgNode.addTarget(sgNode);
-                this._sgTarges.indexOf(sgNode) === -1 && this._sgTarges.push(sgNode);
+                this._sgTarges.push(sgNode);
                 var cmd = sgNode._renderCmd;
                 cmd.setDirtyFlag(transformDirtyFlag);
                 cmd._cameraFlag = Camera.flags.InCamera;
@@ -13919,10 +13812,11 @@
             _removeTargetInSg: function(target) {
                 var sgNode;
                 target instanceof cc.Node ? sgNode = target._sgNode : target instanceof _ccsg.Node && (sgNode = target);
-                if (!sgNode) {
+                if (!sgNode || !sgNode._cameraInfo) {
                     return;
                 }
                 this._sgNode.removeTarget(sgNode);
+                delete sgNode._cameraInfo;
                 cc.js.array.remove(this._sgTarges, sgNode);
                 var cmd = sgNode._renderCmd;
                 cmd.setDirtyFlag(transformDirtyFlag);
@@ -13945,20 +13839,20 @@
                     return;
                 }
                 Camera.main = null;
-                var targets = this._targets;
-                for (var i = 0, l = targets.length; i < l; i++) {
-                    this._removeTargetInSg(targets[i]);
+                var sgTargets = this._sgTarges;
+                for (var i = sgTargets.length - 1; i >= 0; i--) {
+                    this._removeTargetInSg(sgTargets[i]);
                 }
             },
             addTarget: function(target) {
-                if (this._targets.indexOf(target) !== -1) {
+                if (-1 !== this._targets.indexOf(target)) {
                     return;
                 }
                 this._addSgTargetInSg(target);
                 this._targets.push(target);
             },
             removeTarget: function(target) {
-                if (this._targets.indexOf(target) === -1) {
+                if (-1 === this._targets.indexOf(target)) {
                     return;
                 }
                 this._removeTargetInSg(target);
@@ -13980,7 +13874,7 @@
                 node instanceof cc.Node && (node = node._sgNode);
                 var targets = this._sgTarges;
                 while (node) {
-                    if (targets.indexOf(node) !== -1) {
+                    if (-1 !== targets.indexOf(node)) {
                         return true;
                     }
                     node = node.parent;
@@ -13993,7 +13887,26 @@
                     sgTarges[i]._renderCmd.setDirtyFlag(transformDirtyFlag);
                 }
             },
+            _checkSgTargets: function() {
+                var targets = this._targets;
+                var sgTarges = this._sgTarges;
+                var checkedTimes = ++this._checkedTimes;
+                for (var i = 0, l = targets.length; i < l; i++) {
+                    var target = targets[i];
+                    var sgNode = target;
+                    if (target instanceof cc.Node) {
+                        sgNode = target._sgNode;
+                        sgNode && !sgNode._cameraInfo && this._addSgTargetInSg(sgNode);
+                    }
+                    sgNode && (sgNode._cameraInfo.touched = checkedTimes);
+                }
+                for (var _i = sgTarges.length - 1; _i >= 0; _i--) {
+                    var sgTarget = sgTarges[_i];
+                    sgTarget._cameraInfo.touched !== checkedTimes && this._removeTargetInSg(sgTarget);
+                }
+            },
             lateUpdate: function() {
+                this._checkSgTargets();
                 var m = this.viewMatrix;
                 var im = this.invertViewMatrix;
                 var viewPort = this.viewPort;
@@ -14050,9 +13963,9 @@
         });
         module.exports = cc.Camera = Camera;
     }), {
-        "./CCSGCameraNode": 62
+        "./CCSGCameraNode": 60
     } ],
-    62: [ (function(require, module, exports) {
+    60: [ (function(require, module, exports) {
         var CameraNode = _ccsg.Node.extend({
             ctor: function() {
                 this._super();
@@ -14071,22 +13984,13 @@
                 mat[13] = ty;
             },
             addTarget: function(target) {
-                if (target._cameraInfo) {
-                    return;
-                }
-                target._cameraInfo = {
-                    sgCameraNode: this,
-                    originVisit: target.visit
-                };
+                var info = target._cameraInfo;
+                info.sgCameraNode = this;
+                info.originVisit = target.visit;
                 target.visit = this._visit;
             },
             removeTarget: function(target) {
-                var info = target._cameraInfo;
-                if (!info) {
-                    return;
-                }
-                target.visit = info.originVisit;
-                target._cameraInfo = void 0;
+                target.visit = target._cameraInfo.originVisit;
             },
             _visit: function(parent) {
                 var info = this._cameraInfo;
@@ -14109,13 +14013,13 @@
         });
         module.exports = _ccsg.CameraNode = CameraNode;
     }), {} ],
-    63: [ (function(require, module, exports) {
+    61: [ (function(require, module, exports) {
         cc.Collider.Box = cc.Class({
             properties: {
                 _offset: cc.v2(0, 0),
                 _size: cc.size(100, 100),
                 offset: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.offset",
+                    tooltip: false,
                     get: function() {
                         return this._offset;
                     },
@@ -14125,7 +14029,7 @@
                     type: cc.Vec2
                 },
                 size: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.size",
+                    tooltip: false,
                     get: function() {
                         return this._size;
                     },
@@ -14146,7 +14050,7 @@
         });
         cc.BoxCollider = module.exports = BoxCollider;
     }), {} ],
-    64: [ (function(require, module, exports) {
+    62: [ (function(require, module, exports) {
         cc.Collider.Circle = cc.Class({
             properties: {
                 _offset: cc.v2(0, 0),
@@ -14161,7 +14065,7 @@
                     type: cc.Vec2
                 },
                 radius: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.radius",
+                    tooltip: false,
                     get: function() {
                         return this._radius;
                     },
@@ -14180,7 +14084,7 @@
         });
         cc.CircleCollider = module.exports = CircleCollider;
     }), {} ],
-    65: [ (function(require, module, exports) {
+    63: [ (function(require, module, exports) {
         var Collider = cc.Class({
             name: "cc.Collider",
             extends: cc.Component,
@@ -14188,10 +14092,10 @@
                 editing: {
                     default: false,
                     serializable: false,
-                    tooltip: "i18n:COMPONENT.collider.editing"
+                    tooltip: false
                 },
                 tag: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.tag",
+                    tooltip: false,
                     default: 0,
                     range: [ 0, 1e7 ],
                     type: cc.Integer
@@ -14206,7 +14110,7 @@
         });
         cc.Collider = module.exports = Collider;
     }), {} ],
-    66: [ (function(require, module, exports) {
+    64: [ (function(require, module, exports) {
         var Contact = require("./CCContact");
         var CollisionType = Contact.CollisionType;
         var tempRect = cc.rect();
@@ -14290,18 +14194,14 @@
                     if (collider instanceof cc.BoxCollider) {
                         world.position = null;
                         world.points = [ cc.v2(), cc.v2(), cc.v2(), cc.v2() ];
-                    } else {
-                        if (collider instanceof cc.PolygonCollider) {
-                            world.position = null;
-                            world.points = collider.points.map((function(p) {
-                                return cc.v2(p.x, p.y);
-                            }));
-                        } else {
-                            if (collider instanceof cc.CircleCollider) {
-                                world.position = cc.v2();
-                                world.points = null;
-                            }
-                        }
+                    } else if (collider instanceof cc.PolygonCollider) {
+                        world.position = null;
+                        world.points = collider.points.map((function(p) {
+                            return cc.v2(p.x, p.y);
+                        }));
+                    } else if (collider instanceof cc.CircleCollider) {
+                        world.position = cc.v2();
+                        world.points = null;
                     }
                 }
             },
@@ -14335,51 +14235,47 @@
                     aabb.y = miny;
                     aabb.width = maxx - minx;
                     aabb.height = maxy - miny;
-                } else {
-                    if (collider instanceof cc.CircleCollider) {
-                        var p = cc.pointApplyAffineTransform(collider.offset, t);
-                        world.position.x = p.x;
-                        world.position.y = p.y;
-                        t.tx = t.ty = 0;
-                        tempVec2.x = collider.radius;
-                        tempVec2.y = 0;
-                        var tempP = cc.pointApplyAffineTransform(tempVec2, t);
-                        var d = Math.sqrt(tempP.x * tempP.x + tempP.y * tempP.y);
-                        world.radius = d;
-                        aabb.x = p.x - d;
-                        aabb.y = p.y - d;
-                        aabb.width = 2 * d;
-                        aabb.height = 2 * d;
-                    } else {
-                        if (collider instanceof cc.PolygonCollider) {
-                            var points = collider.points;
-                            var worldPoints = world.points;
-                            worldPoints.length = points.length;
-                            var minx = 1e6, miny = 1e6, maxx = -1e6, maxy = -1e6;
-                            for (var i = 0, l = points.length; i < l; i++) {
-                                worldPoints[i] || (worldPoints[i] = cc.v2());
-                                tempVec2.x = points[i].x + offset.x;
-                                tempVec2.y = points[i].y + offset.y;
-                                var p = cc.pointApplyAffineTransform(tempVec2, t);
-                                worldPoints[i].x = p.x;
-                                worldPoints[i].y = p.y;
-                                p.x > maxx && (maxx = p.x);
-                                p.x < minx && (minx = p.x);
-                                p.y > maxy && (maxy = p.y);
-                                p.y < miny && (miny = p.y);
-                            }
-                            aabb.x = minx;
-                            aabb.y = miny;
-                            aabb.width = maxx - minx;
-                            aabb.height = maxy - miny;
-                        }
+                } else if (collider instanceof cc.CircleCollider) {
+                    var p = cc.pointApplyAffineTransform(collider.offset, t);
+                    world.position.x = p.x;
+                    world.position.y = p.y;
+                    t.tx = t.ty = 0;
+                    tempVec2.x = collider.radius;
+                    tempVec2.y = 0;
+                    var tempP = cc.pointApplyAffineTransform(tempVec2, t);
+                    var d = Math.sqrt(tempP.x * tempP.x + tempP.y * tempP.y);
+                    world.radius = d;
+                    aabb.x = p.x - d;
+                    aabb.y = p.y - d;
+                    aabb.width = 2 * d;
+                    aabb.height = 2 * d;
+                } else if (collider instanceof cc.PolygonCollider) {
+                    var points = collider.points;
+                    var worldPoints = world.points;
+                    worldPoints.length = points.length;
+                    var minx = 1e6, miny = 1e6, maxx = -1e6, maxy = -1e6;
+                    for (var i = 0, l = points.length; i < l; i++) {
+                        worldPoints[i] || (worldPoints[i] = cc.v2());
+                        tempVec2.x = points[i].x + offset.x;
+                        tempVec2.y = points[i].y + offset.y;
+                        var p = cc.pointApplyAffineTransform(tempVec2, t);
+                        worldPoints[i].x = p.x;
+                        worldPoints[i].y = p.y;
+                        p.x > maxx && (maxx = p.x);
+                        p.x < minx && (minx = p.x);
+                        p.y > maxy && (maxy = p.y);
+                        p.y < miny && (miny = p.y);
                     }
+                    aabb.x = minx;
+                    aabb.y = miny;
+                    aabb.width = maxx - minx;
+                    aabb.height = maxy - miny;
                 }
             },
             addCollider: function(collider) {
                 var colliders = this._colliders;
                 var index = colliders.indexOf(collider);
-                if (index === -1) {
+                if (-1 === index) {
                     for (var i = 0, l = colliders.length; i < l; i++) {
                         var other = colliders[i];
                         if (this.shouldCollide(collider, other)) {
@@ -14450,11 +14346,9 @@
                             debugDrawer.close();
                             debugDrawer.stroke();
                         }
-                    } else {
-                        if (collider instanceof cc.CircleCollider) {
-                            debugDrawer.circle(collider.world.position.x, collider.world.position.y, collider.world.radius);
-                            debugDrawer.stroke();
-                        }
+                    } else if (collider instanceof cc.CircleCollider) {
+                        debugDrawer.circle(collider.world.position.x, collider.world.position.y, collider.world.radius);
+                        debugDrawer.stroke();
                     }
                     if (this.enabledDrawBoundingBox) {
                         var aabb = collider.world.aabb;
@@ -14485,20 +14379,18 @@
                 }
                 cc.director.getScene()._sgNode.addChild(this._debugDrawer);
                 cc.director.on(cc.Director.EVENT_AFTER_SCENE_LAUNCH, this.onSceneLaunched, this);
-            } else {
-                if (!value && this._enabledDebugDraw) {
-                    this._debugDrawer.clear();
-                    this._debugDrawer.removeFromParent(false);
-                    cc.director.off(cc.Director.EVENT_AFTER_SCENE_LAUNCH, this.onSceneLaunched, this);
-                }
+            } else if (!value && this._enabledDebugDraw) {
+                this._debugDrawer.clear();
+                this._debugDrawer.removeFromParent(false);
+                cc.director.off(cc.Director.EVENT_AFTER_SCENE_LAUNCH, this.onSceneLaunched, this);
             }
             this._enabledDebugDraw = value;
         }));
         cc.CollisionManager = module.exports = CollisionManager;
     }), {
-        "./CCContact": 67
+        "./CCContact": 65
     } ],
-    67: [ (function(require, module, exports) {
+    65: [ (function(require, module, exports) {
         var Intersection = require("./CCIntersection");
         var CollisionType = cc.Enum({
             None: 0,
@@ -14516,22 +14408,16 @@
             var isCollider2Circle = collider2 instanceof cc.CircleCollider;
             if (isCollider1Polygon && isCollider2Polygon) {
                 this.testFunc = Intersection.polygonPolygon;
+            } else if (isCollider1Circle && isCollider2Circle) {
+                this.testFunc = Intersection.circleCircle;
+            } else if (isCollider1Polygon && isCollider2Circle) {
+                this.testFunc = Intersection.polygonCircle;
+            } else if (isCollider1Circle && isCollider2Polygon) {
+                this.testFunc = Intersection.polygonCircle;
+                this.collider1 = collider2;
+                this.collider2 = collider1;
             } else {
-                if (isCollider1Circle && isCollider2Circle) {
-                    this.testFunc = Intersection.circleCircle;
-                } else {
-                    if (isCollider1Polygon && isCollider2Circle) {
-                        this.testFunc = Intersection.polygonCircle;
-                    } else {
-                        if (isCollider1Circle && isCollider2Polygon) {
-                            this.testFunc = Intersection.polygonCircle;
-                            this.collider1 = collider2;
-                            this.collider2 = collider1;
-                        } else {
-                            cc.errorID(6601, cc.js.getClassName(collider1), cc.js.getClassName(collider2));
-                        }
-                    }
-                }
+                cc.errorID(6601, cc.js.getClassName(collider1), cc.js.getClassName(collider2));
             }
         }
         Contact.prototype.test = function() {
@@ -14557,24 +14443,20 @@
             if (result && !this.touching) {
                 this.touching = true;
                 type = CollisionType.CollisionEnter;
-            } else {
-                if (result && this.touching) {
-                    type = CollisionType.CollisionStay;
-                } else {
-                    if (!result && this.touching) {
-                        this.touching = false;
-                        type = CollisionType.CollisionExit;
-                    }
-                }
+            } else if (result && this.touching) {
+                type = CollisionType.CollisionStay;
+            } else if (!result && this.touching) {
+                this.touching = false;
+                type = CollisionType.CollisionExit;
             }
             return type;
         };
         Contact.CollisionType = CollisionType;
         module.exports = Contact;
     }), {
-        "./CCIntersection": 68
+        "./CCIntersection": 66
     } ],
-    68: [ (function(require, module, exports) {
+    66: [ (function(require, module, exports) {
         var Intersection = {};
         function lineLine(a1, a2, b1, b2) {
             var ua_t = (b2.x - b1.x) * (a1.y - b1.y) - (b2.y - b1.y) * (a1.x - b1.x);
@@ -14740,7 +14622,7 @@
         Intersection.pointLineDistance = pointLineDistance;
         cc.Intersection = module.exports = Intersection;
     }), {} ],
-    69: [ (function(require, module, exports) {
+    67: [ (function(require, module, exports) {
         cc.Collider.Polygon = cc.Class({
             properties: {
                 threshold: {
@@ -14759,14 +14641,13 @@
                     type: cc.Vec2
                 },
                 points: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.points",
+                    tooltip: false,
                     default: function() {
                         return [ cc.v2(-50, -50), cc.v2(50, -50), cc.v2(50, 50), cc.v2(-50, 50) ];
                     },
                     type: [ cc.Vec2 ]
                 }
             },
-            resetInEditor: false,
             resetPointsByContour: false
         });
         var PolygonCollider = cc.Class({
@@ -14777,20 +14658,20 @@
         });
         cc.PolygonCollider = module.exports = PolygonCollider;
     }), {} ],
-    70: [ (function(require, module, exports) {
+    68: [ (function(require, module, exports) {
         require("./CCCollisionManager");
         require("./CCCollider");
         require("./CCBoxCollider");
         require("./CCCircleCollider");
         require("./CCPolygonCollider");
     }), {
-        "./CCBoxCollider": 63,
-        "./CCCircleCollider": 64,
-        "./CCCollider": 65,
-        "./CCCollisionManager": 66,
-        "./CCPolygonCollider": 69
+        "./CCBoxCollider": 61,
+        "./CCCircleCollider": 62,
+        "./CCCollider": 63,
+        "./CCCollisionManager": 64,
+        "./CCPolygonCollider": 67
     } ],
-    71: [ (function(require, module, exports) {
+    69: [ (function(require, module, exports) {
         require("./platform/CCClass");
         var Flags = require("./platform/CCObject").Flags;
         var JsArray = require("./platform/js").array;
@@ -14811,19 +14692,17 @@
                 var testOrder = test.constructor._executionOrder;
                 if (testOrder > order) {
                     h = m - 1;
+                } else if (testOrder < order) {
+                    l = m + 1;
                 } else {
-                    if (testOrder < order) {
-                        l = m + 1;
+                    var testId = test.__instanceId;
+                    if (testId > id) {
+                        h = m - 1;
                     } else {
-                        var testId = test.__instanceId;
-                        if (testId > id) {
-                            h = m - 1;
-                        } else {
-                            if (!(testId < id)) {
-                                return m;
-                            }
-                            l = m + 1;
+                        if (!(testId < id)) {
+                            return m;
                         }
+                        l = m + 1;
                     }
                 }
             }
@@ -14901,7 +14780,7 @@
                 } else {
                     var array = order < 0 ? this._neg.array : this._pos.array;
                     var i = sortedIndex(array, comp);
-                    i < 0 ? array.splice(~i, 0, comp) : cc.error("component already added");
+                    i < 0 && array.splice(~i, 0, comp);
                 }
             },
             remove: function(comp) {
@@ -15031,9 +14910,9 @@
         "./platform/CCClass": 172,
         "./platform/CCObject": 178,
         "./platform/js": 192,
-        "./utils/misc": 222
+        "./utils/misc": 223
     } ],
-    72: [ (function(require, module, exports) {
+    70: [ (function(require, module, exports) {
         var AnimationAnimator = require("../../animation/animation-animator");
         var AnimationClip = require("../../animation/animation-clip");
         function equalClips(clip1, clip2) {
@@ -15069,7 +14948,7 @@
                         var clips;
                         var i, l;
                     },
-                    tooltip: "i18n:COMPONENT.animation.default_clip"
+                    tooltip: false
                 },
                 currentClip: {
                     get: function() {
@@ -15084,12 +14963,12 @@
                 _clips: {
                     default: [],
                     type: [ AnimationClip ],
-                    tooltip: "i18n:COMPONENT.animation.clips",
+                    tooltip: false,
                     visible: true
                 },
                 playOnLoad: {
                     default: false,
-                    tooltip: "i18n:COMPONENT.animation.play_on_load"
+                    tooltip: false
                 }
             },
             start: function() {
@@ -15197,7 +15076,7 @@
                         return oldState;
                     }
                     var index = this._clips.indexOf(oldState.clip);
-                    index !== -1 && this._clips.splice(index, 1);
+                    -1 !== index && this._clips.splice(index, 1);
                 }
                 var newState = new cc.AnimationState(clip, newName);
                 this._nameToState[newName] = newState;
@@ -15303,18 +15182,15 @@
     }), {
         "../../animation/animation-animator": 11,
         "../../animation/animation-clip": 12,
-        "./CCComponent": 76
+        "./CCComponent": 75
     } ],
-    73: [ (function(require, module, exports) {
+    71: [ (function(require, module, exports) {
         var AudioSource = cc.Class({
             name: "cc.AudioSource",
             extends: require("./CCComponent"),
             editor: false,
             ctor: function() {
                 this.audio = new cc.Audio();
-            },
-            onLoad: function() {
-                this.clip = this._clip;
             },
             properties: {
                 _clip: {
@@ -15343,13 +15219,16 @@
                         return this._clip;
                     },
                     set: function(value) {
+                        if (value === this._clip) {
+                            return;
+                        }
                         this._clip = value;
                         this.audio.stop();
                         this.audio.src = this._clip;
                         this.audio.preload && this.audio.preload();
                     },
                     url: cc.AudioClip,
-                    tooltip: "i18n:COMPONENT.audio.clip",
+                    tooltip: false,
                     animatable: false
                 },
                 volume: {
@@ -15368,7 +15247,7 @@
                         }
                         return value;
                     },
-                    tooltip: "i18n:COMPONENT.audio.volume"
+                    tooltip: false
                 },
                 mute: {
                     get: function() {
@@ -15380,7 +15259,7 @@
                         return value;
                     },
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.audio.mute"
+                    tooltip: false
                 },
                 loop: {
                     get: function() {
@@ -15392,11 +15271,11 @@
                         return value;
                     },
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.audio.loop"
+                    tooltip: false
                 },
                 playOnLoad: {
                     default: false,
-                    tooltip: "i18n:COMPONENT.audio.play_on_load",
+                    tooltip: false,
                     animatable: false
                 },
                 preload: {
@@ -15497,9 +15376,37 @@
         });
         cc.AudioSource = module.exports = AudioSource;
     }), {
-        "./CCComponent": 76
+        "./CCComponent": 75
     } ],
-    74: [ (function(require, module, exports) {
+    72: [ (function(require, module, exports) {
+        var BlockEvents = [ "touchstart", "touchmove", "touchend", "mousedown", "mousemove", "mouseup", "mouseenter", "mouseleave", "mousewheel" ];
+        function stopPropagation(event) {
+            event.stopPropagation();
+        }
+        var BlockInputEvents = cc.Class({
+            name: "cc.BlockInputEvents",
+            extends: require("./CCComponent"),
+            editor: {
+                menu: "i18n:MAIN_MENU.component.ui/Block Input Events",
+                inspector: "packages://inspector/inspectors/comps/block-input-events.js",
+                help: "i18n:COMPONENT.help_url.block-input-events"
+            },
+            onEnable: function() {
+                for (var i = 0; i < BlockEvents.length; i++) {
+                    this.node.on(BlockEvents[i], stopPropagation, this);
+                }
+            },
+            onDisable: function() {
+                for (var i = 0; i < BlockEvents.length; i++) {
+                    this.node.off(BlockEvents[i], stopPropagation, this);
+                }
+            }
+        });
+        cc.BlockInputEvents = module.exports = BlockInputEvents;
+    }), {
+        "./CCComponent": 75
+    } ],
+    73: [ (function(require, module, exports) {
         var Transition = cc.Enum({
             NONE: 0,
             COLOR: 1,
@@ -15528,7 +15435,7 @@
             properties: {
                 interactable: {
                     default: true,
-                    tooltip: "i18n:COMPONENT.button.interactable",
+                    tooltip: false,
                     notify: function(oldValue) {
                         this._updateState();
                         this.interactable || this._resetState();
@@ -15543,21 +15450,21 @@
                 },
                 enableAutoGrayEffect: {
                     default: false,
-                    tooltip: "i18n:COMPONENT.button.auto_gray_effect",
+                    tooltip: false,
                     notify: function() {
                         this._updateDisabledState();
                     }
                 },
                 transition: {
                     default: Transition.NONE,
-                    tooltip: "i18n:COMPONENT.button.transition",
+                    tooltip: false,
                     type: Transition,
                     animatable: false
                 },
                 normalColor: {
                     default: cc.color(214, 214, 214),
                     displayName: "Normal",
-                    tooltip: "i18n:COMPONENT.button.normal_color",
+                    tooltip: false,
                     notify: function() {
                         this._updateState();
                     }
@@ -15565,17 +15472,17 @@
                 pressedColor: {
                     default: cc.color(211, 211, 211),
                     displayName: "Pressed",
-                    tooltip: "i18n:COMPONENT.button.pressed_color"
+                    tooltip: false
                 },
                 hoverColor: {
                     default: cc.Color.WHITE,
                     displayName: "Hover",
-                    tooltip: "i18n:COMPONENT.button.hover_color"
+                    tooltip: false
                 },
                 disabledColor: {
                     default: cc.color(124, 124, 124),
                     displayName: "Disabled",
-                    tooltip: "i18n:COMPONENT.button.disabled_color",
+                    tooltip: false,
                     notify: function() {
                         this._updateState();
                     }
@@ -15583,17 +15490,17 @@
                 duration: {
                     default: .1,
                     range: [ 0, 10 ],
-                    tooltip: "i18n:COMPONENT.button.duration"
+                    tooltip: false
                 },
                 zoomScale: {
                     default: 1.2,
-                    tooltip: "i18n:COMPONENT.button.zoom_scale"
+                    tooltip: false
                 },
                 normalSprite: {
                     default: null,
                     type: cc.SpriteFrame,
                     displayName: "Normal",
-                    tooltip: "i18n:COMPONENT.button.normal_sprite",
+                    tooltip: false,
                     notify: function() {
                         this._updateState();
                     }
@@ -15602,19 +15509,19 @@
                     default: null,
                     type: cc.SpriteFrame,
                     displayName: "Pressed",
-                    tooltip: "i18n:COMPONENT.button.pressed_sprite"
+                    tooltip: false
                 },
                 hoverSprite: {
                     default: null,
                     type: cc.SpriteFrame,
                     displayName: "Hover",
-                    tooltip: "i18n:COMPONENT.button.hover_sprite"
+                    tooltip: false
                 },
                 disabledSprite: {
                     default: null,
                     type: cc.SpriteFrame,
                     displayName: "Disabled",
-                    tooltip: "i18n:COMPONENT.button.disabled_sprite",
+                    tooltip: false,
                     notify: function() {
                         this._updateState();
                     }
@@ -15622,7 +15529,7 @@
                 target: {
                     default: null,
                     type: cc.Node,
-                    tooltip: "i18n:COMPONENT.button.target",
+                    tooltip: false,
                     notify: function() {
                         this._applyTarget();
                     }
@@ -15630,7 +15537,7 @@
                 clickEvents: {
                     default: [],
                     type: cc.Component.EventHandler,
-                    tooltip: "i18n:COMPONENT.button.click_events"
+                    tooltip: false
                 }
             },
             statics: {
@@ -15809,9 +15716,9 @@
         });
         cc.Button = module.exports = Button;
     }), {
-        "./CCComponent": 76
+        "./CCComponent": 75
     } ],
-    75: [ (function(require, module, exports) {
+    74: [ (function(require, module, exports) {
         var designResolutionWrapper = {
             getContentSize: function() {
                 return cc.visibleRect;
@@ -15843,7 +15750,7 @@
                         this._designResolution.height = value.height;
                         this.applySettings();
                     },
-                    tooltip: "i18n:COMPONENT.canvas.design_resolution"
+                    tooltip: false
                 },
                 _fitWidth: false,
                 _fitHeight: true,
@@ -15857,7 +15764,7 @@
                             this.applySettings();
                         }
                     },
-                    tooltip: "i18n:COMPONENT.canvas.fit_height"
+                    tooltip: false
                 },
                 fitWidth: {
                     get: function() {
@@ -15869,22 +15776,20 @@
                             this.applySettings();
                         }
                     },
-                    tooltip: "i18n:COMPONENT.canvas.fit_width"
+                    tooltip: false
                 }
             },
             ctor: function() {
                 this._thisOnResized = this.onResized.bind(this);
             },
             __preload: function() {
-                var Flags = cc.Object.Flags;
-                this._objFlags |= Flags.IsPositionLocked | Flags.IsAnchorLocked | Flags.IsSizeLocked;
+                var Flags;
                 if (Canvas.instance) {
                     return cc.errorID(6700, this.node.name, Canvas.instance.node.name);
                 }
                 Canvas.instance = this;
                 if (this.node._sizeProvider) {
-                    var renderer = this.node.getComponent(cc._RendererUnderSG);
-                    renderer ? cc.errorID(6701, cc.js.getClassName(renderer)) : cc.errorID(6702);
+                    var renderer;
                 } else {
                     this.node._sizeProvider = designResolutionWrapper;
                 }
@@ -15925,9 +15830,9 @@
         });
         cc.Canvas = module.exports = Canvas;
     }), {
-        "./CCComponent": 76
+        "./CCComponent": 75
     } ],
-    76: [ (function(require, module, exports) {
+    75: [ (function(require, module, exports) {
         var CCObject = require("../platform/CCObject");
         var JS = require("../platform/js");
         var idGenerater = new (require("../platform/id-generater"))("Comp");
@@ -16092,7 +15997,7 @@
         "../platform/id-generater": 188,
         "../platform/js": 192
     } ],
-    77: [ (function(require, module, exports) {
+    76: [ (function(require, module, exports) {
         cc.Component.EventHandler = cc.Class({
             name: "cc.ClickEvent",
             properties: {
@@ -16150,8 +16055,8 @@
             }
         });
     }), {} ],
-    78: [ (function(require, module, exports) {
-        require("../editbox/CCSGEditBox.js");
+    77: [ (function(require, module, exports) {
+        require("../editbox/CCSGEditBox");
         var KeyboardReturnType = _ccsg.EditBox.KeyboardReturnType;
         var InputMode = _ccsg.EditBox.InputMode;
         var InputFlag = _ccsg.EditBox.InputFlag;
@@ -16163,7 +16068,7 @@
                 _useOriginalSize: true,
                 _string: "",
                 string: {
-                    tooltip: "i18n:COMPONENT.editbox.string",
+                    tooltip: false,
                     get: function() {
                         return this._sgNode.string;
                     },
@@ -16172,7 +16077,7 @@
                     }
                 },
                 backgroundImage: {
-                    tooltip: "i18n:COMPONENT.editbox.backgroundImage",
+                    tooltip: false,
                     default: null,
                     type: cc.SpriteFrame,
                     notify: function() {
@@ -16188,7 +16093,7 @@
                 },
                 returnType: {
                     default: KeyboardReturnType.DEFAULT,
-                    tooltip: "i18n:COMPONENT.editbox.returnType",
+                    tooltip: false,
                     displayName: "KeyboardReturnType",
                     type: KeyboardReturnType,
                     notify: function() {
@@ -16196,7 +16101,7 @@
                     }
                 },
                 inputFlag: {
-                    tooltip: "i18n:COMPONENT.editbox.input_flag",
+                    tooltip: false,
                     default: InputFlag.DEFAULT,
                     type: InputFlag,
                     notify: function() {
@@ -16204,7 +16109,7 @@
                     }
                 },
                 inputMode: {
-                    tooltip: "i18n:COMPONENT.editbox.input_mode",
+                    tooltip: false,
                     default: InputMode.ANY,
                     type: InputMode,
                     notify: function() {
@@ -16212,56 +16117,56 @@
                     }
                 },
                 fontSize: {
-                    tooltip: "i18n:COMPONENT.editbox.font_size",
+                    tooltip: false,
                     default: 20,
                     notify: function() {
                         this._sgNode.fontSize = this.fontSize;
                     }
                 },
                 lineHeight: {
-                    tooltip: "i18n:COMPONENT.editbox.line_height",
+                    tooltip: false,
                     default: 40,
                     notify: function() {
                         this._sgNode.setLineHeight(this.lineHeight);
                     }
                 },
                 fontColor: {
-                    tooltip: "i18n:COMPONENT.editbox.font_color",
+                    tooltip: false,
                     default: cc.Color.WHITE,
                     notify: function() {
                         this._sgNode.fontColor = this.fontColor;
                     }
                 },
                 placeholder: {
-                    tooltip: "i18n:COMPONENT.editbox.placeholder",
+                    tooltip: false,
                     default: "Enter text here...",
                     notify: function() {
                         this._sgNode.placeholder = this.placeholder;
                     }
                 },
                 placeholderFontSize: {
-                    tooltip: "i18n:COMPONENT.editbox.placeholder_font_size",
+                    tooltip: false,
                     default: 20,
                     notify: function() {
                         this._sgNode.placeholderFontSize = this.placeholderFontSize;
                     }
                 },
                 placeholderFontColor: {
-                    tooltip: "i18n:COMPONENT.editbox.placeholder_font_color",
+                    tooltip: false,
                     default: cc.Color.GRAY,
                     notify: function() {
                         this._sgNode.placeholderFontColor = this.placeholderFontColor;
                     }
                 },
                 maxLength: {
-                    tooltip: "i18n:COMPONENT.editbox.max_length",
+                    tooltip: false,
                     default: 20,
                     notify: function() {
                         this._sgNode.maxLength = this.maxLength;
                     }
                 },
                 stayOnTop: {
-                    tooltip: "i18n:COMPONENT.editbox.stay_on_top",
+                    tooltip: false,
                     default: false,
                     notify: function() {
                         this._sgNode.stayOnTop(this.stayOnTop);
@@ -16271,7 +16176,7 @@
                 },
                 _tabIndex: 0,
                 tabIndex: {
-                    tooltip: "i18n:COMPONENT.editbox.tab_index",
+                    tooltip: false,
                     get: function() {
                         return this._tabIndex;
                     },
@@ -16360,6 +16265,10 @@
                 cc.Component.EventHandler.emitEvents(this.editingReturn, this);
                 this.node.emit("editing-return", this);
             },
+            onDestroy: function() {
+                this._sgNode.setDelegate(null);
+                this._super();
+            },
             __preload: function() {
                 this._super();
                 this._registerEvent();
@@ -16387,12 +16296,12 @@
         });
         cc.EditBox = module.exports = EditBox;
     }), {
-        "../editbox/CCSGEditBox.js": 104
+        "../editbox/CCSGEditBox": 103
     } ],
-    79: [ (function(require, module, exports) {
-        require("../label/CCSGLabel.js");
-        require("../label/CCSGLabelCanvasRenderCmd.js");
-        require("../label/CCSGLabelWebGLRenderCmd.js");
+    78: [ (function(require, module, exports) {
+        require("../label/CCSGLabel");
+        require("../label/CCSGLabelCanvasRenderCmd");
+        require("../label/CCSGLabelWebGLRenderCmd");
         var HorizontalAlign = cc.TextAlignment;
         var VerticalAlign = cc.VerticalTextAlignment;
         var Overflow = _ccsg.Label.Overflow;
@@ -16430,7 +16339,7 @@
                 string: {
                     default: "Label",
                     multiline: true,
-                    tooltip: "i18n:COMPONENT.label.string",
+                    tooltip: false,
                     notify: function() {
                         this._sgNode && this._updateSgNodeString();
                     }
@@ -16438,7 +16347,7 @@
                 horizontalAlign: {
                     default: HorizontalAlign.LEFT,
                     type: HorizontalAlign,
-                    tooltip: "i18n:COMPONENT.label.horizontal_align",
+                    tooltip: false,
                     notify: function() {
                         this._sgNode && this._sgNode.setHorizontalAlign(this.horizontalAlign);
                     },
@@ -16447,7 +16356,7 @@
                 verticalAlign: {
                     default: VerticalAlign.TOP,
                     type: VerticalAlign,
-                    tooltip: "i18n:COMPONENT.label.vertical_align",
+                    tooltip: false,
                     notify: function() {
                         this._sgNode && this._sgNode.setVerticalAlign(this.verticalAlign);
                     },
@@ -16474,13 +16383,13 @@
                         this._fontSize = value;
                         this._updateSgNodeFontSize();
                     },
-                    tooltip: "i18n:COMPONENT.label.font_size"
+                    tooltip: false
                 },
                 fontFamily: {
                     default: "Arial",
-                    tooltip: "i18n:COMPONENT.label.font_family",
+                    tooltip: false,
                     notify: function() {
-                        this._sgNode && this._sgNode.setFontFileOrFamily(this.fontFamily);
+                        this._sgNode && this._sgNode.setFontFamily(this.fontFamily);
                     },
                     animatable: false
                 },
@@ -16497,12 +16406,12 @@
                             this._updateNodeSize();
                         }
                     },
-                    tooltip: "i18n:COMPONENT.label.line_height"
+                    tooltip: false
                 },
                 overflow: {
                     default: Overflow.NONE,
                     type: Overflow,
-                    tooltip: "i18n:COMPONENT.label.overflow",
+                    tooltip: false,
                     notify: function() {
                         if (this._sgNode) {
                             this._sgNode.setOverflow(this.overflow);
@@ -16522,7 +16431,7 @@
                         this._sgNode && this._sgNode.enableWrapText(value);
                     },
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.label.wrap"
+                    tooltip: false
                 },
                 _N$file: null,
                 font: {
@@ -16539,21 +16448,19 @@
                             var font = this.font;
                             if (font instanceof cc.BitmapFont) {
                                 if (font.spriteFrame) {
-                                    this._sgNode.setFontFileOrFamily(font.fntDataStr, font.spriteFrame, font);
+                                    this._sgNode.setFontAsset(font);
                                 } else {
                                     cc.warnID(4011, font.name);
-                                    this._sgNode.setFontFileOrFamily("");
+                                    this._sgNode.setFontFamily("");
                                 }
                             } else {
-                                var isAsset = value instanceof cc.Font;
-                                var ttfName = isAsset ? value.rawUrl : "";
-                                this._sgNode.setFontFileOrFamily(ttfName);
+                                this._sgNode.setFontAsset(font);
                             }
                         }
                         value instanceof cc.BitmapFont && (this._bmFontOriginalSize = value.fontSize);
                     },
                     type: cc.Font,
-                    tooltip: "i18n:COMPONENT.label.font",
+                    tooltip: false,
                     animatable: false
                 },
                 _isSystemFontUsed: true,
@@ -16565,11 +16472,11 @@
                         this._isSystemFontUsed = !!value;
                         if (value) {
                             this.font = null;
-                            this._sgNode && this._sgNode.setFontFileOrFamily(this.fontFamily);
+                            this._sgNode && this._sgNode.setFontFamily(this.fontFamily);
                         }
                     },
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.label.system_font"
+                    tooltip: false
                 },
                 _bmFontOriginalSize: {
                     displayName: "BMFont Original Size",
@@ -16600,9 +16507,8 @@
             },
             __preload: function() {
                 this._super();
-                var sgSizeInitialized = this._sgNode._isUseSystemFont;
-                sgSizeInitialized && this._updateNodeSize();
                 this._sgNode.on("load", this._updateNodeSize, this);
+                this._updateNodeSize();
             },
             _createSgNode: function() {
                 return null;
@@ -16613,22 +16519,20 @@
                 var sgNode;
                 if (font instanceof cc.BitmapFont) {
                     if (font.spriteFrame) {
-                        sgNode = this._sgNode = new _ccsg.Label(this.string, font.fntDataStr, font.spriteFrame, font);
+                        sgNode = this._sgNode = _ccsg.Label.pool.get(this.string, font);
                     } else {
                         cc.warnID(4011, font.name);
-                        sgNode = this._sgNode = new _ccsg.Label(this.string);
+                        sgNode = this._sgNode = _ccsg.Label.pool.get(this.string);
                     }
                 } else {
-                    var isAsset = font instanceof cc.Font;
-                    var ttfName = isAsset ? font.rawUrl : "";
-                    sgNode = this._sgNode = new _ccsg.Label(this.string, ttfName);
+                    sgNode = this._sgNode = _ccsg.Label.pool.get(this.string, font, null, this._fontSize);
                 }
                 font instanceof cc.BitmapFont && (this._bmFontOriginalSize = font.fontSize);
                 sgNode.setVisible(false);
                 sgNode.setHorizontalAlign(this.horizontalAlign);
                 sgNode.setVerticalAlign(this.verticalAlign);
                 sgNode.setFontSize(this._fontSize);
-                this.useSystemFont && sgNode.setFontFileOrFamily(this.fontFamily);
+                this.useSystemFont && sgNode.setFontFamily(this.fontFamily);
                 sgNode.setOverflow(this.overflow);
                 sgNode.enableWrapText(this._enableWrapText);
                 sgNode.setLineHeight(this._lineHeight);
@@ -16640,15 +16544,23 @@
             _updateNodeSize: function() {
                 var initialized = this._sgNode && this._sgNode.parent;
                 initialized && (this.overflow !== Overflow.NONE && this.overflow !== Overflow.RESIZE_HEIGHT || this.node.setContentSize(this._sgNode.getContentSize()));
+            },
+            onDestroy: function() {
+                var sgNodeBeforeDestroy = this._sgNode;
+                this._super();
+                if (sgNodeBeforeDestroy) {
+                    sgNodeBeforeDestroy.removeFromParent(true);
+                    _ccsg.Label.pool.put(sgNodeBeforeDestroy);
+                }
             }
         });
         cc.Label = module.exports = Label;
     }), {
-        "../label/CCSGLabel.js": 125,
-        "../label/CCSGLabelCanvasRenderCmd.js": 126,
-        "../label/CCSGLabelWebGLRenderCmd.js": 127
+        "../label/CCSGLabel": 124,
+        "../label/CCSGLabelCanvasRenderCmd": 125,
+        "../label/CCSGLabelWebGLRenderCmd": 126
     } ],
-    80: [ (function(require, module, exports) {
+    79: [ (function(require, module, exports) {
         var LabelOutline = cc.Class({
             name: "cc.LabelOutline",
             extends: require("./CCComponent"),
@@ -16701,9 +16613,9 @@
         });
         cc.LabelOutline = module.exports = LabelOutline;
     }), {
-        "./CCComponent": 76
+        "./CCComponent": 75
     } ],
-    81: [ (function(require, module, exports) {
+    80: [ (function(require, module, exports) {
         var Type = cc.Enum({
             NONE: 0,
             HORIZONTAL: 1,
@@ -16749,12 +16661,12 @@
                         var reLayouted;
                         this._doLayoutDirty();
                     },
-                    tooltip: "i18n:COMPONENT.layout.layout_type",
+                    tooltip: false,
                     animatable: false
                 },
                 resizeMode: {
                     type: ResizeMode,
-                    tooltip: "i18n:COMPONENT.layout.resize_mode",
+                    tooltip: false,
                     animatable: false,
                     get: function() {
                         return this._resize;
@@ -16770,7 +16682,7 @@
                 },
                 cellSize: {
                     default: cc.size(40, 40),
-                    tooltip: "i18n:COMPONENT.layout.cell_size",
+                    tooltip: false,
                     type: cc.Size,
                     notify: function() {
                         this._doLayoutDirty();
@@ -16778,7 +16690,7 @@
                 },
                 startAxis: {
                     default: AxisDirection.HORIZONTAL,
-                    tooltip: "i18n:COMPONENT.layout.start_axis",
+                    tooltip: false,
                     type: AxisDirection,
                     notify: function() {
                         var reLayouted;
@@ -16791,28 +16703,28 @@
                 },
                 paddingLeft: {
                     default: 0,
-                    tooltip: "i18n:COMPONENT.layout.padding_left",
+                    tooltip: false,
                     notify: function() {
                         this._doLayoutDirty();
                     }
                 },
                 paddingRight: {
                     default: 0,
-                    tooltip: "i18n:COMPONENT.layout.padding_right",
+                    tooltip: false,
                     notify: function() {
                         this._doLayoutDirty();
                     }
                 },
                 paddingTop: {
                     default: 0,
-                    tooltip: "i18n:COMPONENT.layout.padding_top",
+                    tooltip: false,
                     notify: function() {
                         this._doLayoutDirty();
                     }
                 },
                 paddingBottom: {
                     default: 0,
-                    tooltip: "i18n:COMPONENT.layout.padding_bottom",
+                    tooltip: false,
                     notify: function() {
                         this._doLayoutDirty();
                     }
@@ -16822,14 +16734,14 @@
                     notify: function() {
                         this._doLayoutDirty();
                     },
-                    tooltip: "i18n:COMPONENT.layout.space_x"
+                    tooltip: false
                 },
                 spacingY: {
                     default: 0,
                     notify: function() {
                         this._doLayoutDirty();
                     },
-                    tooltip: "i18n:COMPONENT.layout.space_y"
+                    tooltip: false
                 },
                 verticalDirection: {
                     default: VerticalDirection.TOP_TO_BOTTOM,
@@ -16837,7 +16749,7 @@
                     notify: function() {
                         this._doLayoutDirty();
                     },
-                    tooltip: "i18n:COMPONENT.layout.vertical_direction",
+                    tooltip: false,
                     animatable: false
                 },
                 horizontalDirection: {
@@ -16846,7 +16758,7 @@
                     notify: function() {
                         this._doLayoutDirty();
                     },
-                    tooltip: "i18n:COMPONENT.layout.horizontal_direction",
+                    tooltip: false,
                     animatable: false
                 }
             },
@@ -16864,26 +16776,52 @@
                 this.paddingBottom = this._N$padding;
                 this._N$padding = 0;
             },
-            __preload: function() {
+            onEnable: function() {
+                this._addEventListeners();
                 cc.sizeEqualToSize(this.node.getContentSize(), cc.size(0, 0)) && this.node.setContentSize(this._layoutSize);
                 0 !== this._N$padding && this._migratePaddingData();
+                this._doLayoutDirty();
+            },
+            onDisable: function() {
+                this._removeEventListeners();
+            },
+            _doLayoutDirty: function() {
+                this._layoutDirty = true;
+            },
+            _addEventListeners: function() {
+                cc.director.on(cc.Director.EVENT_BEFORE_VISIT, this._updateLayout, this);
                 this.node.on("size-changed", this._resized, this);
                 this.node.on("anchor-changed", this._doLayoutDirty, this);
                 this.node.on("child-added", this._childAdded, this);
                 this.node.on("child-removed", this._childRemoved, this);
                 this.node.on("child-reorder", this._doLayoutDirty, this);
-                this._updateChildrenEventListener();
+                this._addChildrenEventListeners();
             },
-            _doLayoutDirty: function() {
-                this._layoutDirty = true;
+            _removeEventListeners: function() {
+                cc.director.off(cc.Director.EVENT_BEFORE_VISIT, this._updateLayout, this);
+                this.node.off("size-changed", this._resized, this);
+                this.node.off("anchor-changed", this._doLayoutDirty, this);
+                this.node.off("child-added", this._childAdded, this);
+                this.node.off("child-removed", this._childRemoved, this);
+                this.node.off("child-reorder", this._doLayoutDirty, this);
+                this._removeChildrenEventListeners();
             },
-            _updateChildrenEventListener: function() {
+            _addChildrenEventListeners: function() {
                 var children = this.node.children;
                 children.forEach(function(child) {
                     child.on("size-changed", this._doLayoutDirty, this);
                     child.on("position-changed", this._doLayoutDirty, this);
                     child.on("anchor-changed", this._doLayoutDirty, this);
                     child.on("active-in-hierarchy-changed", this._doLayoutDirty, this);
+                }.bind(this));
+            },
+            _removeChildrenEventListeners: function() {
+                var children = this.node.children;
+                children.forEach(function(child) {
+                    child.off("size-changed", this._doLayoutDirty, this);
+                    child.off("position-changed", this._doLayoutDirty, this);
+                    child.off("anchor-changed", this._doLayoutDirty, this);
+                    child.off("active-in-hierarchy-changed", this._doLayoutDirty, this);
                 }.bind(this));
             },
             _childAdded: function(event) {
@@ -17180,24 +17118,16 @@
                     };
                     this._doLayoutHorizontally(newWidth, false, fnPositionY, true);
                     this.node.width = newWidth;
+                } else if (this.type === Type.VERTICAL) {
+                    var newHeight = this._getVerticalBaseHeight(this.node.children);
+                    var fnPositionX = function(child) {
+                        return child.x;
+                    };
+                    this._doLayoutVertically(newHeight, false, fnPositionX, true);
+                    this.node.height = newHeight;
                 } else {
-                    if (this.type === Type.VERTICAL) {
-                        var newHeight = this._getVerticalBaseHeight(this.node.children);
-                        var fnPositionX = function(child) {
-                            return child.x;
-                        };
-                        this._doLayoutVertically(newHeight, false, fnPositionX, true);
-                        this.node.height = newHeight;
-                    } else {
-                        this.type === Type.NONE ? this.resizeMode === ResizeMode.CONTAINER && this._doLayoutBasic() : this.type === Type.GRID && this._doLayoutGrid();
-                    }
+                    this.type === Type.NONE ? this.resizeMode === ResizeMode.CONTAINER && this._doLayoutBasic() : this.type === Type.GRID && this._doLayoutGrid();
                 }
-            },
-            onEnable: function() {
-                cc.director.on(cc.Director.EVENT_BEFORE_VISIT, this._updateLayout, this);
-            },
-            onDisable: function() {
-                cc.director.off(cc.Director.EVENT_BEFORE_VISIT, this._updateLayout, this);
             },
             _updateLayout: function() {
                 if (this._layoutDirty && this.node.children.length > 0) {
@@ -17219,18 +17149,20 @@
         });
         cc.Layout = module.exports = Layout;
     }), {
-        "./CCComponent": 76
+        "./CCComponent": 75
     } ],
-    82: [ (function(require, module, exports) {
-        require("../../clipping-nodes/CCClippingNode.js");
-        require("../../clipping-nodes/CCClippingNodeCanvasRenderCmd.js");
-        require("../../clipping-nodes/CCClippingNodeWebGLRenderCmd.js");
+    81: [ (function(require, module, exports) {
+        require("../../clipping-nodes/CCClippingNode");
+        require("../../clipping-nodes/CCClippingNodeCanvasRenderCmd");
+        require("../../clipping-nodes/CCClippingNodeWebGLRenderCmd");
         var Base = cc._RendererInSG;
         var MaskType = cc.Enum({
             RECT: 0,
             ELLIPSE: 1,
             IMAGE_STENCIL: 2
         });
+        var SEGEMENTS_MIN = 3;
+        var SEGEMENTS_MAX = 1e4;
         var Mask = cc.Class({
             name: "cc.Mask",
             extends: Base,
@@ -17250,12 +17182,12 @@
                         this._refreshStencil();
                     },
                     type: MaskType,
-                    tooltip: "i18n:COMPONENT.mask.type"
+                    tooltip: false
                 },
                 spriteFrame: {
                     default: null,
                     type: cc.SpriteFrame,
-                    tooltip: "i18n:COMPONENT.mask.spriteFrame",
+                    tooltip: false,
                     notify: function() {
                         this._refreshStencil();
                     }
@@ -17265,7 +17197,7 @@
                     type: cc.Float,
                     range: [ 0, 1, .1 ],
                     slide: true,
-                    tooltip: "i18n:COMPONENT.mask.alphaThreshold",
+                    tooltip: false,
                     notify: function() {
                         if (cc._renderType === cc.game.RENDER_TYPE_CANVAS) {
                             cc.warnID(4201);
@@ -17277,7 +17209,7 @@
                 inverted: {
                     default: false,
                     type: cc.Boolean,
-                    tooltip: "i18n:COMPONENT.mask.inverted",
+                    tooltip: false,
                     notify: function() {
                         if (cc._renderType === cc.game.RENDER_TYPE_CANVAS) {
                             cc.warnID(4202);
@@ -17292,11 +17224,10 @@
                         return this._segements;
                     },
                     set: function(value) {
-                        this._segements = value < 3 ? 3 : value;
+                        this._segements = cc.clampf(value, SEGEMENTS_MIN, SEGEMENTS_MAX);
                         this._refreshStencil();
                     },
-                    type: cc.Integer,
-                    tooltip: "i18n:COMPONENT.mask.segements"
+                    tooltip: false
                 },
                 _resizeToTarget: {
                     animatable: false,
@@ -17309,10 +17240,10 @@
                 Type: MaskType
             },
             _resizeNodeToTargetNode: false,
+            _initSgNode: function() {},
             _createSgNode: function() {
                 return new cc.ClippingNode();
             },
-            _initSgNode: function() {},
             _hitTest: function(point) {
                 var size = this.node.getContentSize(), w = size.width, h = size.height, trans = this.node.getNodeToWorldTransform();
                 if (this.type === MaskType.RECT || this.type === MaskType.IMAGE_STENCIL) {
@@ -17329,11 +17260,10 @@
                     return px * px / (a * a) + py * py / (b * b) < 1;
                 }
             },
-            __preload: function() {
-                this._refreshStencil();
-            },
             onEnable: function() {
                 this._super();
+                this.spriteFrame && this.spriteFrame.ensureLoadTexture();
+                this._refreshStencil();
                 this.node.on("size-changed", this._refreshStencil, this);
                 this.node.on("anchor-changed", this._refreshStencil, this);
             },
@@ -17383,15 +17313,13 @@
                     if (this._type === MaskType.RECT) {
                         var rectangle = [ cc.v2(x, y), cc.v2(x + width, y), cc.v2(x + width, y + height), cc.v2(x, y + height) ];
                         stencil.drawPoly(rectangle, color, 0, color);
-                    } else {
-                        if (this._type === MaskType.ELLIPSE) {
-                            var center = cc.v2(x + width / 2, y + height / 2);
-                            var radius = {
-                                x: width / 2,
-                                y: height / 2
-                            };
-                            stencil.drawPoly(this._calculateCircle(center, radius, this._segements), color, 0, color);
-                        }
+                    } else if (this._type === MaskType.ELLIPSE) {
+                        var center = cc.v2(x + width / 2, y + height / 2);
+                        var radius = {
+                            x: width / 2,
+                            y: height / 2
+                        };
+                        stencil.drawPoly(this._calculateCircle(center, radius, this._segements), color, 0, color);
                     }
                 }
                 this._sgNode.setInverted(this.inverted);
@@ -17401,11 +17329,11 @@
         });
         cc.Mask = module.exports = Mask;
     }), {
-        "../../clipping-nodes/CCClippingNode.js": 26,
-        "../../clipping-nodes/CCClippingNodeCanvasRenderCmd.js": 27,
-        "../../clipping-nodes/CCClippingNodeWebGLRenderCmd.js": 28
+        "../../clipping-nodes/CCClippingNode": 26,
+        "../../clipping-nodes/CCClippingNodeCanvasRenderCmd": 27,
+        "../../clipping-nodes/CCClippingNodeWebGLRenderCmd": 28
     } ],
-    83: [ (function(require, module, exports) {
+    82: [ (function(require, module, exports) {
         var SizeMode = cc.Enum({
             Unified: 0,
             Free: 1
@@ -17432,7 +17360,7 @@
                 sizeMode: {
                     default: SizeMode.Unified,
                     type: SizeMode,
-                    tooltip: "i18n:COMPONENT.pageview.sizeMode",
+                    tooltip: false,
                     notify: function() {
                         this._syncSizeMode();
                     }
@@ -17440,7 +17368,7 @@
                 direction: {
                     default: Direction.Horizontal,
                     type: Direction,
-                    tooltip: "i18n:COMPONENT.pageview.direction",
+                    tooltip: false,
                     notify: function() {
                         this._syncScrollDirection();
                     }
@@ -17450,31 +17378,36 @@
                     type: cc.Float,
                     slide: true,
                     range: [ 0, 1, .01 ],
-                    tooltip: "i18n:COMPONENT.pageview.scrollThreshold"
+                    tooltip: false
                 },
                 autoPageTurningThreshold: {
                     default: 100,
                     type: cc.Float,
-                    tooltip: "i18n:COMPONENT.pageview.autoPageTurningThreshold"
+                    tooltip: false
                 },
                 pageTurningEventTiming: {
                     default: .1,
                     type: cc.Float,
                     range: [ 0, 1, .01 ],
-                    tooltip: "i18n:COMPONENT.pageview.pageTurningEventTiming"
+                    tooltip: false
                 },
                 indicator: {
                     default: null,
                     type: cc.PageViewIndicator,
-                    tooltip: "i18n:COMPONENT.pageview.indicator",
+                    tooltip: false,
                     notify: function() {
                         this.indicator && this.indicator.setPageView(this);
                     }
                 },
+                pageTurningSpeed: {
+                    default: .3,
+                    type: cc.Float,
+                    tooltip: false
+                },
                 pageEvents: {
                     default: [],
                     type: cc.Component.EventHandler,
-                    tooltip: "i18n:COMPONENT.pageview.pageEvents"
+                    tooltip: false
                 }
             },
             statics: {
@@ -17510,7 +17443,7 @@
                 return this._pages;
             },
             addPage: function(page) {
-                if (!page || this._pages.indexOf(page) !== -1 || !this.content) {
+                if (!page || -1 !== this._pages.indexOf(page) || !this.content) {
                     return;
                 }
                 this.content.addChild(page);
@@ -17518,7 +17451,7 @@
                 this._updatePageView();
             },
             insertPage: function(page, index) {
-                if (index < 0 || !page || this._pages.indexOf(page) !== -1 || !this.content) {
+                if (index < 0 || !page || -1 !== this._pages.indexOf(page) || !this.content) {
                     return;
                 }
                 var pageCount = this._pages.length;
@@ -17535,7 +17468,7 @@
                     return;
                 }
                 var index = this._pages.indexOf(page);
-                if (index === -1) {
+                if (-1 === index) {
                     cc.warnID(4300, page.name);
                     return;
                 }
@@ -17595,11 +17528,9 @@
                             if (this.direction === Direction.Horizontal) {
                                 layout.paddingLeft = (this.node.width - this._pages[0].width) / 2;
                                 layout.paddingRight = (this.node.width - lastPage.width) / 2;
-                            } else {
-                                if (this.direction === Direction.Vertical) {
-                                    layout.paddingTop = (this.node.height - this._pages[0].height) / 2;
-                                    layout.paddingBottom = (this.node.height - lastPage.height) / 2;
-                                }
+                            } else if (this.direction === Direction.Vertical) {
+                                layout.paddingTop = (this.node.height - this._pages[0].height) / 2;
+                                layout.paddingBottom = (this.node.height - lastPage.height) / 2;
                             }
                         }
                     }
@@ -17681,10 +17612,8 @@
                     if (Math.abs(touchMoveVelocity.x) > this.autoPageTurningThreshold) {
                         return true;
                     }
-                } else {
-                    if (this.direction === Direction.Vertical && Math.abs(touchMoveVelocity.y) > this.autoPageTurningThreshold) {
-                        return true;
-                    }
+                } else if (this.direction === Direction.Vertical && Math.abs(touchMoveVelocity.y) > this.autoPageTurningThreshold) {
+                    return true;
                 }
                 return false;
             },
@@ -17715,22 +17644,23 @@
                     if (0 === dragDirection) {
                         return;
                     }
-                    dragDirection > 0 ? this._curPageIdx = this._pages.length - 1 : this._curPageIdx = 0;
+                    this._curPageIdx = dragDirection > 0 ? this._pages.length - 1 : 0;
                     this.indicator && this.indicator._changedState();
                 } else {
                     var index = this._curPageIdx, nextIndex = index + this._getDragDirection(moveOffset);
+                    var timeInSecond = this.pageTurningSpeed * Math.abs(index - nextIndex);
                     if (nextIndex < this._pages.length) {
                         if (this._isScrollable(moveOffset, index, nextIndex)) {
-                            this.scrollToPage(nextIndex);
+                            this.scrollToPage(nextIndex, timeInSecond);
                             return;
                         }
                         var touchMoveVelocity = this._calculateTouchMoveVelocity();
                         if (this._isQuicklyScrollable(touchMoveVelocity)) {
-                            this.scrollToPage(nextIndex);
+                            this.scrollToPage(nextIndex, timeInSecond);
                             return;
                         }
                     }
-                    this.scrollToPage(index);
+                    this.scrollToPage(index, timeInSecond);
                 }
             },
             _onTouchBegan: function(event, captureListeners) {
@@ -17752,7 +17682,7 @@
         });
         cc.PageView = module.exports = PageView;
     }), {} ],
-    84: [ (function(require, module, exports) {
+    83: [ (function(require, module, exports) {
         var Direction = cc.Enum({
             HORIZONTAL: 0,
             VERTICAL: 1
@@ -17768,20 +17698,20 @@
                 spriteFrame: {
                     default: null,
                     type: cc.SpriteFrame,
-                    tooltip: "i18n:COMPONENT.pageview_indicator.spriteFrame"
+                    tooltip: false
                 },
                 direction: {
                     default: Direction.HORIZONTAL,
                     type: Direction,
-                    tooltip: "i18n:COMPONENT.pageview_indicator.direction"
+                    tooltip: false
                 },
                 cellSize: {
                     default: cc.size(20, 20),
-                    tooltip: "i18n:COMPONENT.pageview_indicator.cell_size"
+                    tooltip: false
                 },
                 spacing: {
                     default: 0,
-                    tooltip: "i18n:COMPONENT.pageview_indicator.spacing"
+                    tooltip: false
                 }
             },
             statics: {
@@ -17800,11 +17730,9 @@
                 if (this.direction === Direction.HORIZONTAL) {
                     this._layout.type = cc.Layout.Type.HORIZONTAL;
                     this._layout.spacingX = this.spacing;
-                } else {
-                    if (this.direction === Direction.VERTICAL) {
-                        this._layout.type = cc.Layout.Type.VERTICAL;
-                        this._layout.spacingY = this.spacing;
-                    }
+                } else if (this.direction === Direction.VERTICAL) {
+                    this._layout.type = cc.Layout.Type.VERTICAL;
+                    this._layout.spacingY = this.spacing;
                 }
                 this._layout.resizeMode = cc.Layout.ResizeMode.CONTAINER;
             },
@@ -17860,9 +17788,9 @@
         });
         cc.PageViewIndicator = module.exports = PageViewIndicator;
     }), {
-        "./CCComponent": 76
+        "./CCComponent": 75
     } ],
-    85: [ (function(require, module, exports) {
+    84: [ (function(require, module, exports) {
         var Mode = cc.Enum({
             HORIZONTAL: 0,
             VERTICAL: 1,
@@ -17928,17 +17856,15 @@
                             this.reverse && (actualLenth *= -1);
                             this.barSprite.fillRange = actualLenth;
                         }
+                    } else if (this.barSprite.type !== cc.Sprite.Type.FILLED) {
+                        var anchorOffsetX = anchorPoint.x - entityAnchorPoint.x;
+                        var anchorOffsetY = anchorPoint.y - entityAnchorPoint.y;
+                        var finalPosition = cc.p(totalWidth * anchorOffsetX, totalHeight * anchorOffsetY);
+                        entity.setPosition(cc.pAdd(entityPosition, finalPosition));
+                        entity.setAnchorPoint(anchorPoint);
+                        entity.setContentSize(finalContentSize);
                     } else {
-                        if (this.barSprite.type !== cc.Sprite.Type.FILLED) {
-                            var anchorOffsetX = anchorPoint.x - entityAnchorPoint.x;
-                            var anchorOffsetY = anchorPoint.y - entityAnchorPoint.y;
-                            var finalPosition = cc.p(totalWidth * anchorOffsetX, totalHeight * anchorOffsetY);
-                            entity.setPosition(cc.pAdd(entityPosition, finalPosition));
-                            entity.setAnchorPoint(anchorPoint);
-                            entity.setContentSize(finalContentSize);
-                        } else {
-                            cc.warn("ProgressBar non-FILLED mode only works when barSprite's Type is non-FILLED!");
-                        }
+                        cc.warn("ProgressBar non-FILLED mode only works when barSprite's Type is non-FILLED!");
                     }
                 }
             },
@@ -17946,7 +17872,7 @@
                 barSprite: {
                     default: null,
                     type: cc.Sprite,
-                    tooltip: "i18n:COMPONENT.progress.bar_sprite",
+                    tooltip: false,
                     notify: function() {
                         this._initBarSprite();
                     },
@@ -17955,7 +17881,7 @@
                 mode: {
                     default: Mode.HORIZONTAL,
                     type: Mode,
-                    tooltip: "i18n:COMPONENT.progress.mode",
+                    tooltip: false,
                     notify: function() {
                         if (this.barSprite) {
                             var entity = this.barSprite.node;
@@ -17971,7 +17897,7 @@
                 _N$totalLength: 1,
                 totalLength: {
                     range: [ 0, Number.MAX_VALUE ],
-                    tooltip: "i18n:COMPONENT.progress.total_length",
+                    tooltip: false,
                     get: function() {
                         return this._N$totalLength;
                     },
@@ -17986,14 +17912,14 @@
                     type: "Float",
                     range: [ 0, 1, .1 ],
                     slide: true,
-                    tooltip: "i18n:COMPONENT.progress.progress",
+                    tooltip: false,
                     notify: function() {
                         this._updateBarStatus();
                     }
                 },
                 reverse: {
                     default: false,
-                    tooltip: "i18n:COMPONENT.progress.reverse",
+                    tooltip: false,
                     notify: function() {
                         this.barSprite && (this.barSprite.fillStart = 1 - this.barSprite.fillStart);
                         this._updateBarStatus();
@@ -18007,9 +17933,9 @@
         });
         cc.ProgressBar = module.exports = ProgressBar;
     }), {
-        "./CCComponent": 76
+        "./CCComponent": 75
     } ],
-    86: [ (function(require, module, exports) {
+    85: [ (function(require, module, exports) {
         var RendererInSG = cc.Class({
             extends: require("./CCSGComponent"),
             name: "cc._RendererInSG",
@@ -18056,9 +17982,9 @@
         });
         cc._RendererInSG = module.exports = RendererInSG;
     }), {
-        "./CCSGComponent": 89
+        "./CCSGComponent": 88
     } ],
-    87: [ (function(require, module, exports) {
+    86: [ (function(require, module, exports) {
         var RendererUnderSG = cc.Class({
             extends: require("./CCSGComponent"),
             name: "cc._RendererUnderSG",
@@ -18089,7 +18015,6 @@
                 sgNode.setColor(node._color);
                 node._cascadeOpacityEnabled || sgNode.setOpacity(node._opacity);
                 sgNode.setAnchorPoint(node._anchorPoint);
-                sgNode.setIgnoreAnchorPointForPosition(node.__ignoreAnchor);
                 sgNode.setOpacityModifyRGB(node._opacityModifyRGB);
                 sgNode.setLocalZOrder(-1);
                 var sgParent = node._sgNode;
@@ -18098,11 +18023,11 @@
         });
         cc._RendererUnderSG = module.exports = RendererUnderSG;
     }), {
-        "./CCSGComponent": 89
+        "./CCSGComponent": 88
     } ],
-    88: [ (function(require, module, exports) {
-        require("../label/CCHtmlTextParser.js");
-        require("../label/CCTextUtils.js");
+    87: [ (function(require, module, exports) {
+        require("../label/CCHtmlTextParser");
+        require("../label/CCTextUtils");
         var HorizontalAlign = cc.TextAlignment;
         var VerticalAlign = cc.VerticalTextAlignment;
         function debounce(func, wait, immediate) {
@@ -18135,7 +18060,7 @@
                 string: {
                     default: "<color=#00ff00>Rich</c><color=#0fffff>Text</color>",
                     multiline: true,
-                    tooltip: "i18n:COMPONENT.richtext.string",
+                    tooltip: false,
                     notify: function() {
                         this._updateRichTextStatus();
                     }
@@ -18143,7 +18068,7 @@
                 horizontalAlign: {
                     default: HorizontalAlign.LEFT,
                     type: HorizontalAlign,
-                    tooltip: "i18n:COMPONENT.richtext.horizontal_align",
+                    tooltip: false,
                     animatable: false,
                     notify: function(oldValue) {
                         if (this.horizontalAlign === oldValue) {
@@ -18155,7 +18080,7 @@
                 },
                 fontSize: {
                     default: 40,
-                    tooltip: "i18n:COMPONENT.richtext.font_size",
+                    tooltip: false,
                     notify: function(oldValue) {
                         if (this.fontSize === oldValue) {
                             return;
@@ -18167,7 +18092,7 @@
                 font: {
                     default: null,
                     type: cc.TTFFont,
-                    tooltip: "i18n:COMPONENT.richtext.font",
+                    tooltip: false,
                     notify: function(oldValue) {
                         if (this.font === oldValue) {
                             return;
@@ -18179,7 +18104,7 @@
                 },
                 maxWidth: {
                     default: 0,
-                    tooltip: "i18n:COMPONENT.richtext.max_width",
+                    tooltip: false,
                     notify: function(oldValue) {
                         if (this.maxWidth === oldValue) {
                             return;
@@ -18190,7 +18115,7 @@
                 },
                 lineHeight: {
                     default: 40,
-                    tooltip: "i18n:COMPONENT.richtext.line_height",
+                    tooltip: false,
                     notify: function(oldValue) {
                         if (this.lineHeight === oldValue) {
                             return;
@@ -18202,7 +18127,7 @@
                 imageAtlas: {
                     default: null,
                     type: cc.SpriteAtlas,
-                    tooltip: "i18n:COMPONENT.richtext.image_atlas",
+                    tooltip: false,
                     notify: function(oldValue) {
                         if (this.imageAtlas === oldValue) {
                             return;
@@ -18216,9 +18141,13 @@
                 HorizontalAlign: HorizontalAlign,
                 VerticalAlign: VerticalAlign
             },
-            __preload: function() {
+            onEnable: function() {
                 this._super();
-                this._registerEvents();
+                this.node.on(cc.Node.EventType.TOUCH_END, this._onTouchEnded, this);
+            },
+            onDisable: function() {
+                this._super();
+                this.node.off(cc.Node.EventType.TOUCH_END, this._onTouchEnded, this);
             },
             _createSgNode: function() {
                 var sgNode = new _ccsg.Node();
@@ -18241,7 +18170,7 @@
                 this._onTTFLoaded();
             },
             _createFontLabel: function(string) {
-                return new _ccsg.Label(string, this._getFontRawUrl());
+                return _ccsg.Label.pool.get(string, this.font, null, this.fontSize);
             },
             _getFontRawUrl: function() {
                 var isAsset = this.font instanceof cc.TTFFont;
@@ -18294,9 +18223,6 @@
             _containsTouchLocation: function(label, point) {
                 var myRect = label.getBoundingBoxToWorld();
                 return cc.rectContainsPoint(myRect, point);
-            },
-            _registerEvents: function() {
-                this.node.on(cc.Node.EventType.TOUCH_END, this._onTouchEnded, this);
             },
             _resetState: function() {
                 var sgNode = this._sgNode;
@@ -18393,22 +18319,18 @@
                             if (oldItem.style.isImage === newItem.style.isImage && oldItem.style.src !== newItem.style.src) {
                                 return true;
                             }
-                        } else {
-                            if (oldItem.style.size || oldItem.style.italic || oldItem.style.isImage) {
-                                return true;
-                            }
-                        }
-                    } else {
-                        if (newItem.style && (newItem.style.size || newItem.style.italic || newItem.style.isImage)) {
+                        } else if (oldItem.style.size || oldItem.style.italic || oldItem.style.isImage) {
                             return true;
                         }
+                    } else if (newItem.style && (newItem.style.size || newItem.style.italic || newItem.style.isImage)) {
+                        return true;
                     }
                 }
                 return false;
             },
             _onSpriteFrameLoaded: function(event, spriteFrame) {
                 var newSpriteFrame;
-                newSpriteFrame = spriteFrame ? spriteFrame : event.target;
+                newSpriteFrame = spriteFrame || event.target;
                 var sprite = newSpriteFrame.__sprite;
                 sprite.setSpriteFrame(newSpriteFrame);
             },
@@ -18433,16 +18355,29 @@
                     this._labelSegments.push(sprite);
                     var spriteRect = spriteFrame.getRect();
                     var scaleFactor = 1;
-                    spriteRect.height > this.lineHeight && (scaleFactor = this.lineHeight / spriteRect.height);
-                    if (this.maxWidth > 0) {
-                        this._lineOffsetX + spriteRect.width * scaleFactor > this.maxWidth && this._updateLineInfo();
-                        this._lineOffsetX += spriteRect.width * scaleFactor;
+                    var spriteWidth = spriteRect.width;
+                    var spriteHeight = spriteRect.height;
+                    var expectWidth = richTextElement.style.imageWidth;
+                    var expectHeight = richTextElement.style.imageHeight;
+                    if (expectHeight > 0 && expectHeight < this.lineHeight) {
+                        scaleFactor = expectHeight / spriteHeight;
+                        spriteWidth *= scaleFactor;
+                        spriteHeight *= scaleFactor;
                     } else {
-                        this._lineOffsetX += spriteRect.width * scaleFactor;
+                        scaleFactor = this.lineHeight / spriteHeight;
+                        spriteWidth *= scaleFactor;
+                        spriteHeight *= scaleFactor;
+                    }
+                    expectWidth > 0 && (spriteWidth = expectWidth);
+                    if (this.maxWidth > 0) {
+                        this._lineOffsetX + spriteWidth > this.maxWidth && this._updateLineInfo();
+                        this._lineOffsetX += spriteWidth;
+                    } else {
+                        this._lineOffsetX += spriteWidth;
                         this._lineOffsetX > this._labelWidth && (this._labelWidth = this._lineOffsetX);
                     }
                     this._applySpriteFrame(spriteFrame);
-                    sprite.setContentSize(spriteRect.width * scaleFactor, spriteRect.height * scaleFactor);
+                    sprite.setContentSize(spriteWidth, spriteHeight);
                     sprite._lineCount = this._lineCount;
                     richTextElement.style.event && richTextElement.style.event.click && (sprite._clickHandler = richTextElement.style.event.click);
                 } else {
@@ -18586,14 +18521,22 @@
                 }
                 textStyle && textStyle.size ? label.setFontSize(textStyle.size) : label.setFontSize(this.fontSize);
                 textStyle && textStyle.event && textStyle.event.click && (label._clickHandler = textStyle.event.click);
+            },
+            onDestroy: function() {
+                this._super();
+                for (var i = 0; i < this._labelSegments.length; ++i) {
+                    this._labelSegments[i].removeFromParent(true);
+                    _ccsg.Label.pool.put(this._labelSegments[i]);
+                }
+                this._resetState();
             }
         });
         cc.RichText = module.exports = RichText;
     }), {
-        "../label/CCHtmlTextParser.js": 124,
-        "../label/CCTextUtils.js": 128
+        "../label/CCHtmlTextParser": 123,
+        "../label/CCTextUtils": 127
     } ],
-    89: [ (function(require, module, exports) {
+    88: [ (function(require, module, exports) {
         var SceneGraphHelper = require("../utils/scene-graph-helper");
         var SGComponent = cc.Class({
             extends: require("./CCComponent"),
@@ -18610,8 +18553,7 @@
             _removeSgNode: SceneGraphHelper.removeSgNode,
             _registSizeProvider: function() {
                 if (this.node._sizeProvider) {
-                    var name = cc.js.getClassName(this);
-                    this.node.getComponent(cc.Canvas) ? cc.errorID(3627, name) : cc.errorID(3628, name);
+                    var name;
                 } else {
                     this.node._sizeProvider = this._sgNode;
                 }
@@ -18619,10 +18561,10 @@
         });
         cc._SGComponent = module.exports = SGComponent;
     }), {
-        "../utils/scene-graph-helper": 225,
-        "./CCComponent": 76
+        "../utils/scene-graph-helper": 226,
+        "./CCComponent": 75
     } ],
-    90: [ (function(require, module, exports) {
+    89: [ (function(require, module, exports) {
         var GETTINGSHORTERFACTOR = 20;
         var Direction = cc.Enum({
             HORIZONTAL: 0,
@@ -18643,7 +18585,7 @@
                 handle: {
                     default: null,
                     type: cc.Sprite,
-                    tooltip: "i18n:COMPONENT.scrollbar.handle",
+                    tooltip: false,
                     notify: function() {
                         this._onScroll(cc.p(0, 0));
                     },
@@ -18652,7 +18594,7 @@
                 direction: {
                     default: Direction.HORIZONTAL,
                     type: Direction,
-                    tooltip: "i18n:COMPONENT.scrollbar.direction",
+                    tooltip: false,
                     notify: function() {
                         this._onScroll(cc.p(0, 0));
                     },
@@ -18661,12 +18603,12 @@
                 enableAutoHide: {
                     default: true,
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.scrollbar.auto_hide"
+                    tooltip: false
                 },
                 autoHideTime: {
                     default: 1,
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.scrollbar.auto_hide_time"
+                    tooltip: false
                 }
             },
             statics: {
@@ -18708,14 +18650,12 @@
                             handleNodeMeasure = handleNodeSize.width;
                             outOfBoundaryValue = outOfBoundary.x;
                             contentPosition = -this._convertToScrollViewSpace(content).x;
-                        } else {
-                            if (this.direction === Direction.VERTICAL) {
-                                contentMeasure = contentSize.height;
-                                scrollViewMeasure = scrollViewSize.height;
-                                handleNodeMeasure = handleNodeSize.height;
-                                outOfBoundaryValue = outOfBoundary.y;
-                                contentPosition = -this._convertToScrollViewSpace(content).y;
-                            }
+                        } else if (this.direction === Direction.VERTICAL) {
+                            contentMeasure = contentSize.height;
+                            scrollViewMeasure = scrollViewSize.height;
+                            handleNodeMeasure = handleNodeSize.height;
+                            outOfBoundaryValue = outOfBoundary.y;
+                            contentPosition = -this._convertToScrollViewSpace(content).y;
                         }
                         var length = this._calculateLength(contentMeasure, scrollViewMeasure, handleNodeMeasure, outOfBoundaryValue);
                         var position = this._calculatePosition(contentMeasure, scrollViewMeasure, handleNodeMeasure, contentPosition, outOfBoundaryValue, length);
@@ -18832,9 +18772,9 @@
         });
         cc.Scrollbar = module.exports = Scrollbar;
     }), {
-        "./CCComponent": 76
+        "./CCComponent": 75
     } ],
-    91: [ (function(require, module, exports) {
+    90: [ (function(require, module, exports) {
         var NUMBER_OF_GATHERED_TOUCHES_FOR_MOVE_SPEED = 5;
         var OUT_OF_BOUNDARY_BREAKING_FACTOR = .05;
         var EPSILON = 1e-4;
@@ -18909,42 +18849,42 @@
                 content: {
                     default: void 0,
                     type: cc.Node,
-                    tooltip: "i18n:COMPONENT.scrollview.content"
+                    tooltip: false
                 },
                 horizontal: {
                     default: true,
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.scrollview.horizontal"
+                    tooltip: false
                 },
                 vertical: {
                     default: true,
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.scrollview.vertical"
+                    tooltip: false
                 },
                 inertia: {
                     default: true,
-                    tooltip: "i18n:COMPONENT.scrollview.inertia"
+                    tooltip: false
                 },
                 brake: {
                     default: .5,
                     type: "Float",
                     range: [ 0, 1, .1 ],
-                    tooltip: "i18n:COMPONENT.scrollview.brake"
+                    tooltip: false
                 },
                 elastic: {
                     default: true,
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.scrollview.elastic"
+                    tooltip: false
                 },
                 bounceDuration: {
                     default: 1,
                     range: [ 0, 10 ],
-                    tooltip: "i18n:COMPONENT.scrollview.bounceDuration"
+                    tooltip: false
                 },
                 horizontalScrollBar: {
                     default: void 0,
                     type: cc.Scrollbar,
-                    tooltip: "i18n:COMPONENT.scrollview.horizontal_bar",
+                    tooltip: false,
                     notify: function() {
                         if (this.horizontalScrollBar) {
                             this.horizontalScrollBar.setTargetScrollView(this);
@@ -18956,7 +18896,7 @@
                 verticalScrollBar: {
                     default: void 0,
                     type: cc.Scrollbar,
-                    tooltip: "i18n:COMPONENT.scrollview.vertical_bar",
+                    tooltip: false,
                     notify: function() {
                         if (this.verticalScrollBar) {
                             this.verticalScrollBar.setTargetScrollView(this);
@@ -18968,12 +18908,12 @@
                 scrollEvents: {
                     default: [],
                     type: cc.Component.EventHandler,
-                    tooltip: "i18n:COMPONENT.scrollview.scrollEvents"
+                    tooltip: false
                 },
                 cancelInnerEvents: {
                     default: true,
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.scrollview.cancelInnerEvents"
+                    tooltip: false
                 }
             },
             statics: {
@@ -19327,25 +19267,19 @@
                 if (realMove.y > 0) {
                     var icBottomPos = this.content.y - this.content.anchorY * this.content.height;
                     icBottomPos + realMove.y > this._bottomBoundary && (scrollEventType = "scroll-to-bottom");
-                } else {
-                    if (realMove.y < 0) {
-                        var icTopPos = this.content.y - this.content.anchorY * this.content.height + this.content.height;
-                        icTopPos + realMove.y <= this._topBoundary && (scrollEventType = "scroll-to-top");
-                    } else {
-                        if (realMove.x < 0) {
-                            var icRightPos = this.content.x - this.content.anchorX * this.content.width + this.content.width;
-                            icRightPos + realMove.x <= this._rightBoundary && (scrollEventType = "scroll-to-right");
-                        } else {
-                            if (realMove.x > 0) {
-                                var icLeftPos = this.content.x - this.content.anchorX * this.content.width;
-                                icLeftPos + realMove.x >= this._leftBoundary && (scrollEventType = "scroll-to-left");
-                            }
-                        }
-                    }
+                } else if (realMove.y < 0) {
+                    var icTopPos = this.content.y - this.content.anchorY * this.content.height + this.content.height;
+                    icTopPos + realMove.y <= this._topBoundary && (scrollEventType = "scroll-to-top");
+                } else if (realMove.x < 0) {
+                    var icRightPos = this.content.x - this.content.anchorX * this.content.width + this.content.width;
+                    icRightPos + realMove.x <= this._rightBoundary && (scrollEventType = "scroll-to-right");
+                } else if (realMove.x > 0) {
+                    var icLeftPos = this.content.x - this.content.anchorX * this.content.width;
+                    icLeftPos + realMove.x >= this._leftBoundary && (scrollEventType = "scroll-to-left");
                 }
                 this._moveContent(realMove, false);
                 0 === realMove.x && 0 === realMove.y || this._dispatchEvent("scrolling");
-                scrollEventType !== -1 && this._dispatchEvent(scrollEventType);
+                -1 !== scrollEventType && this._dispatchEvent(scrollEventType);
             },
             _handlePressLogic: function() {
                 this._autoScrolling && this._dispatchEvent("scroll-ended");
@@ -19597,14 +19531,12 @@
             _dispatchEvent: function(event) {
                 if ("scroll-ended" === event) {
                     this._scrollEventEmitMask = 0;
-                } else {
-                    if ("scroll-to-top" === event || "scroll-to-bottom" === event || "scroll-to-left" === event || "scroll-to-right" === event) {
-                        var flag = 1 << eventMap[event];
-                        if (this._scrollEventEmitMask & flag) {
-                            return;
-                        }
-                        this._scrollEventEmitMask |= flag;
+                } else if ("scroll-to-top" === event || "scroll-to-bottom" === event || "scroll-to-left" === event || "scroll-to-right" === event) {
+                    var flag = 1 << eventMap[event];
+                    if (this._scrollEventEmitMask & flag) {
+                        return;
                     }
+                    this._scrollEventEmitMask |= flag;
                 }
                 cc.Component.EventHandler.emitEvents(this.scrollEvents, this, eventMap[event]);
                 this.node.emit(event, this);
@@ -19651,9 +19583,9 @@
         });
         cc.ScrollView = module.exports = ScrollView;
     }), {
-        "./CCViewGroup": 99
+        "./CCViewGroup": 98
     } ],
-    92: [ (function(require, module, exports) {
+    91: [ (function(require, module, exports) {
         var Direction = cc.Enum({
             Horizontal: 0,
             Vertical: 1
@@ -19669,20 +19601,20 @@
                 handle: {
                     default: null,
                     type: cc.Button,
-                    tooltip: "i18n:COMPONENT.slider.handle",
+                    tooltip: false,
                     notify: function() {}
                 },
                 direction: {
                     default: Direction.Horizontal,
                     type: Direction,
-                    tooltip: "i18n:COMPONENT.slider.direction"
+                    tooltip: false
                 },
                 progress: {
                     default: .5,
                     type: cc.Float,
                     range: [ 0, 1, .1 ],
                     slide: true,
-                    tooltip: "i18n:COMPONENT.slider.progress",
+                    tooltip: false,
                     notify: function() {
                         this._updateHandlePosition();
                     }
@@ -19690,7 +19622,7 @@
                 slideEvents: {
                     default: [],
                     type: cc.Component.EventHandler,
-                    tooltip: "i18n:COMPONENT.slider.slideEvents"
+                    tooltip: false
                 }
             },
             statics: {
@@ -19764,11 +19696,9 @@
                 if (this.direction === Direction.Horizontal) {
                     maxRange = this.node.width / 2 - this.handle.node.width * this.handle.node.anchorX;
                     progress = cc.clamp01((newPos.x + maxRange) / (2 * maxRange), 0, 1);
-                } else {
-                    if (this.direction === Direction.Vertical) {
-                        maxRange = this.node.height / 2 - this.handle.node.height * this.handle.node.anchorY;
-                        progress = cc.clamp01((newPos.y + maxRange) / (2 * maxRange), 0, 1);
-                    }
+                } else if (this.direction === Direction.Vertical) {
+                    maxRange = this.node.height / 2 - this.handle.node.height * this.handle.node.anchorY;
+                    progress = cc.clamp01((newPos.y + maxRange) / (2 * maxRange), 0, 1);
                 }
                 this.progress = progress;
             },
@@ -19784,9 +19714,9 @@
         });
         cc.Slider = module.exports = Slider;
     }), {
-        "./CCComponent": 76
+        "./CCComponent": 75
     } ],
-    93: [ (function(require, module, exports) {
+    92: [ (function(require, module, exports) {
         var Base = require("./CCRendererUnderSG");
         var SpriteType = cc.Scale9Sprite.RenderingType;
         var FillType = cc.Scale9Sprite.FillType;
@@ -19820,7 +19750,7 @@
                 _atlas: {
                     default: null,
                     type: cc.SpriteAtlas,
-                    tooltip: "i18n:COMPONENT.sprite.atlas",
+                    tooltip: false,
                     editorOnly: true,
                     visible: true,
                     animatable: false
@@ -19849,7 +19779,7 @@
                     },
                     type: SpriteType,
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.sprite.type"
+                    tooltip: false
                 },
                 fillType: {
                     get: function() {
@@ -19860,7 +19790,7 @@
                         this._sgNode && this._sgNode.setFillType(value);
                     },
                     type: FillType,
-                    tooltip: "i18n:COMPONENT.sprite.fill_type"
+                    tooltip: false
                 },
                 fillCenter: {
                     get: function() {
@@ -19870,7 +19800,7 @@
                         this._fillCenter = cc.v2(value);
                         this._sgNode && this._sgNode.setFillCenter(this._fillCenter);
                     },
-                    tooltip: "i18n:COMPONENT.sprite.fill_center"
+                    tooltip: false
                 },
                 fillStart: {
                     get: function() {
@@ -19880,7 +19810,7 @@
                         this._fillStart = cc.clampf(value, -1, 1);
                         this._sgNode && this._sgNode.setFillStart(value);
                     },
-                    tooltip: "i18n:COMPONENT.sprite.fill_start"
+                    tooltip: false
                 },
                 fillRange: {
                     get: function() {
@@ -19890,7 +19820,7 @@
                         this._fillRange = cc.clampf(value, -1, 1);
                         this._sgNode && this._sgNode.setFillRange(value);
                     },
-                    tooltip: "i18n:COMPONENT.sprite.fill_range"
+                    tooltip: false
                 },
                 trim: {
                     get: function() {
@@ -19903,7 +19833,7 @@
                         }
                     },
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.sprite.trim"
+                    tooltip: false
                 },
                 srcBlendFactor: {
                     get: function() {
@@ -19916,7 +19846,7 @@
                     },
                     animatable: false,
                     type: BlendFactor,
-                    tooltip: "i18n:COMPONENT.sprite.src_blend_factor"
+                    tooltip: false
                 },
                 dstBlendFactor: {
                     get: function() {
@@ -19929,7 +19859,7 @@
                     },
                     animatable: false,
                     type: BlendFactor,
-                    tooltip: "i18n:COMPONENT.sprite.dst_blend_factor"
+                    tooltip: false
                 },
                 sizeMode: {
                     get: function() {
@@ -19941,7 +19871,7 @@
                     },
                     animatable: false,
                     type: SizeMode,
-                    tooltip: "i18n:COMPONENT.sprite.size_mode"
+                    tooltip: false
                 }
             },
             statics: {
@@ -19993,13 +19923,11 @@
                     if (SizeMode.RAW === this._sizeMode) {
                         var size = this._spriteFrame.getOriginalSize();
                         this.node.setContentSize(size);
+                    } else if (SizeMode.TRIMMED === this._sizeMode) {
+                        var rect = this._spriteFrame.getRect();
+                        this.node.setContentSize(cc.size(rect.width, rect.height));
                     } else {
-                        if (SizeMode.TRIMMED === this._sizeMode) {
-                            var rect = this._spriteFrame.getRect();
-                            this.node.setContentSize(cc.size(rect.width, rect.height));
-                        } else {
-                            this.node.setContentSize(this.node.getContentSize(true));
-                        }
+                        this.node.setContentSize(this.node.getContentSize(true));
                     }
                 } else {
                     this.node.setContentSize(this.node.getContentSize(true));
@@ -20060,10 +19988,10 @@
         misc.propertyDefine(Sprite, SameNameGetSets, DiffNameGetSets);
         cc.Sprite = module.exports = Sprite;
     }), {
-        "../utils/misc": 222,
-        "./CCRendererUnderSG": 87
+        "../utils/misc": 223,
+        "./CCRendererUnderSG": 86
     } ],
-    94: [ (function(require, module, exports) {
+    93: [ (function(require, module, exports) {
         var SpriteDistortion = cc.Class({
             name: "cc.SpriteDistortion",
             extends: require("./CCComponent"),
@@ -20111,9 +20039,9 @@
         });
         cc.SpriteDistortion = module.exports = SpriteDistortion;
     }), {
-        "./CCComponent": 76
+        "./CCComponent": 75
     } ],
-    95: [ (function(require, module, exports) {
+    94: [ (function(require, module, exports) {
         var ComponentType = cc.Enum({
             NONE: 0,
             CHECKBOX: 1,
@@ -20150,28 +20078,28 @@
         });
         cc.StudioComponent = module.exports = StudioComponent;
     }), {} ],
-    96: [ (function(require, module, exports) {
+    95: [ (function(require, module, exports) {
         var Toggle = cc.Class({
             name: "cc.Toggle",
-            extends: require("./CCButton.js"),
+            extends: require("./CCButton"),
             editor: false,
             properties: {
                 isChecked: {
                     default: true,
-                    tooltip: "i18n:COMPONENT.toggle.isChecked",
+                    tooltip: false,
                     notify: function() {
                         this._updateCheckMark();
                     }
                 },
                 toggleGroup: {
                     default: null,
-                    tooltip: "i18n:COMPONENT.toggle.toggleGroup",
+                    tooltip: false,
                     type: cc.ToggleGroup
                 },
                 checkMark: {
                     default: null,
                     type: cc.Sprite,
-                    tooltip: "i18n:COMPONENT.toggle.checkMark"
+                    tooltip: false
                 },
                 checkEvents: {
                     default: [],
@@ -20242,9 +20170,9 @@
         });
         cc.Toggle = module.exports = Toggle;
     }), {
-        "./CCButton.js": 74
+        "./CCButton": 73
     } ],
-    97: [ (function(require, module, exports) {
+    96: [ (function(require, module, exports) {
         var ToggleGroup = cc.Class({
             name: "cc.ToggleGroup",
             extends: cc.Component,
@@ -20254,7 +20182,7 @@
             editor: false,
             properties: {
                 allowSwitchOff: {
-                    tooltip: "i18n:COMPONENT.toggle_group.allowSwitchOff",
+                    tooltip: false,
                     default: false
                 },
                 toggleItems: {
@@ -20273,7 +20201,7 @@
             },
             addToggle: function(toggle) {
                 var index = this._toggleItems.indexOf(toggle);
-                index === -1 && this._toggleItems.push(toggle);
+                -1 === index && this._toggleItems.push(toggle);
                 this._allowOnlyOneToggleChecked();
             },
             removeToggle: function(toggle) {
@@ -20299,8 +20227,8 @@
         });
         cc.ToggleGroup = module.exports = ToggleGroup;
     }), {} ],
-    98: [ (function(require, module, exports) {
-        require("../videoplayer/CCSGVideoPlayer.js");
+    97: [ (function(require, module, exports) {
+        require("../videoplayer/CCSGVideoPlayer");
         var EventType = _ccsg.VideoPlayer.EventType;
         var ResourceType = cc.Enum({
             REMOTE: 0,
@@ -20313,7 +20241,7 @@
             properties: {
                 _resourceType: ResourceType.REMOTE,
                 resourceType: {
-                    tooltip: "i18n:COMPONENT.videoplayer.resourceType",
+                    tooltip: false,
                     type: ResourceType,
                     set: function(value) {
                         this._resourceType = value;
@@ -20325,7 +20253,7 @@
                 },
                 _remoteURL: "",
                 remoteURL: {
-                    tooltip: "i18n:COMPONENT.videoplayer.url",
+                    tooltip: false,
                     type: cc.String,
                     set: function(url) {
                         this._remoteURL = url;
@@ -20340,7 +20268,7 @@
                     url: cc.RawAsset
                 },
                 clip: {
-                    tooltip: "i18n:COMPONENT.videoplayer.video",
+                    tooltip: false,
                     get: function() {
                         return this._clip;
                     },
@@ -20352,7 +20280,7 @@
                     url: cc.RawAsset
                 },
                 currentTime: {
-                    tooltip: "i18n:COMPONENT.videoplayer.currentTime",
+                    tooltip: false,
                     type: cc.Float,
                     set: function(time) {
                         this._sgNode && this._sgNode.seekTo(time);
@@ -20365,7 +20293,7 @@
                     }
                 },
                 keepAspectRatio: {
-                    tooltip: "i18n:COMPONENT.videoplayer.keepAspectRatio",
+                    tooltip: false,
                     default: true,
                     type: cc.Boolean,
                     notify: function() {
@@ -20373,7 +20301,7 @@
                     }
                 },
                 isFullscreen: {
-                    tooltip: "i18n:COMPONENT.videoplayer.isFullscreen",
+                    tooltip: false,
                     default: false,
                     type: cc.Boolean,
                     notify: function() {
@@ -20471,19 +20399,19 @@
         });
         cc.VideoPlayer = module.exports = VideoPlayer;
     }), {
-        "../videoplayer/CCSGVideoPlayer.js": 236
+        "../videoplayer/CCSGVideoPlayer": 237
     } ],
-    99: [ (function(require, module, exports) {
+    98: [ (function(require, module, exports) {
         var ViewGroup = cc.Class({
             name: "cc.ViewGroup",
             extends: require("./CCComponent")
         });
         cc.ViewGroup = module.exports = ViewGroup;
     }), {
-        "./CCComponent": 76
+        "./CCComponent": 75
     } ],
-    100: [ (function(require, module, exports) {
-        require("../webview/CCSGWebView.js");
+    99: [ (function(require, module, exports) {
+        require("../webview/CCSGWebView");
         var EventType = _ccsg.WebView.EventType;
         var WebView = cc.Class({
             name: "cc.WebView",
@@ -20494,7 +20422,7 @@
                 _url: "",
                 url: {
                     type: String,
-                    tooltip: "i18n:COMPONENT.webview.url",
+                    tooltip: false,
                     get: function() {
                         return this._url;
                     },
@@ -20540,13 +20468,19 @@
             _onWebViewLoadError: function() {
                 cc.Component.EventHandler.emitEvents(this.webviewEvents, this, EventType.ERROR);
                 this.node.emit("error", this);
+            },
+            setJavascriptInterfaceScheme: function(scheme) {
+                this._sgNode && this._sgNode.setJavascriptInterfaceScheme(scheme);
+            },
+            setOnJSCallback: function(callback) {
+                this._sgNode && this._sgNode.setOnJSCallback(callback);
             }
         });
         cc.WebView = module.exports = WebView;
     }), {
-        "../webview/CCSGWebView.js": 237
+        "../webview/CCSGWebView": 238
     } ],
-    101: [ (function(require, module, exports) {
+    100: [ (function(require, module, exports) {
         var WidgetManager = require("../base-ui/CCWidgetManager");
         var AlignFlags = WidgetManager._AlignFlags;
         var TOP = AlignFlags.TOP;
@@ -20570,7 +20504,7 @@
                         this._target = value;
                     },
                     type: cc.Node,
-                    tooltip: "i18n:COMPONENT.widget.target"
+                    tooltip: false
                 },
                 isAlignTop: {
                     get: function() {
@@ -20580,7 +20514,7 @@
                         this._setAlign(TOP, value);
                     },
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.widget.align_top"
+                    tooltip: false
                 },
                 isAlignVerticalCenter: {
                     get: function() {
@@ -20596,7 +20530,7 @@
                         }
                     },
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.widget.align_v_center"
+                    tooltip: false
                 },
                 isAlignBottom: {
                     get: function() {
@@ -20606,7 +20540,7 @@
                         this._setAlign(BOT, value);
                     },
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.widget.align_bottom"
+                    tooltip: false
                 },
                 isAlignLeft: {
                     get: function() {
@@ -20616,7 +20550,7 @@
                         this._setAlign(LEFT, value);
                     },
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.widget.align_left"
+                    tooltip: false
                 },
                 isAlignHorizontalCenter: {
                     get: function() {
@@ -20632,7 +20566,7 @@
                         }
                     },
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.widget.align_h_center"
+                    tooltip: false
                 },
                 isAlignRight: {
                     get: function() {
@@ -20642,7 +20576,7 @@
                         this._setAlign(RIGHT, value);
                     },
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.widget.align_right"
+                    tooltip: false
                 },
                 isStretchWidth: {
                     get: function() {
@@ -20663,7 +20597,7 @@
                     set: function(value) {
                         this._top = value;
                     },
-                    tooltip: "i18n:COMPONENT.widget.top"
+                    tooltip: false
                 },
                 bottom: {
                     get: function() {
@@ -20672,7 +20606,7 @@
                     set: function(value) {
                         this._bottom = value;
                     },
-                    tooltip: "i18n:COMPONENT.widget.bottom"
+                    tooltip: false
                 },
                 left: {
                     get: function() {
@@ -20681,7 +20615,7 @@
                     set: function(value) {
                         this._left = value;
                     },
-                    tooltip: "i18n:COMPONENT.widget.left"
+                    tooltip: false
                 },
                 right: {
                     get: function() {
@@ -20690,7 +20624,7 @@
                     set: function(value) {
                         this._right = value;
                     },
-                    tooltip: "i18n:COMPONENT.widget.right"
+                    tooltip: false
                 },
                 horizontalCenter: {
                     get: function() {
@@ -20699,7 +20633,7 @@
                     set: function(value) {
                         this._horizontalCenter = value;
                     },
-                    tooltip: "i18n:COMPONENT.widget.horizontal_center"
+                    tooltip: false
                 },
                 verticalCenter: {
                     get: function() {
@@ -20708,7 +20642,7 @@
                     set: function(value) {
                         this._verticalCenter = value;
                     },
-                    tooltip: "i18n:COMPONENT.widget.vertical_center"
+                    tooltip: false
                 },
                 isAbsoluteHorizontalCenter: {
                     get: function() {
@@ -20766,7 +20700,7 @@
                 },
                 isAlignOnce: {
                     default: true,
-                    tooltip: "i18n:COMPONENT.widget.align_once",
+                    tooltip: false,
                     displayName: "AlignOnce"
                 },
                 _target: null,
@@ -20818,47 +20752,48 @@
         });
         cc.Widget = module.exports = Widget;
     }), {
-        "../base-ui/CCWidgetManager": 60,
-        "./CCComponent": 76
+        "../base-ui/CCWidgetManager": 58,
+        "./CCComponent": 75
     } ],
-    102: [ (function(require, module, exports) {
+    101: [ (function(require, module, exports) {
         require("./CCComponent");
         require("./CCRendererInSG");
         require("./CCRendererUnderSG");
         require("./CCComponentEventHandler");
         require("./missing-script");
-        module.exports = [ require("./CCSprite"), require("./CCWidget"), require("./CCCanvas"), require("./CCAudioSource"), require("./CCAnimation"), require("./CCButton"), require("./CCLabel"), require("./CCProgressBar"), require("./CCMask"), require("./CCScrollBar"), require("./CCScrollView"), require("./CCPageViewIndicator"), require("./CCPageView"), require("./CCSlider"), require("./CCLayout"), require("./CCEditBox"), require("./CCVideoPlayer"), require("./CCWebView"), require("./CCSpriteDistortion"), require("./CCLabelOutline"), require("./CCRichText"), require("./CCToggleGroup"), require("./CCToggle") ];
+        module.exports = [ require("./CCSprite"), require("./CCWidget"), require("./CCCanvas"), require("./CCAudioSource"), require("./CCAnimation"), require("./CCButton"), require("./CCLabel"), require("./CCProgressBar"), require("./CCMask"), require("./CCScrollBar"), require("./CCScrollView"), require("./CCPageViewIndicator"), require("./CCPageView"), require("./CCSlider"), require("./CCLayout"), require("./CCEditBox"), require("./CCVideoPlayer"), require("./CCWebView"), require("./CCSpriteDistortion"), require("./CCLabelOutline"), require("./CCRichText"), require("./CCToggleGroup"), require("./CCToggle"), require("./CCBlockInputEvents") ];
     }), {
-        "./CCAnimation": 72,
-        "./CCAudioSource": 73,
-        "./CCButton": 74,
-        "./CCCanvas": 75,
-        "./CCComponent": 76,
-        "./CCComponentEventHandler": 77,
-        "./CCEditBox": 78,
-        "./CCLabel": 79,
-        "./CCLabelOutline": 80,
-        "./CCLayout": 81,
-        "./CCMask": 82,
-        "./CCPageView": 83,
-        "./CCPageViewIndicator": 84,
-        "./CCProgressBar": 85,
-        "./CCRendererInSG": 86,
-        "./CCRendererUnderSG": 87,
-        "./CCRichText": 88,
-        "./CCScrollBar": 90,
-        "./CCScrollView": 91,
-        "./CCSlider": 92,
-        "./CCSprite": 93,
-        "./CCSpriteDistortion": 94,
-        "./CCToggle": 96,
-        "./CCToggleGroup": 97,
-        "./CCVideoPlayer": 98,
-        "./CCWebView": 100,
-        "./CCWidget": 101,
-        "./missing-script": 103
+        "./CCAnimation": 70,
+        "./CCAudioSource": 71,
+        "./CCBlockInputEvents": 72,
+        "./CCButton": 73,
+        "./CCCanvas": 74,
+        "./CCComponent": 75,
+        "./CCComponentEventHandler": 76,
+        "./CCEditBox": 77,
+        "./CCLabel": 78,
+        "./CCLabelOutline": 79,
+        "./CCLayout": 80,
+        "./CCMask": 81,
+        "./CCPageView": 82,
+        "./CCPageViewIndicator": 83,
+        "./CCProgressBar": 84,
+        "./CCRendererInSG": 85,
+        "./CCRendererUnderSG": 86,
+        "./CCRichText": 87,
+        "./CCScrollBar": 89,
+        "./CCScrollView": 90,
+        "./CCSlider": 91,
+        "./CCSprite": 92,
+        "./CCSpriteDistortion": 93,
+        "./CCToggle": 95,
+        "./CCToggleGroup": 96,
+        "./CCVideoPlayer": 97,
+        "./CCWebView": 99,
+        "./CCWidget": 100,
+        "./missing-script": 102
     } ],
-    103: [ (function(require, module, exports) {
+    102: [ (function(require, module, exports) {
         var JS = cc.js;
         var isBuiltinClassId = require("../utils/misc").isBuiltinClassId;
         var MissingClass = cc.Class({
@@ -20902,7 +20837,7 @@
                     return null;
                 },
                 getMissingWrapper: function(id, data) {
-                    return data.node && (/^[0-9a-zA-Z+\/]{23}$/.test(id) || isBuiltinClassId(id)) ? MissingScript : MissingClass;
+                    return data.node && (/^[0-9a-zA-Z+/]{23}$/.test(id) || isBuiltinClassId(id)) ? MissingScript : MissingClass;
                 }
             },
             onLoad: function() {
@@ -20911,9 +20846,9 @@
         });
         cc._MissingScript = module.exports = MissingScript;
     }), {
-        "../utils/misc": 222
+        "../utils/misc": 223
     } ],
-    104: [ (function(require, module, exports) {
+    103: [ (function(require, module, exports) {
         var SCROLLY = 40;
         var TIMER_NAME = 400;
         var LEFT_PADDING = 2;
@@ -21427,13 +21362,13 @@
             proto._createLabels = function() {
                 var editBoxSize = this._editBox.getContentSize();
                 if (!this._textLabel) {
-                    this._textLabel = new _ccsg.Label();
+                    this._textLabel = _ccsg.Label.pool.get();
                     this._textLabel.setAnchorPoint(cc.p(0, 1));
                     this._textLabel.setOverflow(_ccsg.Label.Overflow.CLAMP);
                     this._editBox.addChild(this._textLabel, 100);
                 }
                 if (!this._placeholderLabel) {
-                    this._placeholderLabel = new _ccsg.Label();
+                    this._placeholderLabel = _ccsg.Label.pool.get();
                     this._placeholderLabel.setAnchorPoint(cc.p(0, 1));
                     this._placeholderLabel.setColor(cc.Color.GRAY);
                     this._editBox.addChild(this._placeholderLabel, 100);
@@ -21500,11 +21435,9 @@
                         this._placeholderLabel.setVisible(true);
                         this._placeholderLabel.setString(this._editBox._placeholderText);
                     }
-                } else {
-                    if (this._textLabel) {
-                        this._textLabel.setVisible(true);
-                        this._textLabel.setString(this._editBox._text);
-                    }
+                } else if (this._textLabel) {
+                    this._textLabel.setVisible(true);
+                    this._textLabel.setString(this._editBox._text);
                 }
                 this._updateLabelStringStyle();
             };
@@ -21565,7 +21498,7 @@
                 this._edTxt.maxLength = maxLength;
             };
             proto._updateDOMPlaceholderFontStyle = function() {
-                this._placeholderLabel.setFontFileOrFamily(this._editBox._placeholderFontName);
+                this._placeholderLabel.setFontFamily(this._editBox._placeholderFontName);
                 this._placeholderLabel.setFontSize(this._editBox._placeholderFontSize);
             };
             proto.setPlaceholderFontColor = function(color) {
@@ -21575,22 +21508,16 @@
                 var inputMode = this._editBox._editBoxInputMode;
                 if (inputMode === InputMode.EMAIL_ADDR) {
                     this._edTxt.type = "email";
+                } else if (inputMode === InputMode.NUMERIC || inputMode === InputMode.DECIMAL) {
+                    this._edTxt.type = "number";
+                } else if (inputMode === InputMode.PHONE_NUMBER) {
+                    this._edTxt.type = "number";
+                    this._edTxt.pattern = "[0-9]*";
+                } else if (inputMode === InputMode.URL) {
+                    this._edTxt.type = "url";
                 } else {
-                    if (inputMode === InputMode.NUMERIC || inputMode === InputMode.DECIMAL) {
-                        this._edTxt.type = "number";
-                    } else {
-                        if (inputMode === InputMode.PHONE_NUMBER) {
-                            this._edTxt.type = "number";
-                            this._edTxt.pattern = "[0-9]*";
-                        } else {
-                            if (inputMode === InputMode.URL) {
-                                this._edTxt.type = "url";
-                            } else {
-                                this._edTxt.type = "text";
-                                this._editBox._keyboardReturnType === KeyboardReturnType.SEARCH && (this._edTxt.type = "search");
-                            }
-                        }
-                    }
+                    this._edTxt.type = "text";
+                    this._editBox._keyboardReturnType === KeyboardReturnType.SEARCH && (this._edTxt.type = "search");
                 }
                 this._editBox._editBoxInputFlag === InputFlag.PASSWORD && (this._edTxt.type = "password");
             };
@@ -21645,7 +21572,7 @@
                 }
                 if (this._textLabel) {
                     this._textLabel.setFontSize(this._edFontSize);
-                    this._textLabel.setFontFileOrFamily(this._edFontName);
+                    this._textLabel.setFontFamily(this._edFontName);
                 }
             };
             proto.updateSize = function(newWidth, newHeight) {
@@ -21706,9 +21633,9 @@
     }), {
         "../platform/utils": 197
     } ],
-    105: [ (function(require, module, exports) {
+    104: [ (function(require, module, exports) {
         var JS = cc.js;
-        var Event = cc.Event;
+        require("../event/event");
         var EventMouse = function(eventType, bubbles) {
             cc.Event.call(this, cc.Event.MOUSE, bubbles);
             this._eventType = eventType;
@@ -21799,6 +21726,7 @@
             cc.Event.call(this, cc.Event.TOUCH, bubbles);
             this._eventCode = 0;
             this._touches = touchArr || [];
+            this.touch = null;
             this.currentTouch = null;
         };
         JS.extend(EventTouch, cc.Event);
@@ -21854,12 +21782,12 @@
         EventTouch.ENDED = 2;
         EventTouch.CANCELED = 3;
         var EventAcceleration = function(acc, bubbles) {
-            cc.Event.call(this, Event.ACCELERATION, bubbles);
+            cc.Event.call(this, cc.Event.ACCELERATION, bubbles);
             this.acc = acc;
         };
         JS.extend(EventAcceleration, cc.Event);
         var EventKeyboard = function(keyCode, isPressed, bubbles) {
-            cc.Event.call(this, Event.KEYBOARD, bubbles);
+            cc.Event.call(this, cc.Event.KEYBOARD, bubbles);
             this.keyCode = keyCode;
             this.isPressed = isPressed;
         };
@@ -21868,9 +21796,11 @@
         cc.Event.EventTouch = EventTouch;
         cc.Event.EventAcceleration = EventAcceleration;
         cc.Event.EventKeyboard = EventKeyboard;
-        module.exports = Event;
-    }), {} ],
-    106: [ (function(require, module, exports) {
+        module.exports = cc.Event;
+    }), {
+        "../event/event": 112
+    } ],
+    105: [ (function(require, module, exports) {
         cc.EventListener = cc._Class.extend({
             ctor: function(type, listenerID, callback) {
                 this._onEvent = callback;
@@ -22059,29 +21989,19 @@
             var listener = null;
             if (listenerType === cc.EventListener.TOUCH_ONE_BY_ONE) {
                 listener = new cc._EventListenerTouchOneByOne();
-            } else {
-                if (listenerType === cc.EventListener.TOUCH_ALL_AT_ONCE) {
-                    listener = new cc._EventListenerTouchAllAtOnce();
-                } else {
-                    if (listenerType === cc.EventListener.MOUSE) {
-                        listener = new cc._EventListenerMouse();
-                    } else {
-                        if (listenerType === cc.EventListener.CUSTOM) {
-                            listener = new cc._EventListenerCustom(argObj.eventName, argObj.callback);
-                            delete argObj.eventName;
-                            delete argObj.callback;
-                        } else {
-                            if (listenerType === cc.EventListener.KEYBOARD) {
-                                listener = new cc._EventListenerKeyboard();
-                            } else {
-                                if (listenerType === cc.EventListener.ACCELERATION) {
-                                    listener = new cc._EventListenerAcceleration(argObj.callback);
-                                    delete argObj.callback;
-                                }
-                            }
-                        }
-                    }
-                }
+            } else if (listenerType === cc.EventListener.TOUCH_ALL_AT_ONCE) {
+                listener = new cc._EventListenerTouchAllAtOnce();
+            } else if (listenerType === cc.EventListener.MOUSE) {
+                listener = new cc._EventListenerMouse();
+            } else if (listenerType === cc.EventListener.CUSTOM) {
+                listener = new cc._EventListenerCustom(argObj.eventName, argObj.callback);
+                delete argObj.eventName;
+                delete argObj.callback;
+            } else if (listenerType === cc.EventListener.KEYBOARD) {
+                listener = new cc._EventListenerKeyboard();
+            } else if (listenerType === cc.EventListener.ACCELERATION) {
+                listener = new cc._EventListenerAcceleration(argObj.callback);
+                delete argObj.callback;
             }
             for (var key in argObj) {
                 listener[key] = argObj[key];
@@ -22131,7 +22051,7 @@
         });
         cc._EventListenerKeyboard.LISTENER_ID = "__cc_keyboard";
     }), {} ],
-    107: [ (function(require, module, exports) {
+    106: [ (function(require, module, exports) {
         var _EventListenerVector = cc._Class.extend({
             ctor: function() {
                 this._fixedListeners = [];
@@ -22385,7 +22305,7 @@
                         } else {
                             cc.js.array.remove(sceneGraphPriorityListeners, selListener);
                             idx = toRemovedListeners.indexOf(selListener);
-                            idx !== -1 && toRemovedListeners.splice(idx, 1);
+                            -1 !== idx && toRemovedListeners.splice(idx, 1);
                         }
                     }
                 }
@@ -22397,7 +22317,7 @@
                         } else {
                             cc.js.array.remove(fixedPriorityListeners, selListener);
                             idx = toRemovedListeners.indexOf(selListener);
-                            idx !== -1 && toRemovedListeners.splice(idx, 1);
+                            -1 !== idx && toRemovedListeners.splice(idx, 1);
                         }
                     }
                 }
@@ -22453,11 +22373,11 @@
                     var idx, fixedPriorityListeners = listeners.getFixedPriorityListeners(), sceneGraphPriorityListeners = listeners.getSceneGraphPriorityListeners();
                     if (sceneGraphPriorityListeners) {
                         idx = sceneGraphPriorityListeners.indexOf(selListener);
-                        idx !== -1 && sceneGraphPriorityListeners.splice(idx, 1);
+                        -1 !== idx && sceneGraphPriorityListeners.splice(idx, 1);
                     }
                     if (fixedPriorityListeners) {
                         idx = fixedPriorityListeners.indexOf(selListener);
-                        idx !== -1 && fixedPriorityListeners.splice(idx, 1);
+                        -1 !== idx && fixedPriorityListeners.splice(idx, 1);
                     }
                 }
                 toRemovedListeners.length = 0;
@@ -22475,22 +22395,16 @@
                         isClaimed = listener.onTouchBegan(selTouch, event);
                         isClaimed && listener._registered && listener._claimedTouches.push(selTouch);
                     }
-                } else {
-                    if (listener._claimedTouches.length > 0 && (removedIdx = listener._claimedTouches.indexOf(selTouch)) !== -1) {
-                        isClaimed = true;
-                        if (getCode === EventTouch.MOVED && listener.onTouchMoved) {
-                            listener.onTouchMoved(selTouch, event);
-                        } else {
-                            if (getCode === EventTouch.ENDED) {
-                                listener.onTouchEnded && listener.onTouchEnded(selTouch, event);
-                                listener._registered && listener._claimedTouches.splice(removedIdx, 1);
-                            } else {
-                                if (getCode === EventTouch.CANCELLED) {
-                                    listener.onTouchCancelled && listener.onTouchCancelled(selTouch, event);
-                                    listener._registered && listener._claimedTouches.splice(removedIdx, 1);
-                                }
-                            }
-                        }
+                } else if (listener._claimedTouches.length > 0 && -1 !== (removedIdx = listener._claimedTouches.indexOf(selTouch))) {
+                    isClaimed = true;
+                    if (getCode === EventTouch.MOVED && listener.onTouchMoved) {
+                        listener.onTouchMoved(selTouch, event);
+                    } else if (getCode === EventTouch.ENDED) {
+                        listener.onTouchEnded && listener.onTouchEnded(selTouch, event);
+                        listener._registered && listener._claimedTouches.splice(removedIdx, 1);
+                    } else if (getCode === EventTouch.CANCELLED) {
+                        listener.onTouchCancelled && listener.onTouchCancelled(selTouch, event);
+                        listener._registered && listener._claimedTouches.splice(removedIdx, 1);
                     }
                 }
                 if (event.isStopped()) {
@@ -22624,11 +22538,9 @@
                         child = children[i];
                         child && this._visitTarget(child, false);
                     }
-                } else {
-                    if (void 0 !== locNodeListenersMap[node.__instanceId]) {
-                        locGlobalZOrderNodeMap[node.getGlobalZOrder()] || (locGlobalZOrderNodeMap[node.getGlobalZOrder()] = []);
-                        locGlobalZOrderNodeMap[node.getGlobalZOrder()].push(node.__instanceId);
-                    }
+                } else if (void 0 !== locNodeListenersMap[node.__instanceId]) {
+                    locGlobalZOrderNodeMap[node.getGlobalZOrder()] || (locGlobalZOrderNodeMap[node.getGlobalZOrder()] = []);
+                    locGlobalZOrderNodeMap[node.getGlobalZOrder()].push(node.__instanceId);
                 }
                 if (isRootNode) {
                     var globalZOrders = [];
@@ -22808,7 +22720,7 @@
             removeAllListeners: function() {
                 var locListeners = this._listenersMap, locInternalCustomEventIDs = this._internalCustomListenerIDs;
                 for (var selKey in locListeners) {
-                    locInternalCustomEventIDs.indexOf(selKey) === -1 && this._removeListenersForListenerID(selKey);
+                    -1 === locInternalCustomEventIDs.indexOf(selKey) && this._removeListenersForListenerID(selKey);
                 }
             },
             setPriority: function(listener, fixedPriority) {
@@ -22821,7 +22733,7 @@
                     var fixedPriorityListeners = selListeners.getFixedPriorityListeners();
                     if (fixedPriorityListeners) {
                         var found = fixedPriorityListeners.indexOf(listener);
-                        if (found !== -1) {
+                        if (-1 !== found) {
                             null != listener._getSceneGraphPriority() && cc.logID(3502);
                             if (listener._getFixedPriority() !== fixedPriority) {
                                 listener._setFixedPriority(fixedPriority);
@@ -22873,7 +22785,7 @@
             }
         };
     }), {} ],
-    108: [ (function(require, module, exports) {
+    107: [ (function(require, module, exports) {
         var EventTarget = require("../event/event-target");
         var EventType = cc.Enum({
             KEY_DOWN: "keydown",
@@ -22935,9 +22847,9 @@
         cc.SystemEvent = module.exports = SystemEvent;
         cc.systemEvent = new cc.SystemEvent();
     }), {
-        "../event/event-target": 112
+        "../event/event-target": 111
     } ],
-    109: [ (function(require, module, exports) {
+    108: [ (function(require, module, exports) {
         cc.Touch = cc._Class.extend({
             ctor: function(x, y, id) {
                 this._lastModified = 0;
@@ -23011,24 +22923,24 @@
                 }
             },
             _setPrevPoint: function(x, y) {
-                void 0 === y ? this._prevPoint = cc.p(x.x, x.y) : this._prevPoint = cc.p(x || 0, y || 0);
+                this._prevPoint = void 0 === y ? cc.p(x.x, x.y) : cc.p(x || 0, y || 0);
             }
         });
     }), {} ],
-    110: [ (function(require, module, exports) {
+    109: [ (function(require, module, exports) {
         require("./CCTouch");
         require("./CCEventListener");
         require("./CCEventManager");
         require("./CCEvent");
         require("./CCSystemEvent");
     }), {
-        "./CCEvent": 105,
-        "./CCEventListener": 106,
-        "./CCEventManager": 107,
-        "./CCSystemEvent": 108,
-        "./CCTouch": 109
+        "./CCEvent": 104,
+        "./CCEventListener": 105,
+        "./CCEventManager": 106,
+        "./CCSystemEvent": 107,
+        "./CCTouch": 108
     } ],
-    111: [ (function(require, module, exports) {
+    110: [ (function(require, module, exports) {
         var JS = cc.js;
         var CallbacksHandler = require("../platform/callbacks-invoker").CallbacksHandler;
         var REMOVE_PLACEHOLDER = CallbacksHandler.REMOVE_PLACEHOLDER;
@@ -23072,7 +22984,7 @@
     }), {
         "../platform/callbacks-invoker": 186
     } ],
-    112: [ (function(require, module, exports) {
+    111: [ (function(require, module, exports) {
         var EventListeners = require("./event-listeners");
         require("./event");
         var JS = cc.js;
@@ -23160,13 +23072,15 @@
             } else {
                 useCapture = !!useCapture;
             }
-            if (!callback) {
-                return;
-            }
-            var listeners = useCapture ? this._capturingListeners : this._bubblingListeners;
-            if (listeners) {
-                listeners.remove(type, callback, target);
-                target && target.__eventTargets && fastRemove(target.__eventTargets, this);
+            if (callback) {
+                var listeners = useCapture ? this._capturingListeners : this._bubblingListeners;
+                if (listeners) {
+                    listeners.remove(type, callback, target);
+                    target && target.__eventTargets && fastRemove(target.__eventTargets, this);
+                }
+            } else {
+                this._capturingListeners && this._capturingListeners.removeAll(type);
+                this._bubblingListeners && this._bubblingListeners.removeAll(type);
             }
         };
         proto.targetOff = function(target) {
@@ -23186,10 +23100,6 @@
             cachedArray.length = 0;
         };
         proto.emit = function(message, detail) {
-            if ("string" !== typeof message) {
-                cc.errorID(6801);
-                return;
-            }
             var caplisteners = this._capturingListeners && this._capturingListeners._callbackTable[message];
             var bublisteners = this._bubblingListeners && this._bubblingListeners._callbackTable[message];
             if ((!caplisteners || 0 === caplisteners.length) && (!bublisteners || 0 === bublisteners.length)) {
@@ -23214,10 +23124,10 @@
         EventTarget.prototype._EventTargetTargetOff = EventTarget.prototype.targetOff;
         cc.EventTarget = module.exports = EventTarget;
     }), {
-        "./event": 113,
-        "./event-listeners": 111
+        "./event": 112,
+        "./event-listeners": 110
     } ],
-    113: [ (function(require, module, exports) {
+    112: [ (function(require, module, exports) {
         var JS = require("../platform/js");
         cc.Event = function(type, bubbles) {
             this.type = type;
@@ -23295,16 +23205,16 @@
     }), {
         "../platform/js": 192
     } ],
-    114: [ (function(require, module, exports) {
-        require("./event.js");
-        require("./event-listeners.js");
-        require("./event-target.js");
+    113: [ (function(require, module, exports) {
+        require("./event");
+        require("./event-listeners");
+        require("./event-target");
     }), {
-        "./event-listeners.js": 111,
-        "./event-target.js": 112,
-        "./event.js": 113
+        "./event": 112,
+        "./event-listeners": 110,
+        "./event-target": 111
     } ],
-    115: [ (function(require, module, exports) {
+    114: [ (function(require, module, exports) {
         "use strict";
         module.exports = earcut;
         function earcut(data, holeIndices, dim) {
@@ -23501,7 +23411,7 @@
             }
         }
         function findHoleBridge(hole, outerNode) {
-            var p = outerNode, hx = hole.x, hy = hole.y, qx = -(1 / 0), m;
+            var p = outerNode, hx = hole.x, hy = hole.y, qx = -1 / 0, m;
             do {
                 if (hy <= p.y && hy >= p.next.y) {
                     var x = p.x + (hy - p.y) * (p.next.x - p.x) / (p.next.y - p.y);
@@ -23576,22 +23486,20 @@
                             e = q;
                             q = q.nextZ;
                             qSize--;
-                        } else {
-                            if (0 !== qSize && q) {
-                                if (p.z <= q.z) {
-                                    e = p;
-                                    p = p.nextZ;
-                                    pSize--;
-                                } else {
-                                    e = q;
-                                    q = q.nextZ;
-                                    qSize--;
-                                }
-                            } else {
+                        } else if (0 !== qSize && q) {
+                            if (p.z <= q.z) {
                                 e = p;
                                 p = p.nextZ;
                                 pSize--;
+                            } else {
+                                e = q;
+                                q = q.nextZ;
+                                qSize--;
                             }
+                        } else {
+                            e = p;
+                            p = p.nextZ;
+                            pSize--;
                         }
                         tail ? tail.nextZ = e : list = e;
                         e.prevZ = tail;
@@ -23754,7 +23662,7 @@
             return result;
         };
     }), {} ],
-    116: [ (function(require, module, exports) {
+    115: [ (function(require, module, exports) {
         var Js = cc.js;
         var LineCap = require("./types").LineCap;
         var LineJoin = require("./types").LineJoin;
@@ -23888,10 +23796,10 @@
         };
         module.exports = CanvasRenderCmd;
     }), {
-        "./helper": 120,
-        "./types": 122
+        "./helper": 119,
+        "./types": 121
     } ],
-    117: [ (function(require, module, exports) {
+    116: [ (function(require, module, exports) {
         var CanvasRenderCmd = require("./graphics-canvas-cmd");
         var WebGLRenderCmd = require("./graphics-webgl-cmd");
         var LineCap = require("./types").LineCap;
@@ -24003,11 +23911,11 @@
         };
         module.exports = GraphicsNode;
     }), {
-        "./graphics-canvas-cmd": 116,
-        "./graphics-webgl-cmd": 118,
-        "./types": 122
+        "./graphics-canvas-cmd": 115,
+        "./graphics-webgl-cmd": 117,
+        "./types": 121
     } ],
-    118: [ (function(require, module, exports) {
+    117: [ (function(require, module, exports) {
         var LineCap = require("./types").LineCap;
         var LineJoin = require("./types").LineJoin;
         var Earcut = require("./earcut");
@@ -24092,13 +24000,17 @@
                     nverts *= 2;
                 }
                 var newBuffer = new Float32Array(nverts * VERTS_FLOAT_LENGTH);
+                var newUint32Buffer = new Uint32Array(newBuffer.buffer);
                 if (verts) {
-                    for (var i = 0, l = verts.length; i < l; i++) {
+                    var uint32VertsBuffer = this.uint32VertsBuffer;
+                    for (var i = 0, l = verts.length; i < l; i += VERTS_FLOAT_LENGTH) {
                         newBuffer[i] = verts[i];
+                        newBuffer[i + 1] = verts[i + 1];
+                        newUint32Buffer[i + 2] = uint32VertsBuffer[i + 2];
                     }
                 }
                 this.vertsBuffer = newBuffer;
-                this.uint32VertsBuffer = new Uint32Array(this.vertsBuffer.buffer);
+                this.uint32VertsBuffer = newUint32Buffer;
             }
             var indices = this.indicesBuffer;
             var dnindices = this.indicesOffset + cindices;
@@ -24281,7 +24193,6 @@
                 gl.drawElements(gl.TRIANGLES, buffer.indicesOffset, gl.UNSIGNED_SHORT, 0);
                 cc.g_NumberOfDraws++;
             }
-            cc.checkGLErrorDebug();
         };
         _p.rendering = function() {
             cc.gl.blendFunc(this._blendFunc.src, this._blendFunc.dst);
@@ -24409,8 +24320,8 @@
             for (var i = this._pathOffset, l = this._pathLength; i < l; i++) {
                 var path = paths[i];
                 var pointsLength = path.points.length;
-                cverts += lineJoin === LineJoin.ROUND ? 2 * (pointsLength + path.nbevel * (ncap + 2) + 1) : 2 * (pointsLength + 5 * path.nbevel + 1);
-                path.closed || (cverts += lineCap === LineCap.ROUND ? 2 * (2 * ncap + 2) : 12);
+                lineJoin === LineJoin.ROUND ? cverts += 2 * (pointsLength + path.nbevel * (ncap + 2) + 1) : cverts += 2 * (pointsLength + 5 * path.nbevel + 1);
+                path.closed || (lineCap === LineCap.ROUND ? cverts += 2 * (2 * ncap + 2) : cverts += 12);
             }
             this._allocVerts(cverts);
             var buffer = this._buffer;
@@ -24443,13 +24354,11 @@
                 for (var j = s; j < e; ++j) {
                     if (lineJoin === LineJoin.ROUND) {
                         this._roundJoin(p0, p1, w, w, ncap);
+                    } else if (0 !== (p1.flags & (PointFlags.PT_BEVEL | PointFlags.PT_INNERBEVEL))) {
+                        this._bevelJoin(p0, p1, w, w);
                     } else {
-                        if (0 !== (p1.flags & (PointFlags.PT_BEVEL | PointFlags.PT_INNERBEVEL))) {
-                            this._bevelJoin(p0, p1, w, w);
-                        } else {
-                            this._vset(p1.x + p1.dmx * w, p1.y + p1.dmy * w);
-                            this._vset(p1.x - p1.dmx * w, p1.y - p1.dmy * w);
-                        }
+                        this._vset(p1.x + p1.dmx * w, p1.y + p1.dmy * w);
+                        this._vset(p1.x - p1.dmx * w, p1.y - p1.dmy * w);
                     }
                     p0 = p1;
                     p1 = pts[j + 1];
@@ -24746,11 +24655,11 @@
         };
         module.exports = WebGLRenderCmd;
     }), {
-        "./earcut": 115,
-        "./helper": 120,
-        "./types": 122
+        "./earcut": 114,
+        "./helper": 119,
+        "./types": 121
     } ],
-    119: [ (function(require, module, exports) {
+    118: [ (function(require, module, exports) {
         var LineCap = require("./types").LineCap;
         var LineJoin = require("./types").LineJoin;
         var Graphics = cc.Class({
@@ -24866,7 +24775,7 @@
                 this._sgNode.fillRect(x, y, w, h);
             },
             clear: function(clean) {
-                this._sgNode.clear(clean);
+                this._sgNode.clear(!!clean);
             },
             close: function() {
                 this._sgNode.close();
@@ -24880,9 +24789,9 @@
         });
         cc.Graphics = module.exports = Graphics;
     }), {
-        "./types": 122
+        "./types": 121
     } ],
-    120: [ (function(require, module, exports) {
+    119: [ (function(require, module, exports) {
         var PI = Math.PI;
         var min = Math.min;
         var max = Math.max;
@@ -24906,13 +24815,11 @@
                         da += 2 * PI;
                     }
                 }
+            } else if (abs(da) >= 2 * PI) {
+                da = 2 * -PI;
             } else {
-                if (abs(da) >= 2 * PI) {
-                    da = 2 * -PI;
-                } else {
-                    while (da > 0) {
-                        da -= 2 * PI;
-                    }
+                while (da > 0) {
+                    da -= 2 * PI;
                 }
             }
             ndivs = 0 | max(1, min(abs(da) / (.5 * PI) + .5, 5));
@@ -24965,7 +24872,7 @@
             roundRect: roundRect
         };
     }), {} ],
-    121: [ (function(require, module, exports) {
+    120: [ (function(require, module, exports) {
         "use strict";
         var GraphicsNode;
         GraphicsNode = cc.sys.isNative ? _ccsg.GraphicsNode = cc.GraphicsNode : _ccsg.GraphicsNode = require("./graphics-node");
@@ -24975,11 +24882,11 @@
         }
         require("./graphics");
     }), {
-        "../utils/misc": 222,
-        "./graphics": 119,
-        "./graphics-node": 117
+        "../utils/misc": 223,
+        "./graphics": 118,
+        "./graphics-node": 116
     } ],
-    122: [ (function(require, module, exports) {
+    121: [ (function(require, module, exports) {
         "use strict";
         var LineCap = cc.Enum({
             BUTT: 0,
@@ -24996,7 +24903,7 @@
             LineJoin: LineJoin
         };
     }), {} ],
-    123: [ (function(require, module, exports) {
+    122: [ (function(require, module, exports) {
         require("./platform");
         require("./assets");
         require("./CCNode");
@@ -25008,19 +24915,20 @@
         require("./camera/CCCamera");
         require("./base-ui/CCWidgetManager");
     }), {
-        "./CCNode": 41,
-        "./CCScene": 42,
-        "./assets": 55,
-        "./base-ui/CCWidgetManager": 60,
-        "./camera/CCCamera": 61,
-        "./collider": 70,
-        "./components": 102,
-        "./graphics": 121,
+        "./CCNode": 40,
+        "./CCScene": 41,
+        "./assets": 54,
+        "./base-ui/CCWidgetManager": 58,
+        "./camera/CCCamera": 59,
+        "./collider": 68,
+        "./components": 101,
+        "./graphics": 120,
         "./physics": 155,
         "./platform": 189
     } ],
-    124: [ (function(require, module, exports) {
+    123: [ (function(require, module, exports) {
         var eventRegx = /^(click)(\s)*=/;
+        var imageAttrReg = /(\s)*src(\s)*=|(\s)*height(\s)*=|(\s)*width(\s)*=|(\s)*click(\s)*=/;
         cc.HtmlTextParser = function() {
             this._parsedObject = {};
             this._specialSymbolArray = [];
@@ -25046,7 +24954,7 @@
                     } else {
                         this._processResult(htmlString.substring(startIndex, tagBeginIndex));
                         var tagEndIndex = htmlString.indexOf(">", startIndex);
-                        tagEndIndex === -1 ? tagEndIndex = tagBeginIndex : "/" === htmlString.charAt(tagBeginIndex + 1) ? this._stack.pop() : this._addToStack(htmlString.substring(tagBeginIndex + 1, tagEndIndex));
+                        -1 === tagEndIndex ? tagEndIndex = tagBeginIndex : "/" === htmlString.charAt(tagBeginIndex + 1) ? this._stack.pop() : this._addToStack(htmlString.substring(tagBeginIndex + 1, tagEndIndex));
                         startIndex = tagEndIndex + 1;
                     }
                 }
@@ -25069,7 +24977,7 @@
                     nextSpace = attribute.indexOf(" ");
                     switch (tagName[0]) {
                       case "c":
-                        nextSpace > -1 ? obj.color = attribute.substring(0, nextSpace).trim() : obj.color = attribute;
+                        obj.color = nextSpace > -1 ? attribute.substring(0, nextSpace).trim() : attribute;
                         break;
 
                       case "s":
@@ -25100,40 +25008,39 @@
                 if (header && header[0].length > 0) {
                     tagName = header[0].trim();
                     if (tagName.startsWith("img") && "/" === tagName[tagName.length - 1]) {
-                        var srcBegin = tagName.indexOf("=");
-                        var remainingArgument = tagName.substring(srcBegin + 1).trim();
-                        var imageSrc;
-                        var endQuotIndex = -1;
+                        header = attribute.match(imageAttrReg);
+                        var tagValue;
+                        var remainingArgument;
                         var isValidImageTag = false;
-                        switch (remainingArgument[0]) {
-                          case "'":
-                            endQuotIndex = remainingArgument.indexOf("'", 1);
-                            if (endQuotIndex > -1) {
-                                imageSrc = remainingArgument.substring(1, endQuotIndex);
-                                isValidImageTag = true;
+                        while (header) {
+                            attribute = attribute.substring(attribute.indexOf(header[0]));
+                            tagName = attribute.substr(0, header[0].length);
+                            remainingArgument = attribute.substring(tagName.length).trim();
+                            nextSpace = remainingArgument.indexOf(" ");
+                            tagValue = nextSpace > -1 ? remainingArgument.substr(0, nextSpace) : remainingArgument;
+                            tagName = tagName.replace(/[^a-zA-Z]/g, "").trim();
+                            tagName = tagName.toLocaleLowerCase();
+                            attribute = remainingArgument.substring(nextSpace).trim();
+                            if ("src" === tagName) {
+                                obj.isImage = true;
+                                tagValue.endsWith("/") && (tagValue = tagValue.substring(0, tagValue.length - 1));
+                                if (0 === tagValue.indexOf("'")) {
+                                    isValidImageTag = true;
+                                    tagValue = tagValue.substring(1, tagValue.length - 1);
+                                } else if (0 === tagValue.indexOf('"')) {
+                                    isValidImageTag = true;
+                                    tagValue = tagValue.substring(1, tagValue.length - 1);
+                                }
+                                obj.src = tagValue;
+                            } else {
+                                "height" === tagName ? obj.imageHeight = parseInt(tagValue) : "width" === tagName ? obj.imageWidth = parseInt(tagValue) : "click" === tagName && (obj.event = this._processEventHandler(tagName + "=" + tagValue));
                             }
-                            break;
-
-                          case '"':
-                            endQuotIndex = remainingArgument.indexOf('"', 1);
-                            if (endQuotIndex > -1) {
-                                imageSrc = remainingArgument.substring(1, endQuotIndex);
-                                isValidImageTag = true;
-                            }
+                            header = attribute.match(imageAttrReg);
                         }
-                        if (isValidImageTag) {
-                            obj.isImage = true;
-                            obj.src = imageSrc;
-                            eventHanlderString = remainingArgument.substring(endQuotIndex + 1).trim();
-                            if (eventHanlderString.match(eventRegx)) {
-                                eventObj = this._processEventHandler(eventHanlderString);
-                                obj.event = eventObj;
-                            }
-                            this._resultObjectArray.push({
-                                text: "",
-                                style: obj
-                            });
-                        }
+                        isValidImageTag && obj.isImage && this._resultObjectArray.push({
+                            text: "",
+                            style: obj
+                        });
                         return {};
                     }
                 }
@@ -25204,19 +25111,17 @@
                             isValidTag = true;
                         }
                         index++;
-                    } else {
-                        if ("'" === eventString.charAt(0)) {
-                            index = eventString.indexOf("'", 1);
-                            if (index > -1) {
-                                eventValue = eventString.substring(1, index).trim();
-                                isValidTag = true;
-                            }
-                            index++;
-                        } else {
-                            var match = eventString.match(/(\S)+/);
-                            eventValue = match ? match[0] : "";
-                            index = eventValue.length;
+                    } else if ("'" === eventString.charAt(0)) {
+                        index = eventString.indexOf("'", 1);
+                        if (index > -1) {
+                            eventValue = eventString.substring(1, index).trim();
+                            isValidTag = true;
                         }
+                        index++;
+                    } else {
+                        var match = eventString.match(/(\S)+/);
+                        eventValue = match ? match[0] : "";
+                        index = eventValue.length;
                     }
                     if (isValidTag) {
                         eventName = eventName.substring(0, eventName.length - 1).trim();
@@ -25265,85 +25170,10 @@
         };
         cc.htmlTextParser = new cc.HtmlTextParser();
     }), {} ],
-    125: [ (function(require, module, exports) {
-        require("./CCTextUtils.js");
+    124: [ (function(require, module, exports) {
+        require("./CCTextUtils");
         var EventTarget = require("../event/event-target");
-        var FntLoader = {
-            INFO_EXP: /info [^\n]*(\n|$)/gi,
-            COMMON_EXP: /common [^\n]*(\n|$)/gi,
-            PAGE_EXP: /page [^\n]*(\n|$)/gi,
-            CHAR_EXP: /char [^\n]*(\n|$)/gi,
-            KERNING_EXP: /kerning [^\n]*(\n|$)/gi,
-            ITEM_EXP: /\w+=[^ \r\n]+/gi,
-            INT_EXP: /^[\-]?\d+$/,
-            _parseStrToObj: function(str) {
-                var arr = str.match(this.ITEM_EXP);
-                var obj = {};
-                if (arr) {
-                    for (var i = 0, li = arr.length; i < li; i++) {
-                        var tempStr = arr[i];
-                        var index = tempStr.indexOf("=");
-                        var key = tempStr.substring(0, index);
-                        var value = tempStr.substring(index + 1);
-                        value.match(this.INT_EXP) ? value = parseInt(value) : '"' === value[0] && (value = value.substring(1, value.length - 1));
-                        obj[key] = value;
-                    }
-                }
-                return obj;
-            },
-            parseFnt: function(fntStr) {
-                var self = this, fnt = {};
-                var infoResult = fntStr.match(self.INFO_EXP);
-                if (!infoResult) {
-                    return fnt;
-                }
-                var infoObj = self._parseStrToObj(infoResult[0]);
-                var paddingArr = infoObj["padding"].split(",");
-                var padding = {
-                    left: parseInt(paddingArr[0]),
-                    top: parseInt(paddingArr[1]),
-                    right: parseInt(paddingArr[2]),
-                    bottom: parseInt(paddingArr[3])
-                };
-                var commonObj = self._parseStrToObj(fntStr.match(self.COMMON_EXP)[0]);
-                fnt.commonHeight = commonObj["lineHeight"];
-                fnt.fontSize = infoObj["size"];
-                if (cc._renderType === cc.game.RENDER_TYPE_WEBGL) {
-                    var texSize = cc.configuration.getMaxTextureSize();
-                    (commonObj["scaleW"] > texSize.width || commonObj["scaleH"] > texSize.height) && cc.log("cc.LabelBMFont._parseCommonArguments(): page can't be larger than supported");
-                }
-                1 !== commonObj["pages"] && cc.log("cc.LabelBMFont._parseCommonArguments(): only supports 1 page");
-                var pageObj = self._parseStrToObj(fntStr.match(self.PAGE_EXP)[0]);
-                0 !== pageObj["id"] && cc.log("cc.LabelBMFont._parseImageFileName() : file could not be found");
-                fnt.atlasName = pageObj["file"];
-                var charLines = fntStr.match(self.CHAR_EXP);
-                var fontDefDictionary = fnt.fontDefDictionary = {};
-                for (var i = 0, li = charLines.length; i < li; i++) {
-                    var charObj = self._parseStrToObj(charLines[i]);
-                    var charId = charObj["id"];
-                    fontDefDictionary[charId] = {
-                        rect: {
-                            x: charObj["x"],
-                            y: charObj["y"],
-                            width: charObj["width"],
-                            height: charObj["height"]
-                        },
-                        xOffset: charObj["xoffset"],
-                        yOffset: charObj["yoffset"],
-                        xAdvance: charObj["xadvance"]
-                    };
-                }
-                var kerningDict = fnt.kerningDict = {};
-                var kerningLines = fntStr.match(self.KERNING_EXP);
-                if (kerningLines) {
-                    for (i = 0, li = kerningLines.length; i < li; i++) {
-                        var kerningObj = self._parseStrToObj(kerningLines[i]);
-                        kerningDict[kerningObj["first"] << 16 | 65535 & kerningObj["second"]] = kerningObj["amount"];
-                    }
-                }
-                return fnt;
-            }
-        };
+        var JS = require("../platform/js");
         var FontLetterDefinition = function() {
             this._u = 0;
             this._v = 0;
@@ -25444,37 +25274,45 @@
             _isItalic: false,
             _isUnderline: false,
             _fontAsset: null,
-            ctor: function(string, fontHandle, spriteFrame, fontAsset) {
+            ctor: function(string, fontAsset) {
                 EventTarget.call(this);
-                fontHandle = fontHandle || "";
+                var isAsset = fontAsset instanceof cc.Font;
+                var fontHandle = isAsset ? fontAsset.rawUrl : "";
                 this._fontHandle = fontHandle;
                 "string" !== typeof string && (string = "" + string);
                 this._string = string;
                 _ccsg.Node.prototype.ctor.call(this);
-                this.setAnchorPoint(cc.p(.5, .5));
-                _ccsg.Node.prototype.setContentSize.call(this, cc.size(128, 128));
+                this.setAnchorPoint(.5, .5);
+                _ccsg.Node.prototype.setContentSize.call(this, 128, 128);
                 this._blendFunc = cc.BlendFunc._alphaNonPremultiplied();
-                this.setFontFileOrFamily(fontHandle, spriteFrame, fontAsset);
+                this._imageOffset = cc.p(0, 0);
+                this._numberOfLines = 0;
+                this._lettersInfo = [];
+                this._linesWidth = [];
+                this._linesOffsetX = [];
+                this._horizontalKernings = [];
+                this._reusedRect = cc.rect(0, 0, 0, 0);
+                isAsset ? this.setFontAsset(fontAsset) : this.setFontFamily(fontHandle);
                 this.setString(this._string);
             },
             _resetBMFont: function() {
-                this._imageOffset = cc.p(0, 0);
+                this._imageOffset.x = this._imageOffset.y = 0;
                 this._cascadeColorEnabled = true;
                 this._cascadeOpacityEnabled = true;
                 this._fontAtlas = null;
                 this._config = null;
                 this._numberOfLines = 0;
-                this._lettersInfo = [];
-                this._linesWidth = [];
-                this._linesOffsetX = [];
+                this._lettersInfo.length = 0;
+                this._linesWidth.length = 0;
+                this._linesOffsetX.length = 0;
                 this._textDesiredHeight = 0;
                 this._letterOffsetY = 0;
                 this._tailoredTopY = 0;
                 this._tailoredBottomY = 0;
                 this._bmfontScale = 1;
-                this._horizontalKernings = [];
+                this._horizontalKernings.length = 0;
                 this._lineBreakWithoutSpaces = false;
-                this._reusedRect = cc.rect(0, 0, 0, 0);
+                this._reusedRect.x = this._reusedRect.y = this._reusedRect.width = this._reusedRect.height = 0;
                 this._textureLoaded = false;
                 if (this._spriteBatchNode) {
                     this.removeChild(this._spriteBatchNode);
@@ -25690,32 +25528,35 @@
                     return this._fontAtlas._lineHeight;
                 }
             },
-            setFontFileOrFamily: function(fontHandle, spriteFrame, fontAsset) {
-                fontHandle = fontHandle || "Arial";
-                this._fontAsset = fontAsset;
-                var extName = cc.path.extname(fontHandle);
+            setFontFamily: function(fontFamily) {
                 this._resetBMFont();
-                if (!extName && !spriteFrame) {
-                    this._fontHandle = fontHandle;
-                    this._labelType = _ccsg.Label.Type.SystemFont;
-                    this._blendFunc = cc.BlendFunc._alphaPremultiplied();
-                    this._renderCmd._needDraw = true;
-                    this._notifyLabelSkinDirty();
-                    this.emit("load");
+                this._fontHandle = fontFamily || "Arial";
+                this._labelType = _ccsg.Label.Type.SystemFont;
+                this._blendFunc = cc.BlendFunc._alphaPremultiplied();
+                this._renderCmd._needDraw = true;
+                this._notifyLabelSkinDirty();
+                this.emit("load");
+            },
+            setFontAsset: function(fontAsset) {
+                this._fontAsset = fontAsset;
+                var isAsset = fontAsset instanceof cc.Font;
+                if (!isAsset) {
+                    this.setFontFamily("");
                     return;
                 }
+                var fontHandle = isAsset ? fontAsset.rawUrl : "";
+                var extName = cc.path.extname(fontHandle);
+                this._resetBMFont();
                 if (".ttf" === extName) {
                     this._labelType = _ccsg.Label.Type.TTF;
                     this._blendFunc = cc.BlendFunc._alphaPremultiplied();
                     this._renderCmd._needDraw = true;
                     this._fontHandle = this._loadTTFFont(fontHandle);
-                } else {
-                    if (spriteFrame) {
-                        this._labelType = _ccsg.Label.Type.BMFont;
-                        this._blendFunc = cc.BlendFunc._alphaNonPremultiplied();
-                        this._renderCmd._needDraw = false;
-                        this._initBMFontWithString(this._string, fontHandle, spriteFrame);
-                    }
+                } else if (fontAsset.spriteFrame) {
+                    this._labelType = _ccsg.Label.Type.BMFont;
+                    this._blendFunc = cc.BlendFunc._alphaNonPremultiplied();
+                    this._renderCmd._needDraw = false;
+                    this._initBMFontWithString(this._string, fontAsset);
                 }
                 this._notifyLabelSkinDirty();
             },
@@ -25854,14 +25695,12 @@
                         if (this._labelWidth > 0 && this._isHorizontalClamped(px, lineIndex)) {
                             if (this._overFlow === _ccsg.Label.Overflow.CLAMP) {
                                 this._reusedRect.width = 0;
-                            } else {
-                                if (this._overFlow === _ccsg.Label.Overflow.SHRINK) {
-                                    if (this._contentSize.width > letterDef._width) {
-                                        ret = false;
-                                        break;
-                                    }
-                                    this._reusedRect.width = 0;
+                            } else if (this._overFlow === _ccsg.Label.Overflow.SHRINK) {
+                                if (this._contentSize.width > letterDef._width) {
+                                    ret = false;
+                                    break;
                                 }
+                                this._reusedRect.width = 0;
                             }
                         }
                         if (this._reusedRect.height > 0 && this._reusedRect.width > 0) {
@@ -26048,11 +25887,9 @@
                                     letterClamp = true;
                                     break;
                                 }
-                            } else {
-                                if (px > this._contentSize.width) {
-                                    letterClamp = true;
-                                    break;
-                                }
+                            } else if (px > this._contentSize.width) {
+                                letterClamp = true;
+                                break;
                             }
                         }
                     }
@@ -26175,14 +26012,14 @@
                     this._bmfontScale = 1;
                 }
             },
-            _initBMFontWithString: function(str, fntFile, spriteFrame) {
+            _initBMFontWithString: function(str, fontAsset) {
                 var self = this;
                 if (self._config) {
                     cc.logID(4002);
                     return false;
                 }
                 this._string = str;
-                this._setBMFontFile(fntFile, spriteFrame);
+                this._setBMFontFile(fontAsset);
             },
             _createSpriteBatchNode: function(texture) {
                 this._spriteBatchNode = new cc.SpriteBatchNode(texture, this._string.length);
@@ -26226,41 +26063,77 @@
                 for (var i = 0; i < stringLen; ++i) {
                     var key = this._string.charCodeAt(i);
                     var kerningAmount = locKerningDict[prev << 16 | 65535 & key] || 0;
-                    i < stringLen - 1 ? this._horizontalKernings[i] = kerningAmount : this._horizontalKernings[i] = 0;
+                    this._horizontalKernings[i] = i < stringLen - 1 ? kerningAmount : 0;
                     prev = key;
                 }
             },
-            _setBMFontFile: function(fntDataStr, spriteFrame) {
-                if (fntDataStr) {
-                    this._fontHandle = fntDataStr;
-                    if (this._labelType === _ccsg.Label.Type.BMFont) {
-                        var self = this;
-                        this._resetBMFont();
-                        var fntConfig = this._fontAsset._fntConfig;
-                        if (fntConfig) {
-                            self._config = fntConfig;
-                        } else {
-                            self._config = FntLoader.parseFnt(fntDataStr);
-                            this._fontAsset._fntConfig = self._config;
-                        }
-                        self._createFontChars();
-                        self._spriteFrame = spriteFrame;
-                        var createLabelSprites = function() {
-                            var texture = spriteFrame.getTexture();
-                            self._textureLoaded = texture.isLoaded();
-                            self._createSpriteBatchNode(texture);
-                            self.emit("load");
-                        };
-                        if (spriteFrame.textureLoaded()) {
-                            createLabelSprites();
-                        } else {
-                            spriteFrame.once("load", createLabelSprites);
-                            spriteFrame.ensureLoadTexture();
-                        }
+            _setBMFontFile: function(fontAsset) {
+                if (fontAsset && this._labelType === _ccsg.Label.Type.BMFont) {
+                    var self = this;
+                    this._resetBMFont();
+                    var fntConfig = this._fontAsset._fntConfig;
+                    fntConfig ? self._config = fntConfig : cc.warn("Invalid BMFont Assets!");
+                    var spriteFrame = fontAsset.spriteFrame;
+                    self._createFontChars();
+                    self._spriteFrame = spriteFrame;
+                    var createLabelSprites = function() {
+                        var texture = spriteFrame.getTexture();
+                        self._textureLoaded = texture.isLoaded();
+                        self._createSpriteBatchNode(texture);
+                        self.emit("load");
+                    };
+                    if (spriteFrame.textureLoaded()) {
+                        createLabelSprites();
+                    } else {
+                        spriteFrame.once("load", createLabelSprites);
+                        spriteFrame.ensureLoadTexture();
                     }
                 }
             }
         });
+        _ccsg.Label.pool = new JS.Pool(function(label) {
+            if (!(label instanceof _ccsg.Label)) {
+                return false;
+            }
+            label._string = "";
+            label._fontAsset = null;
+            label._fontHandle = "";
+            label._labelType = 0;
+            label._resetBMFont();
+            label._renderCmd._labelCanvas.width = 1;
+            label._renderCmd._labelCanvas.height = 1;
+            label._updateLabel();
+            return true;
+        }, 20);
+        _ccsg.Label.pool.get = function(string, fontAsset) {
+            var label = this._get();
+            if (label) {
+                var isAsset = fontAsset instanceof cc.Font;
+                var fontHandle = isAsset ? fontAsset.rawUrl : "";
+                label._fontHandle = fontHandle;
+                "string" !== typeof string && (string = "" + string);
+                label._string = string;
+                label._position.x = 0;
+                label._position.y = 0;
+                label.setAnchorPoint(.5, .5);
+                _ccsg.Node.prototype.setContentSize.call(label, 128, 128);
+                isAsset ? label.setFontAsset(fontAsset) : label.setFontFamily("Arial");
+                label.setString(string);
+                label.setHorizontalAlign(cc.TextAlignment.LEFT);
+                label.setVerticalAlign(cc.VerticalTextAlignment.TOP);
+                label.setFontSize(40);
+                label.setOverflow(0);
+                label.enableWrapText(true);
+                label.setVisible(true);
+                label.setLineHeight(40);
+                label.setOutlined(false);
+                label.enableBold(false);
+                label.enableItalics(false);
+                label.enableUnderline(false);
+                return label;
+            }
+            return new _ccsg.Label(string || "", fontAsset);
+        };
         var _p = _ccsg.Label.prototype;
         cc.js.addon(_p, EventTarget.prototype);
         _ccsg.Label.Type = cc.Enum({
@@ -26284,10 +26157,11 @@
             set: _ccsg.Node.prototype._setHeight
         });
     }), {
-        "../event/event-target": 112,
-        "./CCTextUtils.js": 128
+        "../event/event-target": 111,
+        "../platform/js": 192,
+        "./CCTextUtils": 127
     } ],
-    126: [ (function(require, module, exports) {
+    125: [ (function(require, module, exports) {
         (function() {
             _ccsg.Label.TTFLabelBaker = function() {};
             var proto = _ccsg.Label.TTFLabelBaker.prototype = Object.create(Object.prototype);
@@ -26465,21 +26339,19 @@
                 if (_ccsg.Label.Overflow.RESIZE_HEIGHT === node._overFlow) {
                     this._canvasSize.height = this._splitedStrings.length * this._getLineHeight();
                     _ccsg.Node.prototype.setContentSize.call(node, this._canvasSize);
-                } else {
-                    if (_ccsg.Label.Overflow.NONE === node._overFlow) {
-                        this._splitedStrings = paragraphedStrings;
-                        var canvasSizeX = 0;
-                        var canvasSizeY = 0;
-                        for (i = 0; i < paragraphedStrings.length; ++i) {
-                            var paraLength = ctx.measureText(paragraphedStrings[i]).width;
-                            canvasSizeX = canvasSizeX > paraLength ? canvasSizeX : paraLength;
-                        }
-                        canvasSizeY = this._splitedStrings.length * this._getLineHeight();
-                        this._canvasSize.width = parseFloat(canvasSizeX.toFixed(2)) + 2 * this._getMargin();
-                        this._canvasSize.height = parseFloat(canvasSizeY.toFixed(2));
-                        node._isItalic && (this._canvasSize.width += node._drawFontsize * Math.tan(.20943951));
-                        _ccsg.Node.prototype.setContentSize.call(node, this._canvasSize);
+                } else if (_ccsg.Label.Overflow.NONE === node._overFlow) {
+                    this._splitedStrings = paragraphedStrings;
+                    var canvasSizeX = 0;
+                    var canvasSizeY = 0;
+                    for (i = 0; i < paragraphedStrings.length; ++i) {
+                        var paraLength = ctx.measureText(paragraphedStrings[i]).width;
+                        canvasSizeX = canvasSizeX > paraLength ? canvasSizeX : paraLength;
                     }
+                    canvasSizeY = this._splitedStrings.length * this._getLineHeight();
+                    this._canvasSize.width = parseFloat(canvasSizeX.toFixed(2)) + 2 * this._getMargin();
+                    this._canvasSize.height = parseFloat(canvasSizeY.toFixed(2));
+                    node._isItalic && (this._canvasSize.width += node._drawFontsize * Math.tan(.20943951));
+                    _ccsg.Node.prototype.setContentSize.call(node, this._canvasSize);
                 }
                 this._labelCanvas.width = this._canvasSize.width;
                 this._labelCanvas.height = this._canvasSize.height;
@@ -26612,7 +26484,7 @@
             proto.transform = function(parentCmd, recursive) {
                 this.originTransform(parentCmd, recursive);
                 var bb = this._currentRegion, l = bb._minX, r = bb._maxX, b = bb._minY, t = bb._maxY, rect = cc.visibleRect, vl = rect.left.x, vr = rect.right.x, vt = rect.top.y, vb = rect.bottom.y;
-                r < vl || l > vr || t < vb || b > vt ? this._needDraw = false : this._needDraw = true;
+                this._needDraw = !(r < vl || l > vr || t < vb || b > vt);
             };
             proto.rendering = function(ctx, scaleX, scaleY) {
                 var node = this._node;
@@ -26652,7 +26524,7 @@
             };
         })();
     }), {} ],
-    127: [ (function(require, module, exports) {
+    126: [ (function(require, module, exports) {
         _ccsg.Label.WebGLRenderCmd = function(renderableObject) {
             this._rootCtor(renderableObject);
             this._needDraw = true;
@@ -26739,7 +26611,7 @@
             return len;
         };
     }), {} ],
-    128: [ (function(require, module, exports) {
+    127: [ (function(require, module, exports) {
         var CustomFontDescriptor = function() {
             this._status = "unloaded";
             this._observers = [];
@@ -26755,7 +26627,7 @@
             return "loaded" === this._status;
         };
         CustomFontDescriptor.prototype.addHandler = function(callback) {
-            this._observers.indexOf(callback) === -1 && this._observers.push(callback);
+            -1 === this._observers.indexOf(callback) && this._observers.push(callback);
         };
         var CustomFontLoader = {
             _fontCache: {},
@@ -26765,8 +26637,11 @@
             _allFontsLoaded: false,
             _intervalId: 0,
             loadTTF: function(url, callback) {
+                var fontFamilyName = this._getFontFamily(url);
+                var md5Pipe = cc.loader.md5Pipe;
+                md5Pipe && (url = md5Pipe.transformURL(url));
                 var useFontFace = cc.sys.browserType !== cc.sys.BROWSER_TYPE_BAIDU && cc.sys.browserType !== cc.sys.BROWSER_TYPE_BAIDU_APP && cc.sys.browserType !== cc.sys.BROWSER_TYPE_MOBILE_QQ;
-                window.FontFace && useFontFace ? this._loadWithFontFace(url, callback) : this._loadWithCSS(url, callback);
+                window.FontFace && useFontFace ? this._loadWithFontFace(fontFamilyName, url, callback) : this._loadWithCSS(fontFamilyName, url, callback);
                 0 === this._intervalId && (this._intervalId = setInterval(this._checkFontLoaded.bind(this), 100));
             },
             _checkFontLoaded: function() {
@@ -26786,8 +26661,7 @@
                     this._intervalId = 0;
                 }
             },
-            _loadWithFontFace: function(url, callback) {
-                var fontFamilyName = this._getFontFamily(url);
+            _loadWithFontFace: function(fontFamilyName, url, callback) {
                 var fontDescriptor = this._fontCache[fontFamilyName];
                 if (fontDescriptor) {
                     fontDescriptor.isLoaded() || fontDescriptor.addHandler(callback);
@@ -26802,8 +26676,7 @@
                     }));
                 }
             },
-            _loadWithCSS: function(url, callback) {
-                var fontFamilyName = this._getFontFamily(url);
+            _loadWithCSS: function(fontFamilyName, url, callback) {
                 var fontDescriptor = this._fontCache[fontFamilyName];
                 if (fontDescriptor) {
                     fontDescriptor.isLoaded() || fontDescriptor.addHandler(callback);
@@ -26813,7 +26686,7 @@
                     fontStyle.type = "text/css";
                     doc.body.appendChild(fontStyle);
                     var fontStr = "";
-                    fontStr += isNaN(fontFamilyName - 0) ? "@font-face { font-family:" + fontFamilyName + "; src:" : "@font-face { font-family:'" + fontFamilyName + "'; src:";
+                    isNaN(fontFamilyName - 0) ? fontStr += "@font-face { font-family:" + fontFamilyName + "; src:" : fontStr += "@font-face { font-family:'" + fontFamilyName + "'; src:";
                     fontStr += "url('" + url + "');";
                     fontStyle.textContent = fontStr + "}";
                     var preloadDiv = document.createElement("div");
@@ -26852,21 +26725,21 @@
             },
             _getFontFamily: function(fontHandle) {
                 var ttfIndex = fontHandle.lastIndexOf(".ttf");
-                if (ttfIndex === -1) {
+                if (-1 === ttfIndex) {
                     return fontHandle;
                 }
                 var slashPos = fontHandle.lastIndexOf("/");
                 var fontFamilyName;
-                fontFamilyName = slashPos === -1 ? fontHandle.substring(0, ttfIndex) + "_LABEL" : fontHandle.substring(slashPos + 1, ttfIndex) + "_LABEL";
+                fontFamilyName = -1 === slashPos ? fontHandle.substring(0, ttfIndex) + "_LABEL" : fontHandle.substring(slashPos + 1, ttfIndex) + "_LABEL";
                 return fontFamilyName;
             }
         };
         var TextUtils = {
             label_wordRex: /([a-zA-Z0-9ÄÖÜäöüßéèçàùêâîôûа-яА-ЯЁё]+|\S)/,
             label_symbolRex: /^[!,.:;}\]%\?>、‘“》？。，！]/,
-            label_lastWordRex: /([a-zA-Z0-9ÄÖÜäöüßéèçàùêâîôûа-яА-ЯЁё]+|\S)$/,
-            label_lastEnglish: /[a-zA-Z0-9ÄÖÜäöüßéèçàùêâîôûа-яА-ЯЁё]+$/,
-            label_firsrEnglish: /^[a-zA-Z0-9ÄÖÜäöüßéèçàùêâîôûа-яА-ЯЁё]/,
+            label_lastWordRex: /([a-zA-Z0-9ÄÖÜäöüßéèçàùêâîôûаíìÍÌïÁÀáàÉÈÒÓòóŐőÙÚŰúűñÑæÆœŒÃÂãÔõěščřžýáíéóúůťďňĚŠČŘŽÁÍÉÓÚŤżźśóńłęćąŻŹŚÓŃŁĘĆĄ-яА-ЯЁё]+|\S)$/,
+            label_lastEnglish: /[a-zA-Z0-9ÄÖÜäöüßéèçàùêâîôûаíìÍÌïÁÀáàÉÈÒÓòóŐőÙÚŰúűñÑæÆœŒÃÂãÔõěščřžýáíéóúůťďňĚŠČŘŽÁÍÉÓÚŤżźśóńłęćąŻŹŚÓŃŁĘĆĄ-яА-ЯЁё]+$/,
+            label_firsrEnglish: /^[a-zA-Z0-9ÄÖÜäöüßéèçàùêâîôûаíìÍÌïÁÀáàÉÈÒÓòóŐőÙÚŰúűñÑæÆœŒÃÂãÔõěščřžýáíéóúůťďňĚŠČŘŽÁÍÉÓÚŤżźśóńłęćąŻŹŚÓŃŁĘĆĄ-яА-ЯЁё]/,
             label_wrapinspection: true,
             isUnicodeCJK: function(ch) {
                 var __CHINESE_REG = /^[\u4E00-\u9FFF\u3400-\u4DFF]+$/;
@@ -26942,7 +26815,7 @@
         cc.TextUtils = module.exports = TextUtils;
         cc.CustomFontLoader = module.exports = CustomFontLoader;
     }), {} ],
-    129: [ (function(require, module, exports) {
+    128: [ (function(require, module, exports) {
         var JS = require("../platform/js");
         var Pipeline = require("./pipeline");
         var LoadingItems = require("./loading-items");
@@ -26973,8 +26846,6 @@
                 id = res;
             }
             isUuid = result.type ? "uuid" === result.type : cc.AssetLibrary._getAssetUrl(id);
-            _info.url = null;
-            _info.raw = false;
             cc.AssetLibrary._getAssetInfoInRuntime(id, _info);
             result.url = isUuid ? _info.url : id;
             if (_info.url && "uuid" === result.type && _info.raw) {
@@ -27029,21 +26900,20 @@
                 if (!res.url && !res.uuid) {
                     continue;
                 }
-                var item = this.getItem(res.url);
+                var item = this._cache[res.url];
                 _sharedResources.push(item || res);
             }
             var queue = LoadingItems.create(this, progressCallback, (function(errors, items) {
                 callInNextTick((function() {
-                    if (!completeCallback) {
-                        return;
+                    if (completeCallback) {
+                        if (singleRes) {
+                            var id = res.url;
+                            completeCallback.call(self, items.getError(id), items.getContent(id));
+                        } else {
+                            completeCallback.call(self, errors, items);
+                        }
+                        completeCallback = null;
                     }
-                    if (singleRes) {
-                        var id = res.url;
-                        completeCallback.call(self, items.getError(id), items.getContent(id));
-                    } else {
-                        completeCallback.call(self, errors, items);
-                    }
-                    completeCallback = null;
                     var id;
                     items.destroy();
                 }));
@@ -27059,7 +26929,7 @@
                 if (!res.url && !res.uuid) {
                     continue;
                 }
-                var item = this.getItem(res.url);
+                var item = this._cache[res.url];
                 item ? _sharedList.push(item) : _sharedList.push(res);
             }
             var queue = LoadingItems.create(this, owner ? function(completedCount, totalCount, item) {
@@ -27083,7 +26953,7 @@
                 return null;
             }
             var index = url.indexOf("?");
-            index !== -1 && (url = url.substr(0, index));
+            -1 !== index && (url = url.substr(0, index));
             var uuid = resources.getUuid(url, type);
             if (!uuid) {
                 var extname = cc.path.extname(url);
@@ -27102,8 +26972,6 @@
                 cc.warnID(4800, assetOrUrlOrUuid);
                 return key;
             }
-            _info.url = null;
-            _info.raw = false;
             cc.AssetLibrary._getAssetInfoInRuntime(key, _info);
             return this._cache[_info.url] ? _info.url : key;
         };
@@ -27120,12 +26988,10 @@
                 if (onProgress) {
                     onComplete = onProgress;
                     isValidType && (onProgress = this.onProgress || null);
-                } else {
-                    if (void 0 === onProgress && !isValidType) {
-                        onComplete = type;
-                        onProgress = this.onProgress || null;
-                        type = null;
-                    }
+                } else if (void 0 === onProgress && !isValidType) {
+                    onComplete = type;
+                    onProgress = this.onProgress || null;
+                    type = null;
                 }
                 if (void 0 !== onProgress && !isValidType) {
                     onProgress = type;
@@ -27221,7 +27087,7 @@
                 var ref = this._getReferenceKey(uuid);
                 item = this._cache[ref];
             }
-            item && item.alias && (item = this._cache[item.alias]);
+            item && item.alias && (item = item.alias);
             return item && item.complete ? item.content : null;
         };
         proto.getResCount = function() {
@@ -27242,21 +27108,19 @@
                     var key = asset[i];
                     this.release(key);
                 }
-            } else {
-                if (asset) {
-                    var id = this._getReferenceKey(asset);
-                    var item = this.getItem(id);
-                    if (item) {
-                        var removed = this.removeItem(id);
-                        asset = item.content;
-                        if (asset instanceof cc.Asset) {
-                            var urls = asset.rawUrls;
-                            for (var _i = 0; _i < urls.length; _i++) {
-                                this.release(urls[_i]);
-                            }
-                        } else {
-                            asset instanceof cc.Texture2D && cc.textureCache.removeTextureForKey(item.url);
+            } else if (asset) {
+                var id = this._getReferenceKey(asset);
+                var item = this.getItem(id);
+                if (item) {
+                    var removed = this.removeItem(id);
+                    asset = item.content;
+                    if (asset instanceof cc.Asset) {
+                        var urls = asset.rawUrls;
+                        for (var _i = 0; _i < urls.length; _i++) {
+                            this.release(urls[_i]);
                         }
+                    } else {
+                        asset instanceof cc.Texture2D && cc.textureCache.removeTextureForKey(item.url);
                     }
                 }
             }
@@ -27288,7 +27152,7 @@
         };
         proto.setAutoRelease = function(assetOrUrlOrUuid, autoRelease) {
             var key = this._getReferenceKey(assetOrUrlOrUuid);
-            key ? this._autoReleaseSetting[key] = !!autoRelease : cc.warnID(4902);
+            key && (this._autoReleaseSetting[key] = !!autoRelease);
         };
         proto.setAutoReleaseRecursively = function(assetOrUrlOrUuid, autoRelease) {
             autoRelease = !!autoRelease;
@@ -27300,8 +27164,6 @@
                     var depend = depends[i];
                     this._autoReleaseSetting[depend] = autoRelease;
                 }
-            } else {
-                cc.warnID(4902);
             }
         };
         proto.isAutoRelease = function(assetOrUrl) {
@@ -27316,15 +27178,15 @@
     }), {
         "../platform/js": 192,
         "../platform/utils": 197,
-        "./asset-loader": 130,
-        "./asset-table": 131,
-        "./auto-release-utils": 133,
-        "./downloader": 134,
-        "./loader": 137,
-        "./loading-items": 138,
+        "./asset-loader": 129,
+        "./asset-table": 130,
+        "./auto-release-utils": 132,
+        "./downloader": 133,
+        "./loader": 136,
+        "./loading-items": 137,
         "./pipeline": 140
     } ],
-    130: [ (function(require, module, exports) {
+    129: [ (function(require, module, exports) {
         var Path = require("../utils/CCPath");
         var Pipeline = require("./pipeline");
         var LoadingItems = require("./loading-items");
@@ -27346,7 +27208,7 @@
                 if (error) {
                     callback(error);
                 } else {
-                    item.url = url;
+                    item.url = item.rawUrl = url;
                     item.isRawAsset = isRawAsset;
                     if (isRawAsset) {
                         var ext = Path.extname(url).toLowerCase();
@@ -27362,7 +27224,7 @@
                             url: url,
                             type: ext,
                             error: null,
-                            alias: item.id,
+                            alias: item,
                             complete: true
                         };
                         queue.append(reusedArray);
@@ -27378,10 +27240,10 @@
         Pipeline.AssetLoader = module.exports = AssetLoader;
     }), {
         "../utils/CCPath": 216,
-        "./loading-items": 138,
+        "./loading-items": 137,
         "./pipeline": 140
     } ],
-    131: [ (function(require, module, exports) {
+    130: [ (function(require, module, exports) {
         function Entry(uuid, type) {
             this.uuid = uuid;
             this.type = type;
@@ -27411,10 +27273,8 @@
                             return entry.uuid;
                         }
                     }
-                } else {
-                    if (!type || cc.isChildClassOf(item.type, type)) {
-                        return item.uuid;
-                    }
+                } else if (!type || cc.isChildClassOf(item.type, type)) {
+                    return item.uuid;
                 }
             }
             return "";
@@ -27436,11 +27296,9 @@
                                 out_urls && out_urls.push(p);
                             }
                         }
-                    } else {
-                        if (!type || isChildClassOf(item.type, type)) {
-                            uuids.push(item.uuid);
-                            out_urls && out_urls.push(p);
-                        }
+                    } else if (!type || isChildClassOf(item.type, type)) {
+                        uuids.push(item.uuid);
+                        out_urls && out_urls.push(p);
                     }
                 }
             }
@@ -27454,14 +27312,14 @@
             var newEntry = new Entry(uuid, type);
             var pathToUuid = this._pathToUuid;
             var exists = pathToUuid[path];
-            exists ? Array.isArray(exists) ? isMainAsset ? exists.unshift(newEntry) : exists.push(newEntry) : isMainAsset ? pathToUuid[path] = [ newEntry, exists ] : pathToUuid[path] = [ exists, newEntry ] : pathToUuid[path] = newEntry;
+            exists ? Array.isArray(exists) ? isMainAsset ? exists.unshift(newEntry) : exists.push(newEntry) : pathToUuid[path] = isMainAsset ? [ newEntry, exists ] : [ exists, newEntry ] : pathToUuid[path] = newEntry;
         };
         proto.reset = function() {
             this._pathToUuid = {};
         };
         module.exports = AssetTable;
     }), {} ],
-    132: [ (function(require, module, exports) {
+    131: [ (function(require, module, exports) {
         var Path = require("../utils/CCPath");
         var Sys = require("../platform/CCSys");
         var Pipeline = require("./pipeline");
@@ -27528,7 +27386,8 @@
         "../utils/CCPath": 216,
         "./pipeline": 140
     } ],
-    133: [ (function(require, module, exports) {
+    132: [ (function(require, module, exports) {
+        var JS = require("../platform/js");
         function parseDepends(key, parsed) {
             var item = cc.loader.getItem(key);
             if (item) {
@@ -27544,23 +27403,65 @@
                 }
             }
         }
-        function release(loader, key, nextSceneAssets) {
-            nextSceneAssets && nextSceneAssets.indexOf(key) !== -1 || loader.release(key);
+        function visitAsset(asset, excludeMap) {
+            var key = cc.loader._getReferenceKey(asset);
+            if (!excludeMap[key]) {
+                excludeMap[key] = true;
+                parseDepends(key, excludeMap);
+            }
+        }
+        function visitComponent(comp, excludeMap) {
+            var props = Object.getOwnPropertyNames(comp);
+            for (var i = 0; i < props.length; i++) {
+                var value = comp[props[i]];
+                if ("object" === typeof value && value) {
+                    if (Array.isArray(value)) {
+                        for (var j = 0; j < value.length; j++) {
+                            var val = value[j];
+                            val instanceof cc.RawAsset && visitAsset(val, excludeMap);
+                        }
+                    } else if (value.constructor && value.constructor !== Object) {
+                        value instanceof cc.RawAsset && visitAsset(value, excludeMap);
+                    } else {
+                        var keys = Object.getOwnPropertyNames(value);
+                        for (var _j = 0; _j < keys.length; _j++) {
+                            var _val = value[keys[_j]];
+                            _val instanceof cc.RawAsset && visitAsset(_val, excludeMap);
+                        }
+                    }
+                }
+            }
+        }
+        function visitNode(node, excludeMap) {
+            for (var i = 0; i < node._components.length; i++) {
+                visitComponent(node._components[i], excludeMap);
+            }
+            for (var _i = 0; _i < node._children.length; _i++) {
+                visitNode(node._children[_i], excludeMap);
+            }
         }
         module.exports = {
-            autoRelease: function(loader, oldSceneAssets, nextSceneAssets) {
-                var releaseSettings = loader._autoReleaseSetting;
-                var i, key;
+            autoRelease: function(oldSceneAssets, nextSceneAssets, persistNodes) {
+                var releaseSettings = cc.loader._autoReleaseSetting;
+                var excludeMap = JS.createMap();
+                if (nextSceneAssets) {
+                    for (var i = 0; i < nextSceneAssets.length; i++) {
+                        excludeMap[nextSceneAssets[i]] = true;
+                    }
+                }
+                for (var _i2 = 0; _i2 < persistNodes.length; _i2++) {
+                    visitNode(persistNodes[_i2], excludeMap);
+                }
                 if (oldSceneAssets) {
-                    for (i = 0; i < oldSceneAssets.length; i++) {
-                        key = oldSceneAssets[i];
-                        false !== releaseSettings[key] && release(loader, key, nextSceneAssets);
+                    for (var _i3 = 0; _i3 < oldSceneAssets.length; _i3++) {
+                        var key = oldSceneAssets[_i3];
+                        false === releaseSettings[key] || excludeMap[key] || cc.loader.release(key);
                     }
                 }
                 var keys = Object.keys(releaseSettings);
-                for (i = 0; i < keys.length; i++) {
-                    key = keys[i];
-                    true === releaseSettings[key] && release(loader, key, nextSceneAssets);
+                for (var _i4 = 0; _i4 < keys.length; _i4++) {
+                    var _key = keys[_i4];
+                    true !== releaseSettings[_key] || excludeMap[_key] || cc.loader.release(_key);
                 }
             },
             getDependsRecursively: function(key) {
@@ -27569,8 +27470,10 @@
                 return Object.keys(depends);
             }
         };
-    }), {} ],
-    134: [ (function(require, module, exports) {
+    }), {
+        "../platform/js": 192
+    } ],
+    133: [ (function(require, module, exports) {
         var JS = require("../platform/js");
         var Path = require("../utils/CCPath");
         var misc = require("../utils/misc");
@@ -27642,7 +27545,7 @@
             fontStyle.type = "text/css";
             doc.body.appendChild(fontStyle);
             var fontStr = "";
-            fontStr += isNaN(name - 0) ? "@font-face { font-family:" + name + "; src:" : "@font-face { font-family:'" + name + "'; src:";
+            isNaN(name - 0) ? fontStr += "@font-face { font-family:" + name + "; src:" : fontStr += "@font-face { font-family:'" + name + "'; src:";
             if (srcs instanceof Array) {
                 for (var i = 0, li = srcs.length; i < li; i++) {
                     var src = srcs[i];
@@ -27667,7 +27570,7 @@
         function downloadFont(item, callback) {
             var url = item.url, type = item.type, name = item.name, srcs = item.srcs;
             if (name && srcs) {
-                srcs.indexOf(url) === -1 && srcs.push(url);
+                -1 === srcs.indexOf(url) && srcs.push(url);
                 _loadFont(name, srcs);
             } else {
                 type = Path.extname(url);
@@ -27766,32 +27669,30 @@
                     this._handleLoadQueue();
                     return syncRet;
                 }
-            } else {
-                if (item.ignoreMaxConcurrency) {
-                    syncRet = downloadFunc.call(this, item, callback);
-                    if (void 0 !== syncRet) {
-                        return syncRet;
-                    }
-                } else {
-                    this._loadQueue.push({
-                        item: item,
-                        callback: callback
-                    });
+            } else if (item.ignoreMaxConcurrency) {
+                syncRet = downloadFunc.call(this, item, callback);
+                if (void 0 !== syncRet) {
+                    return syncRet;
                 }
+            } else {
+                this._loadQueue.push({
+                    item: item,
+                    callback: callback
+                });
             }
         };
         Pipeline.Downloader = module.exports = Downloader;
     }), {
         "../platform/js": 192,
         "../utils/CCPath": 216,
-        "../utils/misc": 222,
-        "./audio-downloader": 132,
+        "../utils/misc": 223,
+        "./audio-downloader": 131,
         "./pack-downloader": 139,
         "./pipeline": 140,
         "./text-downloader": 141,
         "./utils": 142
     } ],
-    135: [ (function(require, module, exports) {
+    134: [ (function(require, module, exports) {
         require("./downloader");
         require("./loader");
         require("./json-unpacker");
@@ -27799,14 +27700,14 @@
         require("./pipeline");
         require("./CCLoader");
     }), {
-        "./CCLoader": 129,
-        "./downloader": 134,
-        "./json-unpacker": 136,
-        "./loader": 137,
-        "./loading-items": 138,
+        "./CCLoader": 128,
+        "./downloader": 133,
+        "./json-unpacker": 135,
+        "./loader": 136,
+        "./loading-items": 137,
         "./pipeline": 140
     } ],
-    136: [ (function(require, module, exports) {
+    135: [ (function(require, module, exports) {
         function JsonUnpacker() {
             this.jsons = {};
             this.state = -1;
@@ -27825,7 +27726,7 @@
         };
         module.exports = JsonUnpacker;
     }), {} ],
-    137: [ (function(require, module, exports) {
+    136: [ (function(require, module, exports) {
         var JS = require("../platform/js");
         var Pipeline = require("./pipeline");
         var Texture2D = require("../textures/CCTexture2D");
@@ -27849,13 +27750,13 @@
             if (!(item.content instanceof Image)) {
                 return new Error("Image Loader: Input item doesn't contain Image content");
             }
-            var url = item.url;
-            var tex = cc.textureCache.getTextureForKey(url) || new Texture2D();
-            tex.url = url;
+            var rawUrl = item.rawUrl;
+            var tex = cc.textureCache.getTextureForKey(rawUrl) || new Texture2D();
+            tex.url = rawUrl;
             tex.initWithElement(item.content);
             tex.handleLoadedTexture();
             cc._renderType === cc.game.RENDER_TYPE_WEBGL && misc.imagePool.put(item.content);
-            cc.textureCache.cacheImage(url, tex);
+            cc.textureCache.cacheImage(rawUrl, tex);
             return tex;
         }
         function loadPlist(item, callback) {
@@ -27863,7 +27764,7 @@
                 return new Error("Plist Loader: Input item doesn't contain string content");
             }
             var result = cc.plistParser.parse(item.content);
-            return result ? result : new Error("Plist Loader: Parse [" + item.id + "] failed");
+            return result || new Error("Plist Loader: Parse [" + item.id + "] failed");
         }
         var defaultMap = {
             png: loadImage,
@@ -27903,11 +27804,11 @@
     }), {
         "../platform/js": 192,
         "../textures/CCTexture2D": 212,
-        "../utils/misc": 222,
+        "../utils/misc": 223,
         "./pipeline": 140,
         "./uuid-loader": 143
     } ],
-    138: [ (function(require, module, exports) {
+    137: [ (function(require, module, exports) {
         var CallbacksInvoker = require("../platform/callbacks-invoker");
         var Path = require("../utils/CCPath");
         var JS = require("../platform/js");
@@ -27921,71 +27822,52 @@
             ERROR: 3
         };
         var _queueDeps = {};
-        var _parseUrl = function(url) {
-            var result = {};
-            if (!url) {
-                return result;
-            }
-            var split = url.split("?");
-            if (!split || !split[0]) {
-                return result;
-            }
-            result.url = split[0];
-            if (!split[1]) {
-                return result;
-            }
-            result.param = {};
-            split = split[1].split("&");
-            split.forEach((function(item) {
-                var itemSplit = item.split("=");
-                result.param[itemSplit[0]] = itemSplit[1];
-            }));
-            return result;
-        };
         function isIdValid(id) {
             var realId = id.url || id;
             return "string" === typeof realId;
         }
+        function _parseUrlParam(url) {
+            if (!url) {
+                return;
+            }
+            var split = url.split("?");
+            if (!split || !split[0] || !split[1]) {
+                return;
+            }
+            var urlParam = {};
+            var queries = split[1].split("&");
+            queries.forEach((function(item) {
+                var itemSplit = item.split("=");
+                urlParam[itemSplit[0]] = itemSplit[1];
+            }));
+            return urlParam;
+        }
         function createItem(id, queueId) {
-            var result, urlItem;
+            var url = "object" === typeof id ? id.url : id;
+            var result = {
+                queueId: queueId,
+                id: url,
+                url: url,
+                rawUrl: void 0,
+                urlParam: _parseUrlParam(url),
+                type: "",
+                error: null,
+                content: null,
+                complete: false,
+                states: {},
+                deps: null
+            };
             if ("object" === typeof id) {
-                id.url && !id.type && (id.type = Path.extname(id.url).toLowerCase().substr(1));
-                urlItem = _parseUrl(id.url);
-                result = {
-                    queueId: queueId,
-                    id: id.url,
-                    url: urlItem.url,
-                    urlParam: urlItem.param,
-                    error: null,
-                    content: null,
-                    complete: false,
-                    states: {},
-                    deps: null
-                };
                 JS.mixin(result, id);
-            } else {
-                if ("string" === typeof id) {
-                    urlItem = _parseUrl(id);
-                    result = {
-                        queueId: queueId,
-                        id: id,
-                        url: urlItem.url,
-                        urlParam: urlItem.param,
-                        type: Path.extname(id).toLowerCase().substr(1),
-                        error: null,
-                        content: null,
-                        complete: false,
-                        states: {},
-                        deps: null
-                    };
+                if (id.skips) {
+                    for (var i = 0; i < id.skips.length; i++) {
+                        var skip = id.skips[i];
+                        result.states[skip] = ItemState.COMPLETE;
+                    }
                 }
             }
-            if (result.skips) {
-                for (var i = 0, l = result.skips.length; i < l; i++) {
-                    var skip = result.skips[i];
-                    result.states[skip] = ItemState.COMPLETE;
-                }
-            }
+            result.rawUrl = result.url;
+            url && !result.type && (result.type = Path.extname(url).toLowerCase().substr(1));
             return result;
         }
         var checkedIds = [];
@@ -28039,16 +27921,14 @@
                     onComplete = urlList;
                     urlList = onProgress = null;
                 }
-            } else {
-                if (void 0 === onComplete) {
-                    if ("function" === typeof urlList) {
-                        onComplete = onProgress;
-                        onProgress = urlList;
-                        urlList = null;
-                    } else {
-                        onComplete = onProgress;
-                        onProgress = null;
-                    }
+            } else if (void 0 === onComplete) {
+                if ("function" === typeof urlList) {
+                    onComplete = onProgress;
+                    onProgress = urlList;
+                    urlList = null;
+                } else {
+                    onComplete = onProgress;
+                    onProgress = null;
                 }
             }
             var queue = _pool.pop();
@@ -28090,20 +27970,18 @@
             }
             var queueDepList = _queueDeps[queueId];
             if (queueDepList) {
-                queueDepList.deps.indexOf(depId) === -1 && queueDepList.deps.push(depId);
-            } else {
-                if (owner.id) {
-                    for (var id in _queueDeps) {
-                        var queue = _queueDeps[id];
-                        queue.deps.indexOf(owner.id) !== -1 && queue.deps.indexOf(depId) === -1 && queue.deps.push(depId);
-                    }
+                -1 === queueDepList.deps.indexOf(depId) && queueDepList.deps.push(depId);
+            } else if (owner.id) {
+                for (var id in _queueDeps) {
+                    var queue = _queueDeps[id];
+                    -1 !== queue.deps.indexOf(owner.id) && -1 === queue.deps.indexOf(depId) && queue.deps.push(depId);
                 }
             }
         };
         LoadingItems.finishDep = function(depId) {
             for (var id in _queueDeps) {
                 var queue = _queueDeps[id];
-                queue.deps.indexOf(depId) !== -1 && queue.completed.indexOf(depId) === -1 && queue.completed.push(depId);
+                -1 !== queue.deps.indexOf(depId) && -1 === queue.completed.indexOf(depId) && queue.completed.push(depId);
             }
         };
         var proto = LoadingItems.prototype;
@@ -28174,13 +28052,13 @@
         proto.getContent = function(id) {
             var item = this.map[id];
             var ret = null;
-            item && (item.content ? ret = item.content : item.alias && (ret = this.getContent(item.alias)));
+            item && (item.content ? ret = item.content : item.alias && (ret = item.alias.content));
             return ret;
         };
         proto.getError = function(id) {
             var item = this.map[id];
             var ret = null;
-            item && (item.error ? ret = item.error : item.alias && (ret = this.getError(item.alias)));
+            item && (item.error ? ret = item.error : item.alias && (ret = item.alias.error));
             return ret;
         };
         proto.addListener = CallbacksInvoker.prototype.add;
@@ -28198,8 +28076,8 @@
             delete this.completed[url];
             delete this.map[url];
             if (item.alias) {
-                delete this.completed[item.alias];
-                delete this.map[item.alias];
+                delete this.completed[item.alias.id];
+                delete this.map[item.alias.id];
             }
             this.completedCount--;
             this.totalCount--;
@@ -28210,7 +28088,7 @@
                 return;
             }
             var errorListId = this._errorUrls.indexOf(id);
-            item.error && errorListId === -1 ? this._errorUrls.push(id) : item.error || errorListId === -1 || this._errorUrls.splice(errorListId, 1);
+            item.error && -1 === errorListId ? this._errorUrls.push(id) : item.error || -1 === errorListId || this._errorUrls.splice(errorListId, 1);
             this.completed[id] = item;
             this.completedCount++;
             LoadingItems.finishDep(item.id);
@@ -28239,13 +28117,57 @@
                 _queueDeps[this._id].completed.length = 0;
                 _queueDeps[this._id].deps.length = 0;
             }
-            _pool.indexOf(this) === -1 && _pool.length < _POOL_MAX_LENGTH && _pool.push(this);
+            -1 === _pool.indexOf(this) && _pool.length < _POOL_MAX_LENGTH && _pool.push(this);
         };
         cc.LoadingItems = module.exports = LoadingItems;
     }), {
         "../platform/callbacks-invoker": 186,
         "../platform/js": 192,
         "../utils/CCPath": 216
+    } ],
+    138: [ (function(require, module, exports) {
+        var Pipeline = require("./pipeline");
+        var ID = "MD5Pipe";
+        var ExtnameRegex = /(\.[^.\n\\/]*)$/;
+        var MD5Pipe = function(md5AssetsMap, libraryBase, rawAssetsBase) {
+            this.id = ID;
+            this.async = false;
+            this.pipeline = null;
+            this.md5AssetsMap = md5AssetsMap;
+            this.libraryBase = libraryBase;
+            this.rawAssetsBase = rawAssetsBase;
+        };
+        MD5Pipe.ID = ID;
+        MD5Pipe.prototype.handle = function(item) {
+            item.url = this.transformURL(item.url);
+            return item;
+        };
+        MD5Pipe.prototype.transformURL = function(url) {
+            var index = url.indexOf("?");
+            var key = url;
+            -1 !== index && (key = url.substr(0, index));
+            if (key.startsWith(this.libraryBase)) {
+                key = key.slice(this.libraryBase.length);
+            } else {
+                if (!key.startsWith(this.rawAssetsBase)) {
+                    return url;
+                }
+                key = key.slice(this.rawAssetsBase.length);
+            }
+            var hashValue = this.md5AssetsMap[key];
+            if (hashValue) {
+                var matched = false;
+                url = url.replace(ExtnameRegex, (function(match, p1) {
+                    matched = true;
+                    return "." + hashValue + p1;
+                }));
+                matched || (url = url + "." + hashValue);
+            }
+            return url;
+        };
+        Pipeline.MD5Pipe = module.exports = MD5Pipe;
+    }), {
+        "./pipeline": 140
     } ],
     139: [ (function(require, module, exports) {
         var JsonUnpacker = require("./json-unpacker");
@@ -28284,7 +28206,7 @@
             },
             _loadNewPack: function(uuid, packUuid, callback) {
                 var self = this;
-                var packUrl = cc.AssetLibrary.getImportedDir(packUuid) + "/" + packUuid + ".json";
+                var packUrl = cc.AssetLibrary.getLibUrlNoExt(packUuid) + ".json";
                 cc.loader.load({
                     url: packUrl,
                     ignoreMaxConcurrency: true
@@ -28334,7 +28256,7 @@
                 var unpacker = globalUnpackers[packUuid];
                 if (unpacker && unpacker.state === PackState.Loaded) {
                     var json = unpacker.retrieve(uuid);
-                    return json ? json : error(uuid, packUuid);
+                    return json || error(uuid, packUuid);
                 }
                 if (!unpacker) {
                     console.log("Create unpacker %s for %s", packUuid, uuid);
@@ -28346,7 +28268,7 @@
             }
         };
     }), {
-        "./json-unpacker": 136
+        "./json-unpacker": 135
     } ],
     140: [ (function(require, module, exports) {
         var JS = require("../platform/js");
@@ -28379,12 +28301,10 @@
                     item.error = result;
                     item.states[pipeId] = ItemState.ERROR;
                     pipeline.flowOut(item);
-                } else {
-                    if (void 0 !== result) {
-                        null !== result && (item.content = result);
-                        item.states[pipeId] = ItemState.COMPLETE;
-                        next ? flow(next, item) : pipeline.flowOut(item);
-                    }
+                } else if (void 0 !== result) {
+                    null !== result && (item.content = result);
+                    item.states[pipeId] = ItemState.COMPLETE;
+                    next ? flow(next, item) : pipeline.flowOut(item);
                 }
             }
         }
@@ -28403,17 +28323,29 @@
         Pipeline.ItemState = ItemState;
         var proto = Pipeline.prototype;
         proto.insertPipe = function(pipe, index) {
-            if (!pipe.handle || !pipe.id) {
+            if (!pipe.handle || !pipe.id || index > this._pipes.length) {
+                cc.warnID(4921);
+                return;
+            }
+            if (this._pipes.indexOf(pipe) > 0) {
+                cc.warnID(4922);
                 return;
             }
             pipe.pipeline = this;
-            if (index < this._pipes.length) {
-                pipe.next = this._pipes[index];
-                this._pipes.splice(index, 0, pipe);
-            } else {
-                pipe.next = null;
-                this._pipes.push(pipe);
+            var nextPipe = null;
+            index < this._pipes.length && (nextPipe = this._pipes[index]);
+            var previousPipe = null;
+            index > 0 && (previousPipe = this._pipes[index - 1]);
+            previousPipe && (previousPipe.next = pipe);
+            pipe.next = nextPipe;
+            this._pipes.splice(index, 0, pipe);
+        };
+        proto.insertPipeAfter = function(refPipe, newPipe) {
+            var index = this._pipes.indexOf(refPipe);
+            if (index < 0) {
+                return;
             }
+            this.insertPipe(newPipe, index + 1);
         };
         proto.appendPipe = function(pipe) {
             if (!pipe.handle || !pipe.id) {
@@ -28421,6 +28353,7 @@
             }
             pipe.pipeline = this;
             pipe.next = null;
+            this._pipes.length > 0 && (this._pipes[this._pipes.length - 1].next = pipe);
             this._pipes.push(pipe);
         };
         proto.flowIn = function(items) {
@@ -28472,7 +28405,7 @@
             if (!item) {
                 return item;
             }
-            item.alias && (item = this._cache[item.alias]);
+            item.alias && (item = item.alias);
             return item;
         };
         proto.removeItem = function(id) {
@@ -28493,7 +28426,7 @@
         cc.Pipeline = module.exports = Pipeline;
     }), {
         "../platform/js": 192,
-        "./loading-items": 138
+        "./loading-items": 137
     } ],
     141: [ (function(require, module, exports) {
         var urlAppendTimestamp = require("./utils").urlAppendTimestamp;
@@ -28533,7 +28466,7 @@
         var _noCacheRex = /\?/;
         module.exports = {
             urlAppendTimestamp: function(url) {
-                cc.game.config["noCache"] && "string" === typeof url && (url += _noCacheRex.test(url) ? "&_t=" + (new Date() - 0) : "?_t=" + (new Date() - 0));
+                cc.game.config["noCache"] && "string" === typeof url && (_noCacheRex.test(url) ? url += "&_t=" + (new Date() - 0) : url += "?_t=" + (new Date() - 0));
                 return url;
             }
         };
@@ -28623,7 +28556,7 @@
                             prop: dependProp
                         };
                         function loadCallback(item) {
-                            var value = item.isRawAsset ? item.url : item.content;
+                            var value = item.isRawAsset ? item.rawUrl : item.content;
                             this.obj[this.prop] = value;
                             item.uuid !== asset._uuid && dependKeys.indexOf(item.id) < 0 && dependKeys.push(item.id);
                         }
@@ -28697,7 +28630,7 @@
     }), {
         "../platform/deserialize": 187,
         "../platform/js": 192,
-        "./loading-items": 138
+        "./loading-items": 137
     } ],
     144: [ (function(require, module, exports) {
         var CompScheduler = require("./component-scheduler");
@@ -28752,8 +28685,6 @@
             return task;
         };
         function _componentCorrupted(node, comp, index) {
-            cc.errorID(3817, node.name, index);
-            console.log("Corrupted component value:", comp);
             comp ? node._removeComponent(comp) : JS.array.removeAt(node._components, index);
         }
         function _onLoadInEditor(comp) {
@@ -28793,8 +28724,6 @@
                 node._onPostActivated(true);
             },
             _deactivateNodeRecursively: function(node) {
-                cc.assert(!(node._objFlags & Deactivating), "node should not deactivating");
-                cc.assert(node._activeInHierarchy, "node should not deactivated");
                 node._objFlags |= Deactivating;
                 node._activeInHierarchy = false;
                 var originCount = node._components.length;
@@ -28877,10 +28806,10 @@
         });
         module.exports = NodeActivator;
     }), {
-        "./component-scheduler": 71,
+        "./component-scheduler": 69,
         "./platform/CCObject": 178,
         "./platform/js": 192,
-        "./utils/misc": 222
+        "./utils/misc": 223
     } ],
     145: [ (function(require, module, exports) {
         var PTM_RATIO = require("./CCPhysicsTypes").PTM_RATIO;
@@ -29112,11 +29041,15 @@
         var tempB2AABB = new b2.AABB();
         var tempB2Vec21 = new b2.Vec2();
         var tempB2Vec22 = new b2.Vec2();
+        var FIXED_TIME_STEP = 1 / 60;
+        var MAX_ACCUMULATOR = .2;
         var PhysicsManager = cc.Class({
             mixins: [ cc.EventTarget ],
             statics: {
                 DrawBits: b2.Draw,
-                PTM_RATIO: PTM_RATIO
+                PTM_RATIO: PTM_RATIO,
+                VELOCITY_ITERATIONS: 10,
+                POSITION_ITERATIONS: 10
             },
             ctor: function() {
                 this.__instanceId = cc.ClassManager.getNewInstanceId();
@@ -29127,6 +29060,8 @@
                 this._contactMap = {};
                 this._contactID = 0;
                 this._delayEvents = [];
+                this._accumulator = 0;
+                this.enabledAccumulator = false;
             },
             pushDelayEvent: function(target, func, args) {
                 this._steping ? this._delayEvents.push({
@@ -29142,8 +29077,19 @@
                 }
                 this.emit("before-step");
                 this._steping = true;
-                var timeStep = 1 / cc.game.config["frameRate"];
-                world.Step(timeStep, 10, 10);
+                var velocityIterations = PhysicsManager.VELOCITY_ITERATIONS;
+                var positionIterations = PhysicsManager.POSITION_ITERATIONS;
+                if (this.enabledAccumulator) {
+                    this._accumulator += dt;
+                    this._accumulator > MAX_ACCUMULATOR && (this._accumulator = MAX_ACCUMULATOR);
+                    while (this._accumulator > FIXED_TIME_STEP) {
+                        world.Step(FIXED_TIME_STEP, velocityIterations, positionIterations);
+                        this._accumulator -= FIXED_TIME_STEP;
+                    }
+                } else {
+                    var timeStep = 1 / cc.game.config["frameRate"];
+                    world.Step(timeStep, velocityIterations, positionIterations);
+                }
                 world.DrawDebugData();
                 this._steping = false;
                 var events = this._delayEvents;
@@ -29285,7 +29231,7 @@
                 world.DestroyBody(body._b2Body);
                 body._b2Body = null;
                 var index = this._bodies.indexOf(body);
-                index !== -1 && this._bodies.splice(index, 1);
+                -1 !== index && this._bodies.splice(index, 1);
             },
             _initCallback: function() {
                 if (!this._world) {
@@ -29445,8 +29391,8 @@
             var list = [];
             var d, lowerDist, upperDist;
             var p;
-            var lowervar = cc.v2();
-            var uppervar = cc.v2();
+            var lowerInt = cc.v2();
+            var upperInt = cc.v2();
             var lowerIndex = 0, upperIndex = 0;
             var lowerPoly, upperPoly;
             for (var i = 0; i < vertices.length; ++i) {
@@ -29459,7 +29405,7 @@
                                 d = SquareDist(At(i, vertices), p);
                                 if (d < lowerDist) {
                                     lowerDist = d;
-                                    lowervar = p;
+                                    lowerInt = p;
                                     lowerIndex = j;
                                 }
                             }
@@ -29471,17 +29417,17 @@
                                 if (d < upperDist) {
                                     upperDist = d;
                                     upperIndex = j;
-                                    uppervar = p;
+                                    upperInt = p;
                                 }
                             }
                         }
                     }
                     if (lowerIndex == (upperIndex + 1) % vertices.length) {
-                        var sp = lowervar.add(upperInt).div(2);
+                        var sp = lowerInt.add(upperInt).div(2);
                         lowerPoly = Copy(i, upperIndex, vertices);
-                        lowerPoly.Add(sp);
+                        lowerPoly.push(sp);
                         upperPoly = Copy(lowerIndex, i, vertices);
-                        upperPoly.Add(sp);
+                        upperPoly.push(sp);
                     } else {
                         var highestScore = 0, bestIndex = lowerIndex;
                         while (upperIndex < lowerIndex) {
@@ -29490,7 +29436,7 @@
                         for (var j = lowerIndex; j <= upperIndex; ++j) {
                             if (CanSee(i, j, vertices)) {
                                 var score = 1 / (SquareDist(At(i, vertices), At(j, vertices)) + 1);
-                                score += Reflex(j, vertices) ? RightOn(At(j - 1, vertices), At(j, vertices), At(i, vertices)) && LeftOn(At(j + 1, vertices), At(j, vertices), At(i, vertices)) ? 3 : 2 : 1;
+                                Reflex(j, vertices) ? RightOn(At(j - 1, vertices), At(j, vertices), At(i, vertices)) && LeftOn(At(j + 1, vertices), At(j, vertices), At(i, vertices)) ? score += 3 : score += 2 : score += 1;
                                 if (score > highestScore) {
                                     bestIndex = j;
                                     highestScore = score;
@@ -29516,19 +29462,15 @@
                 if (LeftOn(At(i, vertices), At(i - 1, vertices), At(j, vertices)) && RightOn(At(i, vertices), At(i + 1, vertices), At(j, vertices))) {
                     return false;
                 }
-            } else {
-                if (RightOn(At(i, vertices), At(i + 1, vertices), At(j, vertices)) || LeftOn(At(i, vertices), At(i - 1, vertices), At(j, vertices))) {
-                    return false;
-                }
+            } else if (RightOn(At(i, vertices), At(i + 1, vertices), At(j, vertices)) || LeftOn(At(i, vertices), At(i - 1, vertices), At(j, vertices))) {
+                return false;
             }
             if (Reflex(j, vertices)) {
                 if (LeftOn(At(j, vertices), At(j - 1, vertices), At(i, vertices)) && RightOn(At(j, vertices), At(j + 1, vertices), At(i, vertices))) {
                     return false;
                 }
-            } else {
-                if (RightOn(At(j, vertices), At(j + 1, vertices), At(i, vertices)) || LeftOn(At(j, vertices), At(j - 1, vertices), At(i, vertices))) {
-                    return false;
-                }
+            } else if (RightOn(At(j, vertices), At(j + 1, vertices), At(i, vertices)) || LeftOn(At(j, vertices), At(j - 1, vertices), At(i, vertices))) {
+                return false;
             }
             for (var k = 0; k < vertices.length; ++k) {
                 if ((k + 1) % vertices.length == i || k == i || (k + 1) % vertices.length == j || k == j) {
@@ -29681,15 +29623,15 @@
                 },
                 enabledContactListener: {
                     default: false,
-                    tooltip: "i18n:COMPONENT.physics.rigidbody.enabledContactListener"
+                    tooltip: false
                 },
                 bullet: {
                     default: false,
-                    tooltip: "i18n:COMPONENT.physics.rigidbody.bullet"
+                    tooltip: false
                 },
                 type: {
                     type: BodyType,
-                    tooltip: "i18n:COMPONENT.physics.rigidbody.type",
+                    tooltip: false,
                     get: function() {
                         return this._type;
                     },
@@ -29699,7 +29641,7 @@
                     }
                 },
                 allowSleep: {
-                    tooltip: "i18n:COMPONENT.physics.rigidbody.allowSleep",
+                    tooltip: false,
                     get: function() {
                         if (this._b2Body) {
                             return this._b2Body.IsSleepingAllowed();
@@ -29712,7 +29654,7 @@
                     }
                 },
                 gravityScale: {
-                    tooltip: "i18n:COMPONENT.physics.rigidbody.gravityScale",
+                    tooltip: false,
                     get: function() {
                         return this._gravityScale;
                     },
@@ -29722,7 +29664,7 @@
                     }
                 },
                 linearDamping: {
-                    tooltip: "i18n:COMPONENT.physics.rigidbody.linearDamping",
+                    tooltip: false,
                     get: function() {
                         return this._linearDamping;
                     },
@@ -29732,7 +29674,7 @@
                     }
                 },
                 angularDamping: {
-                    tooltip: "i18n:COMPONENT.physics.rigidbody.angularDamping",
+                    tooltip: false,
                     get: function() {
                         return this._angularDamping;
                     },
@@ -29742,7 +29684,7 @@
                     }
                 },
                 linearVelocity: {
-                    tooltip: "i18n:COMPONENT.physics.rigidbody.linearVelocity",
+                    tooltip: false,
                     type: cc.Vec2,
                     get: function() {
                         var lv = this._linearVelocity;
@@ -29764,7 +29706,7 @@
                     }
                 },
                 angularVelocity: {
-                    tooltip: "i18n:COMPONENT.physics.rigidbody.angularVelocity",
+                    tooltip: false,
                     get: function() {
                         if (this._b2Body) {
                             return this._b2Body.GetAngularVelocity() * PHYSICS_ANGLE_TO_ANGLE;
@@ -29777,7 +29719,7 @@
                     }
                 },
                 fixedRotation: {
-                    tooltip: "i18n:COMPONENT.physics.rigidbody.fixedRotation",
+                    tooltip: false,
                     get: function() {
                         return this._fixedRotation;
                     },
@@ -29787,7 +29729,7 @@
                     }
                 },
                 awake: {
-                    tooltip: "i18n:COMPONENT.physics.rigidbody.awake",
+                    tooltip: false,
                     get: function() {
                         return !!this._b2Body && this._b2Body.IsAwake();
                     },
@@ -30047,7 +29989,7 @@
                 var node = this.node;
                 var pos = node.convertToWorldSpaceAR(VEC2_ZERO);
                 bodyDef.position = new b2.Vec2(pos.x / PTM_RATIO, pos.y / PTM_RATIO);
-                bodyDef.angle = -(Math.PI / 180) * getWorldRotation(node);
+                bodyDef.angle = -Math.PI / 180 * getWorldRotation(node);
                 cc.director.getPhysicsManager()._addBody(this, bodyDef);
                 this._inited = true;
             },
@@ -30179,7 +30121,7 @@
                 _friction: .2,
                 _restitution: 0,
                 density: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.density",
+                    tooltip: false,
                     get: function() {
                         return this._density;
                     },
@@ -30188,7 +30130,7 @@
                     }
                 },
                 sensor: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.sensor",
+                    tooltip: false,
                     get: function() {
                         return this._sensor;
                     },
@@ -30197,7 +30139,7 @@
                     }
                 },
                 friction: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.friction",
+                    tooltip: false,
                     get: function() {
                         return this._friction;
                     },
@@ -30206,7 +30148,7 @@
                     }
                 },
                 restitution: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.restitution",
+                    tooltip: false,
                     get: function() {
                         return this._restitution;
                     },
@@ -30418,7 +30360,7 @@
         require("./platform/CCPhysicsAABBQueryCallback");
         require("./platform/CCPhysicsRayCastCallback");
     }), {
-        "../../../external/box2d/box2d": 309,
+        "../../../external/box2d/box2d": 310,
         "./CCPhysicsContact": 145,
         "./CCPhysicsManager": 146,
         "./CCRigidBody": 149,
@@ -30453,7 +30395,7 @@
                 _frequency: 0,
                 _dampingRatio: 0,
                 distance: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.distance",
+                    tooltip: false,
                     get: function() {
                         return this._distance;
                     },
@@ -30463,7 +30405,7 @@
                     }
                 },
                 frequency: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.frequency",
+                    tooltip: false,
                     get: function() {
                         return this._frequency;
                     },
@@ -30473,7 +30415,7 @@
                     }
                 },
                 dampingRatio: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.dampingRatio",
+                    tooltip: false,
                     get: function() {
                         return this._dampingRatio;
                     },
@@ -30508,20 +30450,20 @@
             properties: {
                 anchor: {
                     default: cc.v2(0, 0),
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.anchor"
+                    tooltip: false
                 },
                 connectedAnchor: {
                     default: cc.v2(0, 0),
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.connectedAnchor"
+                    tooltip: false
                 },
                 connectedBody: {
                     default: null,
                     type: cc.RigidBody,
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.connectedBody"
+                    tooltip: false
                 },
                 collideConnected: {
                     default: false,
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.collideConnected"
+                    tooltip: false
                 }
             },
             onDisable: function() {
@@ -30574,7 +30516,7 @@
                     return;
                 }
                 this.body = this.getComponent(cc.RigidBody);
-                if (this.body && this.body._getBody() && this.connectedBody && this.connectedBody._getBody()) {
+                if (this._isValid()) {
                     var world = cc.director.getPhysicsManager()._getWorld();
                     var def = this._createJointDef();
                     if (!def) {
@@ -30592,13 +30534,16 @@
                 if (!this._inited) {
                     return;
                 }
-                this.body && this.body._getBody() && cc.director.getPhysicsManager()._getWorld().DestroyJoint(this._joint);
+                this._isValid() && cc.director.getPhysicsManager()._getWorld().DestroyJoint(this._joint);
                 this._joint && (this._joint._joint = null);
                 this._joint = null;
                 this._inited = false;
             },
             _createJointDef: function() {
                 return null;
+            },
+            _isValid: function() {
+                return this.body && this.body._getBody() && this.connectedBody && this.connectedBody._getBody();
             }
         });
         cc.Joint = module.exports = Joint;
@@ -30619,19 +30564,19 @@
                 _maxTorque: 1,
                 _correctionFactor: .3,
                 anchor: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.anchor",
+                    tooltip: false,
                     default: cc.v2(0, 0),
                     override: true,
                     visible: false
                 },
                 connectedAnchor: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.connectedAnchor",
+                    tooltip: false,
                     default: cc.v2(0, 0),
                     override: true,
                     visible: false
                 },
                 linearOffset: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.linearOffset",
+                    tooltip: false,
                     get: function() {
                         return this._linearOffset;
                     },
@@ -30641,7 +30586,7 @@
                     }
                 },
                 angularOffset: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.angularOffset",
+                    tooltip: false,
                     get: function() {
                         return this._angularOffset;
                     },
@@ -30651,7 +30596,7 @@
                     }
                 },
                 maxForce: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.maxForce",
+                    tooltip: false,
                     get: function() {
                         return this._maxForce;
                     },
@@ -30661,7 +30606,7 @@
                     }
                 },
                 maxTorque: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.maxTorque",
+                    tooltip: false,
                     get: function() {
                         return this._maxTorque;
                     },
@@ -30671,7 +30616,7 @@
                     }
                 },
                 correctionFactor: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.correctionFactor",
+                    tooltip: false,
                     get: function() {
                         return this._correctionFactor;
                     },
@@ -30719,24 +30664,24 @@
                     override: true
                 },
                 anchor: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.anchor",
+                    tooltip: false,
                     default: cc.v2(0, 0),
                     override: true,
                     visible: false
                 },
                 connectedAnchor: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.connectedAnchor",
+                    tooltip: false,
                     default: cc.v2(0, 0),
                     override: true,
                     visible: false
                 },
                 mouseRegion: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.mouseRegion",
+                    tooltip: false,
                     default: null,
                     type: cc.Node
                 },
                 target: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.target",
+                    tooltip: false,
                     visible: false,
                     get: function() {
                         return this._target;
@@ -30751,7 +30696,7 @@
                     }
                 },
                 frequency: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.frequency",
+                    tooltip: false,
                     get: function() {
                         return this._frequency;
                     },
@@ -30761,7 +30706,7 @@
                     }
                 },
                 dampingRatio: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.dampingRatio",
+                    tooltip: false,
                     get: function() {
                         return this._dampingRatio;
                     },
@@ -30771,7 +30716,7 @@
                     }
                 },
                 maxForce: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.maxForce",
+                    tooltip: false,
                     visible: false,
                     get: function() {
                         return this._maxForce;
@@ -30822,7 +30767,7 @@
                 return def;
             },
             update: function() {
-                if (!this._pressPoint) {
+                if (!this._pressPoint || !this._isValid()) {
                     return;
                 }
                 cc.Camera && cc.Camera.main ? this.target = cc.Camera.main.getCameraToWorldPoint(this._pressPoint) : this.target = this._pressPoint;
@@ -30842,32 +30787,32 @@
             properties: {
                 localAxisA: {
                     default: cc.v2(1, 0),
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.localAxisA"
+                    tooltip: false
                 },
                 referenceAngle: {
                     default: 0,
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.referenceAngle"
+                    tooltip: false
                 },
                 enableLimit: {
                     default: false,
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.enableLimit"
+                    tooltip: false
                 },
                 enableMotor: {
                     default: false,
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.enableMotor"
+                    tooltip: false
                 },
                 lowerLimit: {
                     default: 0,
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.lowerLimit"
+                    tooltip: false
                 },
                 upperLimit: {
                     default: 0,
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.upperLimit"
+                    tooltip: false
                 },
                 _maxMotorForce: 0,
                 _motorSpeed: 0,
                 maxMotorForce: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.maxMotorForce",
+                    tooltip: false,
                     get: function() {
                         return this._maxMotorForce;
                     },
@@ -30877,7 +30822,7 @@
                     }
                 },
                 motorSpeed: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.motorSpeed",
+                    tooltip: false,
                     get: function() {
                         return this._motorSpeed;
                     },
@@ -30921,18 +30866,18 @@
                 _enableMotor: false,
                 referenceAngle: {
                     default: 0,
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.referenceAngle"
+                    tooltip: false
                 },
                 lowerAngle: {
                     default: 0,
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.lowerAngle"
+                    tooltip: false
                 },
                 upperAngle: {
                     default: 0,
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.upperAngle"
+                    tooltip: false
                 },
                 maxMotorTorque: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.maxMotorTorque",
+                    tooltip: false,
                     get: function() {
                         return this._maxMotorTorque;
                     },
@@ -30942,7 +30887,7 @@
                     }
                 },
                 motorSpeed: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.motorSpeed",
+                    tooltip: false,
                     get: function() {
                         return this._motorSpeed;
                     },
@@ -30952,7 +30897,7 @@
                     }
                 },
                 enableLimit: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.enableLimit",
+                    tooltip: false,
                     get: function() {
                         return this._enableLimit;
                     },
@@ -30962,7 +30907,7 @@
                     }
                 },
                 enableMotor: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.enableMotor",
+                    tooltip: false,
                     get: function() {
                         return this._enableMotor;
                     },
@@ -31005,7 +30950,7 @@
             properties: {
                 _maxLength: 1,
                 maxLength: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.maxLength",
+                    tooltip: false,
                     get: function() {
                         return this._maxLength;
                     },
@@ -31037,12 +30982,12 @@
             properties: {
                 referenceAngle: {
                     default: 0,
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.referenceAngle"
+                    tooltip: false
                 },
                 _frequency: 0,
                 _dampingRatio: 0,
                 frequency: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.frequency",
+                    tooltip: false,
                     get: function() {
                         return this._frequency;
                     },
@@ -31052,7 +30997,7 @@
                     }
                 },
                 dampingRatio: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.dampingRatio",
+                    tooltip: false,
                     get: function() {
                         return this._dampingRatio;
                     },
@@ -31091,10 +31036,10 @@
                 _dampingRatio: .7,
                 localAxisA: {
                     default: cc.v2(1, 0),
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.localAxisA"
+                    tooltip: false
                 },
                 maxMotorTorque: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.maxMotorTorque",
+                    tooltip: false,
                     get: function() {
                         return this._maxMotorTorque;
                     },
@@ -31104,7 +31049,7 @@
                     }
                 },
                 motorSpeed: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.motorSpeed",
+                    tooltip: false,
                     get: function() {
                         return this._motorSpeed;
                     },
@@ -31114,7 +31059,7 @@
                     }
                 },
                 enableMotor: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.enableMotor",
+                    tooltip: false,
                     get: function() {
                         return this._enableMotor;
                     },
@@ -31124,7 +31069,7 @@
                     }
                 },
                 frequency: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.frequency",
+                    tooltip: false,
                     get: function() {
                         return this._frequency;
                     },
@@ -31134,7 +31079,7 @@
                     }
                 },
                 dampingRatio: {
-                    tooltip: "i18n:COMPONENT.physics.physics_collider.dampingRatio",
+                    tooltip: false,
                     get: function() {
                         return this._dampingRatio;
                     },
@@ -31217,7 +31162,7 @@
             var fixtureB = contact.GetFixtureB();
             var fixtures = this._contactFixtures;
             contact._shouldReport = false;
-            if (fixtures.indexOf(fixtureA) !== -1 || fixtures.indexOf(fixtureB) !== -1) {
+            if (-1 !== fixtures.indexOf(fixtureA) || -1 !== fixtures.indexOf(fixtureB)) {
                 contact._shouldReport = true;
                 this._BeginContact(contact);
             }
@@ -31444,11 +31389,17 @@
         var Loader = require("../load-pipeline/CCLoader");
         var PackDownloader = require("../load-pipeline/pack-downloader");
         var AutoReleaseUtils = require("../load-pipeline/auto-release-utils");
+        var decodeUuid = require("../utils/decode-uuid");
+        var MD5Pipe = require("../load-pipeline/md5-pipe");
         var _libraryBase = "";
         var _rawAssetsBase = "";
         var _uuidToRawAsset = {};
         function isScene(asset) {
             return asset && (asset.constructor === cc.SceneAsset || asset instanceof cc.Scene);
+        }
+        function RawAssetEntry(url, type) {
+            this.url = url;
+            this.type = type;
         }
         var AssetLibrary = {
             loadAsset: function(uuid, callback, options) {
@@ -31476,21 +31427,23 @@
                     callback && callback(error, asset);
                 }));
             },
-            getImportedDir: function(uuid) {
-                return _libraryBase + uuid.slice(0, 2);
+            getLibUrlNoExt: function(uuid) {
+                uuid = decodeUuid(uuid);
+                return _libraryBase + uuid.slice(0, 2) + "/" + uuid;
             },
             _queryAssetInfoInEditor: function(uuid, callback) {},
             _getAssetInfoInRuntime: function(uuid, result) {
-                result || (result = {
+                result = result || {
                     url: null,
                     raw: false
-                });
+                };
                 var info = _uuidToRawAsset[uuid];
                 if (info && !cc.isChildClassOf(info.type, cc.Asset)) {
                     result.url = _rawAssetsBase + info.url;
                     result.raw = true;
                 } else {
-                    result.url = this.getImportedDir(uuid) + "/" + uuid + ".json";
+                    result.url = this.getLibUrlNoExt(uuid) + ".json";
+                    result.raw = false;
                 }
                 return result;
             },
@@ -31544,8 +31497,14 @@
             init: function(options) {
                 var libraryPath = options.libraryPath;
                 libraryPath = libraryPath.replace(/\\/g, "/");
-                _libraryBase = cc.path._setEndWithSep(libraryPath, "/");
+                _libraryBase = cc.path.stripSep(libraryPath) + "/";
                 _rawAssetsBase = options.rawAssetsBase;
+                var md5AssetsMap = options.md5AssetsMap;
+                if (md5AssetsMap) {
+                    var md5Pipe = new MD5Pipe(md5AssetsMap, _libraryBase, _rawAssetsBase);
+                    cc.loader.insertPipeAfter(cc.loader.assetLoader, md5Pipe);
+                    cc.loader.md5Pipe = md5Pipe;
+                }
                 var resources = Loader._resources;
                 resources.reset();
                 var rawAssets = options.rawAssets;
@@ -31562,10 +31521,7 @@
                                 cc.error("Cannot get", typeId);
                                 continue;
                             }
-                            _uuidToRawAsset[uuid] = {
-                                url: mountPoint + "/" + url,
-                                type: type
-                            };
+                            _uuidToRawAsset[uuid] = new RawAssetEntry(mountPoint + "/" + url, type);
                             if ("assets" === mountPoint && url.startsWith(RES_DIR)) {
                                 if (cc.isChildClassOf(type, Asset)) {
                                     var ext = cc.path.extname(url);
@@ -31591,10 +31547,12 @@
         AssetLibrary._uuidToAsset = {};
         module.exports = cc.AssetLibrary = AssetLibrary;
     }), {
-        "../assets/CCAsset": 44,
-        "../load-pipeline/CCLoader": 129,
-        "../load-pipeline/auto-release-utils": 133,
+        "../assets/CCAsset": 43,
+        "../load-pipeline/CCLoader": 128,
+        "../load-pipeline/auto-release-utils": 132,
+        "../load-pipeline/md5-pipe": 138,
         "../load-pipeline/pack-downloader": 139,
+        "../utils/decode-uuid": 220,
         "./utils": 197
     } ],
     172: [ (function(require, module, exports) {
@@ -31609,7 +31567,7 @@
         var preprocess = require("./preprocess-class");
         require("./requiring-frame");
         var BUILTIN_ENTRIES = [ "name", "extends", "mixins", "ctor", "__ctor__", "properties", "statics", "editor", "__ES6__" ];
-        var INVALID_STATICS_DEV = [ "name", "__ctors__", "__props__", "arguments", "call", "apply", "caller", "length", "prototype" ];
+        var INVALID_STATICS_DEV = false;
         function pushUnique(array, item) {
             array.indexOf(item) < 0 && array.push(item);
         }
@@ -31642,34 +31600,11 @@
             }
         };
         function appendProp(cls, name) {
-            if (name.indexOf(".") !== -1) {
-                cc.errorID(3634);
-                return;
-            }
             pushUnique(cls.__props__, name);
         }
         var tmpArray = [];
         function defineProp(cls, className, propName, val, es6) {
             var defaultValue = val.default;
-            if (!es6 && "object" === typeof defaultValue && defaultValue) {
-                if (Array.isArray(defaultValue)) {
-                    if (defaultValue.length > 0) {
-                        cc.errorID(3635, className, propName, propName);
-                        return;
-                    }
-                } else {
-                    if (!_isPlainEmptyObj_DEV(defaultValue) && !_cloneable_DEV(defaultValue)) {
-                        cc.errorID(3636, className, propName, propName);
-                        return;
-                    }
-                }
-            }
-            if (CCClass.getInheritanceChain(cls).some((function(x) {
-                return x.prototype.hasOwnProperty(propName);
-            }))) {
-                cc.errorID(3637, className, propName, className);
-                return;
-            }
             Attr.setClassAttr(cls, propName, "default", defaultValue);
             appendProp(cls, propName);
             var attrs = parseAttributes(cls, val, className, propName, false);
@@ -31692,11 +31627,8 @@
             var setter = val.set;
             var proto = cls.prototype;
             var d = Object.getOwnPropertyDescriptor(proto, propName);
+            var setterUndefined = !d;
             if (getter) {
-                if (!es6 && d && d.get) {
-                    cc.errorID(3638, name, propName);
-                    return;
-                }
                 var attrs = parseAttributes(cls, val, name, propName, true);
                 for (var i = 0; i < attrs.length; i++) {
                     Attr.attr(cls, propName, attrs[i]);
@@ -31704,22 +31636,10 @@
                 attrs.length = 0;
                 var ForceSerializable = false;
                 ForceSerializable || Attr.setClassAttr(cls, propName, "serializable", false);
-                (ForceSerializable || true) && appendProp(cls, propName);
-                if (!es6) {
-                    var setterUndefined = !d;
-                    JS.get(proto, propName, getter, setterUndefined, setterUndefined);
-                }
-                Attr.setClassAttr(cls, propName, "hasGetter", true);
+                (ForceSerializable || false) && appendProp(cls, propName);
+                es6 || JS.get(proto, propName, getter, setterUndefined, setterUndefined);
             }
-            if (setter) {
-                if (!es6) {
-                    if (d && d.set) {
-                        return cc.errorID(3640, name, propName);
-                    }
-                    JS.set(proto, propName, setter, true, true);
-                }
-                Attr.setClassAttr(cls, propName, "hasSetter", true);
-            }
+            setter && (es6 || JS.set(proto, propName, setter, setterUndefined, setterUndefined));
         }
         function getDefault(defaultVal) {
             if ("function" === typeof defaultVal) {
@@ -31737,26 +31657,7 @@
             var __ctor__ = options.__ctor__;
             var ctor = options.ctor;
             var __es6__ = options.__ES6__;
-            var ctorToUse = __ctor__ || ctor;
-            if (ctorToUse) {
-                if (CCClass._isCCClass(ctorToUse)) {
-                    cc.errorID(3618, className);
-                } else {
-                    if ("function" !== typeof ctorToUse) {
-                        cc.errorID(3619, className);
-                    } else {
-                        if (baseClass && /\bprototype.ctor\b/.test(ctorToUse)) {
-                            if (__es6__) {
-                                cc.errorID(3651, className || "");
-                            } else {
-                                cc.warnID(3600, className || "");
-                                shouldAddProtoCtor = true;
-                            }
-                        }
-                    }
-                }
-                ctor && (__ctor__ ? cc.errorID(3649, className) : ctor = options.ctor = _validateCtor_DEV(ctor, baseClass, className, options));
-            }
+            var ctorToUse;
             var ctors;
             var fireClass;
             if (__es6__) {
@@ -31778,14 +31679,13 @@
                     prototype = fireClass.prototype;
                 }
                 JS.value(fireClass, "$super", baseClass);
-                shouldAddProtoCtor && (prototype.ctor = function() {});
             }
             if (mixins) {
                 for (var m = mixins.length - 1; m >= 0; m--) {
                     var mixin = mixins[m];
                     mixinWithInherited(prototype, mixin.prototype);
                     mixinWithInherited(fireClass, mixin, (function(prop) {
-                        return mixin.hasOwnProperty(prop) && INVALID_STATICS_DEV.indexOf(prop) < 0;
+                        return mixin.hasOwnProperty(prop) && true;
                     }));
                     CCClass._isCCClass(mixin) && mixinWithInherited(Attr.getClassAttrs(fireClass).constructor.prototype, Attr.getClassAttrs(mixin).constructor.prototype);
                 }
@@ -31803,7 +31703,6 @@
                     cc.errorID(3615);
                     return null;
                 }
-                frame.uuid && className && cc.warnID(3616, className);
                 className = className || frame.script;
             }
             var cls = doDefine(className, baseClass, mixins, options);
@@ -31821,15 +31720,7 @@
         function normalizeClassName_DEV(className) {
             var DefaultName = "CCClass";
             if (className) {
-                className = Array.prototype.map.call(className, (function(x) {
-                    return /^[a-zA-Z0-9_$]/.test(x) ? x : "_";
-                })).join("");
-                try {
-                    Function("function " + className + "(){}")();
-                    return className;
-                } catch (e) {
-                    className = DefaultName + "_" + className;
-                }
+                className = className.replace(/^[^$A-Za-z_]/, "_").replace(/[^0-9A-Za-z_$]/g, "_");
                 try {
                     Function("function " + className + "(){}")();
                     return className;
@@ -31885,14 +31776,12 @@
                     var def = attrs[attrKey];
                     if ("object" === typeof def && def) {
                         expression = def instanceof cc.ValueType ? getNewValueTypeCode(def) : Array.isArray(def) ? "[]" : "{}";
+                    } else if ("function" === typeof def) {
+                        var index = F.length;
+                        F.push(def);
+                        expression = "F[" + index + "]()";
                     } else {
-                        if ("function" === typeof def) {
-                            var index = F.length;
-                            F.push(def);
-                            expression = "F[" + index + "]()";
-                        } else {
-                            expression = "string" === typeof def ? escapeForJS(def) : def;
-                        }
+                        expression = "string" === typeof def ? escapeForJS(def) : def;
                     }
                     statement = statement + expression + ";\n";
                     func += statement;
@@ -31905,9 +31794,8 @@
         }
         function _createCtor(ctors, baseClass, className, options) {
             var superCallBounded = baseClass && boundSuperCalls(baseClass, options, className);
-            var args = "";
-            var ctorName = normalizeClassName_DEV(className);
-            var body = "return function " + ctorName + "(" + args + "){\n";
+            var ctorName = "CCClass";
+            var body = "return function " + ctorName + "(){\n";
             superCallBounded && (body += "this._super=null;\n");
             body += "this.__initProps__(" + ctorName + ");\n";
             var ctorLen = ctors.length;
@@ -31987,7 +31875,6 @@
                         continue;
                     }
                 }
-                SuperCallRegStrict.test(func) && cc.warnID(3620, className, funcName);
             }
             return hasSuperCall;
         }
@@ -32021,25 +31908,18 @@
             if ("function" === typeof properties || base && null === base.__props__ || mixins && mixins.some((function(x) {
                 return null === x.__props__;
             }))) {
-                if (options.__ES6__) {
-                    cc.error("not yet implement deferred properties for ES6 Classes");
-                } else {
-                    deferredInitializer.push({
-                        cls: cls,
-                        props: properties,
-                        mixins: mixins
-                    });
-                    cls.__props__ = null;
-                }
+                deferredInitializer.push({
+                    cls: cls,
+                    props: properties,
+                    mixins: mixins
+                });
+                cls.__props__ = null;
             } else {
                 declareProperties(cls, name, properties, base, options.mixins, options.__ES6__);
             }
             var statics = options.statics;
             if (statics) {
                 var staticPropName;
-                for (staticPropName in statics) {
-                    INVALID_STATICS_DEV.indexOf(staticPropName) !== -1 && cc.errorID(3642, name, staticPropName, staticPropName);
-                }
                 for (staticPropName in statics) {
                     cls[staticPropName] = statics[staticPropName];
                 }
@@ -32049,13 +31929,13 @@
                     continue;
                 }
                 var func = options[funcName];
-                if (!preprocess.validateMethod(func, funcName, name, cls, base)) {
+                if (!preprocess.validateMethodWithProps(func, funcName, name, cls, base)) {
                     continue;
                 }
                 JS.value(cls.prototype, funcName, func, true, true);
             }
             var editor = options.editor;
-            editor && (cc.isChildClassOf(base, cc.Component) ? cc.Component._registerEditorProps(cls, editor) : cc.warnID(3623, name));
+            editor && cc.isChildClassOf(base, cc.Component) && cc.Component._registerEditorProps(cls, editor);
             return cls;
         }
         CCClass._isCCClass = function(constructor) {
@@ -32079,7 +31959,6 @@
                     return false;
                 }
                 if ("function" !== typeof superclass) {
-                    cc.warnID(3625, superclass);
                     return false;
                 }
                 if (subclass === superclass) {
@@ -32116,7 +31995,7 @@
         };
         var tmpAttrs = [];
         function parseAttributes(cls, attrs, className, propName, usedInGetter) {
-            var ERR_Type = "The %s of %s must be type %s";
+            var ERR_Type = "";
             var attrsProto = null;
             var attrsProtoKey = "";
             function getAttrsProto() {
@@ -32133,64 +32012,40 @@
                         type: type,
                         _onAfterProp: getTypeChecker(primitiveType, "cc." + type)
                     });
+                } else if ("Object" === type) {} else if (type === Attr.ScriptUuid) {
+                    var attr = Attr.ObjectType(cc.ScriptAsset);
+                    attr.type = "Script";
+                    result.push(attr);
                 } else {
-                    if ("Object" === type) {
-                        cc.errorID(3644, className, propName);
-                    } else {
-                        if (type === Attr.ScriptUuid) {
-                            var attr = Attr.ObjectType(cc.ScriptAsset);
-                            attr.type = "Script";
-                            result.push(attr);
-                        } else {
-                            "object" === typeof type ? Enum.isEnum(type) ? result.push({
-                                type: "Enum",
-                                enumList: Enum.getList(type)
-                            }) : cc.errorID(3645, className, propName, type) : "function" === typeof type ? attrs.url ? result.push({
-                                type: "Object",
-                                ctor: type,
-                                _onAfterProp: getTypeChecker("String", "cc.String")
-                            }) : result.push(attrs._short ? {
-                                type: "Object",
-                                ctor: type
-                            } : Attr.ObjectType(type)) : cc.errorID(3646, className, propName, type);
-                        }
-                    }
+                    "object" === typeof type ? Enum.isEnum(type) && result.push({
+                        type: "Enum",
+                        enumList: Enum.getList(type)
+                    }) : "function" === typeof type && (attrs.url ? result.push({
+                        type: "Object",
+                        ctor: type,
+                        _onAfterProp: getTypeChecker("String", "cc.String")
+                    }) : result.push(attrs._short ? {
+                        type: "Object",
+                        ctor: type
+                    } : Attr.ObjectType(type)));
                 }
             }
             function parseSimpleAttr(attrName, expectType) {
                 if (attrName in attrs) {
                     var val = attrs[attrName];
-                    typeof val === expectType ? (attrsProto || getAttrsProto())[attrsProtoKey + attrName] = val : cc.error(ERR_Type, attrName, className, propName, expectType);
+                    typeof val === expectType && ((attrsProto || getAttrsProto())[attrsProtoKey + attrName] = val);
                 }
             }
-            attrs.editorOnly && (usedInGetter ? cc.errorID(3613, "editorOnly", name, propName) : (attrsProto || getAttrsProto())[attrsProtoKey + "editorOnly"] = true);
-            parseSimpleAttr("displayName", "string");
-            parseSimpleAttr("multiline", "boolean");
-            attrs.readonly && ((attrsProto || getAttrsProto())[attrsProtoKey + "readonly"] = true);
-            parseSimpleAttr("tooltip", "string");
-            parseSimpleAttr("slide", "boolean");
+            attrs.editorOnly && ((attrsProto || getAttrsProto())[attrsProtoKey + "editorOnly"] = true);
             attrs.url && ((attrsProto || getAttrsProto())[attrsProtoKey + "saveUrlAsAsset"] = true);
-            false === attrs.serializable && (usedInGetter ? cc.errorID(3613, "serializable", name, propName) : (attrsProto || getAttrsProto())[attrsProtoKey + "serializable"] = false);
-            var visible = attrs.visible;
-            if ("undefined" !== typeof visible) {
-                visible ? "function" === typeof visible && ((attrsProto || getAttrsProto())[attrsProtoKey + "visible"] = visible) : (attrsProto || getAttrsProto())[attrsProtoKey + "visible"] = false;
-            } else {
-                var startsWithUS = 95 === propName.charCodeAt(0);
-                startsWithUS && ((attrsProto || getAttrsProto())[attrsProtoKey + "visible"] = false);
-            }
+            false === attrs.serializable && ((attrsProto || getAttrsProto())[attrsProtoKey + "serializable"] = false);
+            var visible;
+            var startsWithUS;
             var range = attrs.range;
-            if (range) {
-                if (Array.isArray(range)) {
-                    if (range.length >= 2) {
-                        (attrsProto || getAttrsProto())[attrsProtoKey + "min"] = range[0];
-                        attrsProto[attrsProtoKey + "max"] = range[1];
-                        range.length > 2 && (attrsProto[attrsProtoKey + "step"] = range[2]);
-                    } else {
-                        cc.errorID(3647);
-                    }
-                } else {
-                    cc.error(ERR_Type, "range", className, propName, "array");
-                }
+            if (range && Array.isArray(range) && range.length >= 2) {
+                (attrsProto || getAttrsProto())[attrsProtoKey + "min"] = range[0];
+                attrsProto[attrsProtoKey + "max"] = range[1];
+                range.length > 2 && (attrsProto[attrsProtoKey + "step"] = range[2]);
             }
             parseSimpleAttr("min", "number");
             parseSimpleAttr("max", "number");
@@ -32221,14 +32076,13 @@
         require("./CCClass");
         var Preprocess = require("./preprocess-class");
         var JS = require("./js");
-        var isPlainEmptyObj_DEV = require("./utils").isPlainEmptyObj_DEV;
+        var isPlainEmptyObj_DEV = false;
+        var CACHE_KEY = "__ccclassCache__";
         function fNOP(ctor) {
             return ctor;
         }
         function getSubDict(obj, key) {
-            var res = obj[key];
-            res || (res = obj[key] = {});
-            return res;
+            return obj[key] || (obj[key] = {});
         }
         function checkCtorArgument(decorate) {
             return function(target) {
@@ -32242,42 +32096,19 @@
         }
         function _checkNormalArgument(validator_DEV, decorate, decoratorName) {
             return function(target) {
-                if (false === validator_DEV(target, decoratorName)) {
-                    return function() {
-                        return fNOP;
-                    };
-                }
                 return function(ctor) {
                     return decorate(ctor, target);
                 };
             };
         }
-        var checkCompArgument = _checkNormalArgument.bind(null, (function(arg, decoratorName) {
-            if (!cc.Class._isCCClass(arg)) {
-                cc.error("The parameter for %s is missing.", decoratorName);
-                return false;
-            }
-        }));
+        var checkCompArgument = _checkNormalArgument.bind(null, false);
         function _argumentChecker(type) {
-            return _checkNormalArgument.bind(null, (function(arg, decoratorName) {
-                if (arg instanceof cc.Component || void 0 === arg) {
-                    cc.error("The parameter for %s is missing.", decoratorName);
-                    return false;
-                }
-                if (typeof arg !== type) {
-                    cc.error("The parameter for %s must be type %s.", decoratorName, type);
-                    return false;
-                }
-            }));
+            return _checkNormalArgument.bind(null, false);
         }
         var checkStringArgument = _argumentChecker("string");
         var checkNumberArgument = _argumentChecker("number");
-        function getClassProto(ctor, decoratorName) {
-            if (cc.Class._isCCClass(ctor)) {
-                cc.error('@%s should be used after @ccclass for class "%s"', decoratorName, JS.getClassName(ctor));
-                return null;
-            }
-            return getSubDict(ctor, "__ccclassProto__");
+        function getClassCache(ctor, decoratorName) {
+            return getSubDict(ctor, CACHE_KEY);
         }
         function getDefaultFromInitializer(initializer) {
             var value;
@@ -32288,6 +32119,43 @@
             }
             return "object" !== typeof value || null === value ? value : initializer;
         }
+        function extractActualDefaultValues(ctor) {
+            var dummyObj;
+            try {
+                dummyObj = new ctor();
+            } catch (e) {
+                return {};
+            }
+            return dummyObj;
+        }
+        function genProperty(ctor, properties, propName, options, desc, cache) {
+            var fullOptions = options && (Preprocess.getFullFormOfProperty(options) || options);
+            var existsProperty = properties[propName];
+            var prop = JS.mixin(existsProperty || {}, fullOptions || {});
+            var isGetset = desc && (desc.get || desc.set);
+            if (isGetset) {
+                var errorProps;
+                desc.get && (prop.get = desc.get);
+                desc.set && (prop.set = desc.set);
+            } else {
+                var defaultValue = void 0;
+                var isDefaultValueSpecified = false;
+                if (desc) {
+                    if (desc.initializer) {
+                        defaultValue = getDefaultFromInitializer(desc.initializer);
+                        isDefaultValueSpecified = true;
+                    }
+                } else {
+                    var actualDefaultValues = cache.default || (cache.default = extractActualDefaultValues(ctor));
+                    if (actualDefaultValues.hasOwnProperty(propName)) {
+                        defaultValue = actualDefaultValues[propName];
+                        isDefaultValueSpecified = true;
+                    }
+                }
+                prop.default = defaultValue;
+            }
+            properties[propName] = prop;
+        }
         var ccclass = checkCtorArgument((function(ctor, name) {
             var base = JS.getSuper(ctor);
             base === Object && (base = null);
@@ -32297,41 +32165,27 @@
                 ctor: ctor,
                 __ES6__: true
             };
-            var decoratedProto = ctor.__ccclassProto__;
-            if (decoratedProto) {
-                JS.mixin(proto, decoratedProto);
-                ctor.__ccclassProto__ = void 0;
+            var cache = ctor[CACHE_KEY];
+            if (cache) {
+                var decoratedProto = cache.proto;
+                decoratedProto && JS.mixin(proto, decoratedProto);
+                ctor[CACHE_KEY] = void 0;
             }
             var res = cc.Class(proto);
+            var methods;
+            var i;
+            var methodName;
+            var func;
             return res;
         }));
         function property(ctorProtoOrOptions, propName, desc) {
             var options = null;
             function normalized(ctorProto, propName, desc) {
-                var ccclassProto = getClassProto(ctorProto.constructor);
-                if (ccclassProto) {
-                    var props = getSubDict(ccclassProto, "properties");
-                    var prop = props[propName];
-                    var fullOptions = options && (Preprocess.getFullFormOfProperty(options) || options);
-                    prop = JS.mixin(prop || {}, fullOptions || {});
-                    if (desc) {
-                        if (desc.initializer) {
-                            options && options.hasOwnProperty("default") && cc.warnID(3650, "default", propName, JS.getClassName(ctorProto.constructor));
-                            prop.default = getDefaultFromInitializer(desc.initializer);
-                        } else {
-                            if (desc.get) {
-                                options && options.get && cc.warnID(3650, "get", propName, JS.getClassName(ctorProto.constructor));
-                                prop.get = desc.get;
-                            }
-                            if (desc.set) {
-                                options && options.set && cc.warnID(3650, "set", propName, JS.getClassName(ctorProto.constructor));
-                                prop.set = desc.set;
-                            }
-                        }
-                    } else {
-                        isPlainEmptyObj_DEV(prop) ? cc.error('Failed to get default value of "%s" in class "%s". If using TypeScript, you also need to pass in the "default" attribute required by the "property" decorator.', propName, JS.getClassName(ctorProto.constructor)) : (prop.get || prop.set) && cc.error('Can not define get set in decorator of "%s" in class "%s", please use:\n@decorator(...)\nget %s () {\n  ...\n}\n@decorator\nset %s () {\n  ...\n}', propName, JS.getClassName(ctorProto.constructor), propName, propName);
-                    }
-                    props[propName] = prop;
+                var cache = getClassCache(ctorProto.constructor);
+                if (cache) {
+                    var ccclassProto = getSubDict(cache, "proto");
+                    var properties = getSubDict(ccclassProto, "properties");
+                    genProperty(ctorProto.constructor, properties, propName, options, desc, cache);
                 }
             }
             if ("undefined" === typeof propName) {
@@ -32342,9 +32196,10 @@
         }
         function createEditorDecorator(argCheckFunc, editorPropName, staticValue) {
             return argCheckFunc((function(ctor, decoratedValue) {
-                var proto = getClassProto(ctor, editorPropName);
-                if (proto) {
+                var cache = getClassCache(ctor, editorPropName);
+                if (cache) {
                     var value = void 0 !== staticValue ? staticValue : decoratedValue;
+                    var proto = getSubDict(cache, "proto");
                     getSubDict(proto, "editor")[editorPropName] = value;
                 }
             }), editorPropName);
@@ -32352,23 +32207,23 @@
         function createDummyDecorator(argCheckFunc) {
             return argCheckFunc(fNOP);
         }
-        var executeInEditMode = createEditorDecorator(checkCtorArgument, "executeInEditMode", true);
+        var executeInEditMode = createDummyDecorator(checkCtorArgument, "executeInEditMode", true);
         var requireComponent = createEditorDecorator(checkCompArgument, "requireComponent");
-        var menu = createEditorDecorator(checkStringArgument, "menu");
+        var menu = createDummyDecorator(checkStringArgument, "menu");
         var executionOrder = createEditorDecorator(checkNumberArgument, "executionOrder");
-        var disallowMultiple = createEditorDecorator(checkCtorArgument, "disallowMultiple");
-        var playOnFocus = createEditorDecorator(checkCtorArgument, "playOnFocus");
-        var inspector = createEditorDecorator(checkStringArgument, "inspector");
-        var icon = createEditorDecorator(checkStringArgument, "icon");
-        var help = createEditorDecorator(checkStringArgument, "help");
+        var disallowMultiple = createDummyDecorator(checkCtorArgument, "disallowMultiple");
+        var playOnFocus = createDummyDecorator(checkCtorArgument, "playOnFocus");
+        var inspector = createDummyDecorator(checkStringArgument, "inspector");
+        var icon = createDummyDecorator(checkStringArgument, "icon");
+        var help = createDummyDecorator(checkStringArgument, "help");
         function mixins() {
             var mixins = [];
             for (var i = 0; i < arguments.length; i++) {
                 mixins[i] = arguments[i];
             }
             return function(ctor) {
-                var proto = getClassProto(ctor, "mixins");
-                proto && (proto.mixins = mixins);
+                var cache = getClassCache(ctor, "mixins");
+                cache && (getSubDict(cache, "proto").mixins = mixins);
             };
         }
         cc._decorator = module.exports = {
@@ -32403,17 +32258,13 @@
             for (var i = 0; i < keys.length; i++) {
                 var key = keys[i];
                 var val = obj[key];
-                if (val === -1) {
+                if (-1 === val) {
                     val = ++lastIndex;
                     obj[key] = val;
-                } else {
-                    if ("number" === typeof val) {
-                        lastIndex = val;
-                    } else {
-                        if ("string" === typeof val && Number.isInteger(parseFloat(key))) {
-                            continue;
-                        }
-                    }
+                } else if ("number" === typeof val) {
+                    lastIndex = val;
+                } else if ("string" === typeof val && Number.isInteger(parseFloat(key))) {
+                    continue;
                 }
                 var reverseKey = "" + val;
                 key !== reverseKey && JS.value(obj, reverseKey, key);
@@ -32440,13 +32291,7 @@
             }));
             return enums;
         };
-        var _TestEnum = Enum({
-            ZERO: -1,
-            ONE: -1,
-            TWO: -1,
-            THREE: -1
-        });
-        0 === _TestEnum.ZERO && 1 === _TestEnum.ONE && 3 === _TestEnum.THREE || cc.errorID(7101);
+        var _TestEnum;
         module.exports = cc.Enum = Enum;
     }), {
         "./js": 192
@@ -32509,7 +32354,7 @@
                 z = .1 * eventAcceleration.z;
             } else {
                 x = eventData["gamma"] / 90 * .981;
-                y = .981 * -(eventData["beta"] / 90);
+                y = -eventData["beta"] / 90 * .981;
                 z = eventData["alpha"] / 90 * .981;
             }
             mAcceleration.x = x;
@@ -32520,16 +32365,12 @@
             if (w.orientation === cc.macro.WEB_ORIENTATION_LANDSCAPE_RIGHT) {
                 mAcceleration.x = -mAcceleration.y;
                 mAcceleration.y = tmpX;
-            } else {
-                if (w.orientation === cc.macro.WEB_ORIENTATION_LANDSCAPE_LEFT) {
-                    mAcceleration.x = mAcceleration.y;
-                    mAcceleration.y = -tmpX;
-                } else {
-                    if (w.orientation === cc.macro.WEB_ORIENTATION_PORTRAIT_UPSIDE_DOWN) {
-                        mAcceleration.x = -mAcceleration.x;
-                        mAcceleration.y = -mAcceleration.y;
-                    }
-                }
+            } else if (w.orientation === cc.macro.WEB_ORIENTATION_LANDSCAPE_LEFT) {
+                mAcceleration.x = mAcceleration.y;
+                mAcceleration.y = -tmpX;
+            } else if (w.orientation === cc.macro.WEB_ORIENTATION_PORTRAIT_UPSIDE_DOWN) {
+                mAcceleration.x = -mAcceleration.x;
+                mAcceleration.y = -mAcceleration.y;
             }
             if (cc.sys.os === cc.sys.OS_ANDROID && cc.sys.browserType !== cc.sys.BROWSER_TYPE_MOBILE_QQ) {
                 mAcceleration.x = -mAcceleration.x;
@@ -32595,7 +32436,7 @@
                     index = locTouchIntDict[touchID];
                     if (null == index) {
                         var unusedIndex = this._getUnUsedIndex();
-                        if (unusedIndex === -1) {
+                        if (-1 === unusedIndex) {
                             cc.logID(2300, unusedIndex);
                             continue;
                         }
@@ -32863,7 +32704,7 @@
                         var location = selfPointer.getPointByEvent(event, pos);
                         var mouseEvent = selfPointer.getMouseEvent(location, pos, cc.Event.EventMouse.SCROLL);
                         mouseEvent.setButton(event.button);
-                        mouseEvent.setScrollData(0, event.detail * -120);
+                        mouseEvent.setScrollData(0, -120 * event.detail);
                         cc.eventManager.dispatchEvent(mouseEvent);
                         event.stopPropagation();
                         event.preventDefault();
@@ -32956,7 +32797,6 @@
     } ],
     177: [ (function(require, module, exports) {
         require("./_CCClass");
-        cc._tmp = cc._tmp || {};
         cc.KEY = {
             none: 0,
             back: 6,
@@ -33195,7 +33035,7 @@
             ENABLE_STACKABLE_ACTIONS: 1,
             ENABLE_GL_STATE_CACHE: 1,
             TOUCH_TIMEOUT: 5e3,
-            BATCH_VERTEX_COUNT: 2e3,
+            BATCH_VERTEX_COUNT: 2e4,
             ENABLE_GC_FOR_NATIVE_OBJECTS: true,
             ENABLE_TILEDMAP_CULLING: true,
             DOWNLOAD_MAX_CONCURRENT: 64,
@@ -33230,7 +33070,7 @@
             cc.g_NumberOfDraws += addNumber;
         };
         cc.checkGLErrorDebug = function() {
-            if (cc.renderMode === cc.game.RENDER_TYPE_WEBGL) {
+            if (cc._renderType === cc.game.RENDER_TYPE_WEBGL) {
                 var _error = cc._renderContext.getError();
                 _error && cc.logID(2400, _error);
             }
@@ -33452,23 +33292,19 @@
                 var data = null, tagName = node.tagName;
                 if ("dict" === tagName) {
                     data = this._parseDict(node);
-                } else {
-                    if ("array" === tagName) {
-                        data = this._parseArray(node);
+                } else if ("array" === tagName) {
+                    data = this._parseArray(node);
+                } else if ("string" === tagName) {
+                    if (1 === node.childNodes.length) {
+                        data = node.firstChild.nodeValue;
                     } else {
-                        if ("string" === tagName) {
-                            if (1 === node.childNodes.length) {
-                                data = node.firstChild.nodeValue;
-                            } else {
-                                data = "";
-                                for (var i = 0; i < node.childNodes.length; i++) {
-                                    data += node.childNodes[i].nodeValue;
-                                }
-                            }
-                        } else {
-                            "false" === tagName ? data = false : "true" === tagName ? data = true : "real" === tagName ? data = parseFloat(node.firstChild.nodeValue) : "integer" === tagName && (data = parseInt(node.firstChild.nodeValue, 10));
+                        data = "";
+                        for (var i = 0; i < node.childNodes.length; i++) {
+                            data += node.childNodes[i].nodeValue;
                         }
                     }
+                } else {
+                    "false" === tagName ? data = false : "true" === tagName ? data = true : "real" === tagName ? data = parseFloat(node.firstChild.nodeValue) : "integer" === tagName && (data = parseInt(node.firstChild.nodeValue, 10));
                 }
                 return data;
             },
@@ -33635,7 +33471,7 @@
         sys.isMobile = /mobile|android|iphone|ipad/.test(ua);
         sys.platform = sys.isMobile ? sys.MOBILE_BROWSER : sys.DESKTOP_BROWSER;
         var currLanguage = nav.language;
-        currLanguage = currLanguage ? currLanguage : nav.browserLanguage;
+        currLanguage = currLanguage || nav.browserLanguage;
         currLanguage = currLanguage ? currLanguage.split("-")[0] : sys.LANGUAGE_ENGLISH;
         sys.language = currLanguage;
         var isAndroid = false, iOS = false, osVersion = "", osMainVersion = 0;
@@ -33650,15 +33486,13 @@
             iOS = true;
             osVersion = uaResult[2] || "";
             osMainVersion = parseInt(osVersion) || 0;
-        } else {
-            if (/(iPhone|iPad|iPod)/.exec(nav.platform)) {
-                iOS = true;
-                osVersion = "";
-                osMainVersion = 0;
-            }
+        } else if (/(iPhone|iPad|iPod)/.exec(nav.platform)) {
+            iOS = true;
+            osVersion = "";
+            osMainVersion = 0;
         }
         var osName = sys.OS_UNKNOWN;
-        nav.appVersion.indexOf("Win") !== -1 ? osName = sys.OS_WINDOWS : iOS ? osName = sys.OS_IOS : nav.appVersion.indexOf("Mac") !== -1 ? osName = sys.OS_OSX : nav.appVersion.indexOf("X11") !== -1 && nav.appVersion.indexOf("Linux") === -1 ? osName = sys.OS_UNIX : isAndroid ? osName = sys.OS_ANDROID : nav.appVersion.indexOf("Linux") !== -1 && (osName = sys.OS_LINUX);
+        -1 !== nav.appVersion.indexOf("Win") ? osName = sys.OS_WINDOWS : iOS ? osName = sys.OS_IOS : -1 !== nav.appVersion.indexOf("Mac") ? osName = sys.OS_OSX : -1 !== nav.appVersion.indexOf("X11") && -1 === nav.appVersion.indexOf("Linux") ? osName = sys.OS_UNIX : isAndroid ? osName = sys.OS_ANDROID : -1 === nav.appVersion.indexOf("Linux") && -1 === ua.indexOf("ubuntu") || (osName = sys.OS_LINUX);
         sys.os = osName;
         sys.osVersion = osVersion;
         sys.osMainVersion = osMainVersion;
@@ -33765,8 +33599,10 @@
                     _supportWebGL = browserVer >= 30;
                     break;
 
-                  case sys.BROWSER_TYPE_360:
                   case sys.BROWSER_TYPE_UC:
+                    _supportWebGL = browserVer > 11;
+
+                  case sys.BROWSER_TYPE_360:
                     _supportWebGL = false;
                 }
             }
@@ -34007,12 +33843,10 @@
                         window.addEventListener("resize", this._resizeEvent);
                         window.addEventListener("orientationchange", this._orientationChange);
                     }
-                } else {
-                    if (this.__resizeWithBrowserSize) {
-                        this.__resizeWithBrowserSize = false;
-                        window.removeEventListener("resize", this._resizeEvent);
-                        window.removeEventListener("orientationchange", this._orientationChange);
-                    }
+                } else if (this.__resizeWithBrowserSize) {
+                    this.__resizeWithBrowserSize = false;
+                    window.removeEventListener("resize", this._resizeEvent);
+                    window.removeEventListener("orientationchange", this._orientationChange);
                 }
             },
             setResizeCallback: function(callback) {
@@ -34066,13 +33900,11 @@
                 vp.name = "viewport";
                 vp.content = "";
                 for (key in metas) {
-                    if (content.indexOf(key) == -1) {
+                    if (-1 == content.indexOf(key)) {
                         content += "," + key + "=" + metas[key];
-                    } else {
-                        if (overwrite) {
-                            pattern = new RegExp(key + "s*=s*[^,]+");
-                            content.replace(pattern, key + "=" + metas[key]);
-                        }
+                    } else if (overwrite) {
+                        pattern = new RegExp(key + "s*=s*[^,]+");
+                        content.replace(pattern, key + "=" + metas[key]);
                     }
                 }
                 /^,/.test(content) && (content = content.substr(1));
@@ -34115,17 +33947,15 @@
                         var tex = item && item.content instanceof cc.Texture2D ? item.content : null;
                         tex && (enabled ? tex.setAntiAliasTexParameters() : tex.setAliasTexParameters());
                     }
-                } else {
-                    if (cc._renderType === cc.game.RENDER_TYPE_CANVAS) {
-                        var ctx = cc._canvas.getContext("2d");
-                        ctx.imageSmoothingEnabled = enabled;
-                        ctx.mozImageSmoothingEnabled = enabled;
-                        var dirtyRegion = cc.rendererCanvas._dirtyRegion;
-                        if (dirtyRegion) {
-                            var oldRegion = new cc.Region();
-                            oldRegion.setTo(0, 0, cc.visibleRect.width, cc.visibleRect.height);
-                            dirtyRegion.addRegion(oldRegion);
-                        }
+                } else if (cc._renderType === cc.game.RENDER_TYPE_CANVAS) {
+                    var ctx = cc._canvas.getContext("2d");
+                    ctx.imageSmoothingEnabled = enabled;
+                    ctx.mozImageSmoothingEnabled = enabled;
+                    var dirtyRegion = cc.rendererCanvas._dirtyRegion;
+                    if (dirtyRegion) {
+                        var oldRegion = new cc.Region();
+                        oldRegion.setTo(0, 0, cc.visibleRect.width, cc.visibleRect.height);
+                        dirtyRegion.addRegion(oldRegion);
                     }
                 }
             },
@@ -34594,11 +34424,7 @@
     }), {} ],
     184: [ (function(require, module, exports) {
         var ClassManager = cc.ClassManager = {
-            id: 0 | 998 * Math.random(),
             instanceId: 0 | 998 * Math.random(),
-            getNewID: function() {
-                return this.id++;
-            },
             getNewInstanceId: function() {
                 return this.instanceId++;
             }
@@ -34652,8 +34478,6 @@
                     }
                 };
             }
-            desc.value = ClassManager.getNewID();
-            Object.defineProperty(proto, "__pid", desc);
             TheClass.prototype = proto;
             desc.value = TheClass;
             Object.defineProperty(proto, "constructor", desc);
@@ -34672,13 +34496,11 @@
                         };
                     })(name, props[name]);
                     Object.defineProperty(proto, name, desc);
+                } else if (isFunc) {
+                    desc.value = props[name];
+                    Object.defineProperty(proto, name, desc);
                 } else {
-                    if (isFunc) {
-                        desc.value = props[name];
-                        Object.defineProperty(proto, name, desc);
-                    } else {
-                        proto[name] = props[name];
-                    }
+                    proto[name] = props[name];
                 }
             }
             TheClass.extend = Class.extend;
@@ -34721,9 +34543,8 @@
         var DELIMETER = "$_$";
         function createAttrsSingle(owner, ownerCtor, superAttrs) {
             var AttrsCtor;
-            var ctorName = ownerCtor.name;
-            ctorName += owner === ownerCtor ? "_ATTRS" : "_ATTRS_INSTANCE";
-            AttrsCtor = Function("return (function " + ctorName + "(){});")();
+            var ctorName;
+            AttrsCtor = function() {};
             superAttrs && JS.extend(AttrsCtor, superAttrs.constructor);
             var attrs = new AttrsCtor();
             JS.value(owner, "__attrs__", attrs);
@@ -34771,8 +34592,6 @@
                 for (key in newAttrs) {
                     95 !== key.charCodeAt(0) && (setter[propName + DELIMETER + key] = newAttrs[key]);
                 }
-            } else {
-                cc.errorID(3629);
             }
         }
         function getClassAttrs(ctor) {
@@ -34789,84 +34608,12 @@
         cc.Float = "Float";
         cc.Boolean = "Boolean";
         cc.String = "String";
-        function getTypeChecker(type, attrName) {
-            return function(constructor, mainPropName) {
-                var propInfo = '"' + JS.getClassName(constructor) + "." + mainPropName + '"';
-                var mainPropAttrs = attr(constructor, mainPropName);
-                if (!mainPropAttrs.saveUrlAsAsset) {
-                    var mainPropAttrsType = mainPropAttrs.type;
-                    mainPropAttrsType !== cc.Integer && mainPropAttrsType !== cc.Float || (mainPropAttrsType = "Number");
-                    if (mainPropAttrsType !== type) {
-                        cc.warnID(3604, propInfo);
-                        return;
-                    }
-                }
-                if (!mainPropAttrs.hasOwnProperty("default")) {
-                    return;
-                }
-                var defaultVal = mainPropAttrs.default;
-                if ("undefined" === typeof defaultVal) {
-                    return;
-                }
-                var isContainer = Array.isArray(defaultVal) || isPlainEmptyObj(defaultVal);
-                if (isContainer) {
-                    return;
-                }
-                var defaultType = typeof defaultVal;
-                var type_lowerCase = type.toLowerCase();
-                if (defaultType === type_lowerCase) {
-                    if (!mainPropAttrs.saveUrlAsAsset) {
-                        if ("object" === type_lowerCase) {
-                            if (!defaultVal || defaultVal instanceof mainPropAttrs.ctor) {
-                                return;
-                            }
-                            cc.warnID(3605, propInfo, JS.getClassName(mainPropAttrs.ctor));
-                        } else {
-                            "Number" !== type && cc.warnID(3606, attrName, propInfo, type);
-                        }
-                    }
-                } else {
-                    if ("function" === defaultType) {
-                        return;
-                    }
-                    if (type === cc.String && null == defaultVal) {
-                        cc.isChildClassOf(mainPropAttrs.ctor, cc.RawAsset) || cc.warnID(3607, propInfo);
-                    } else {
-                        if (mainPropAttrs.ctor !== String || "string" !== defaultType && null != defaultVal) {
-                            if (mainPropAttrs.ctor === Boolean && "boolean" === defaultType) {
-                                mainPropAttrs.type = cc.Boolean;
-                                cc.warnID(3609, propInfo);
-                            } else {
-                                if (mainPropAttrs.ctor === Number && "number" === defaultType) {
-                                    mainPropAttrs.type = cc.Float;
-                                    cc.warnID(3610, propInfo);
-                                } else {
-                                    cc.warnID(3611, attrName, propInfo, defaultType);
-                                }
-                            }
-                        } else {
-                            mainPropAttrs.type = cc.String;
-                            cc.warnID(3608, propInfo);
-                        }
-                    }
-                }
-                delete mainPropAttrs.type;
-            };
-        }
+        function getTypeChecker(type, attrName) {}
         function ObjectType(typeCtor) {
             return {
                 type: "Object",
                 ctor: typeCtor,
-                _onAfterProp: function(classCtor, mainPropName) {
-                    getTypeChecker("Object", "type")(classCtor, mainPropName);
-                    var defaultDef = getClassAttrs(classCtor)[mainPropName + DELIMETER + "default"];
-                    var defaultVal = require("./CCClass").getDefault(defaultDef);
-                    if (!Array.isArray(defaultVal) && cc.isChildClassOf(typeCtor, cc.ValueType)) {
-                        var typename = JS.getClassName(typeCtor);
-                        var info = cc.js.formatStr('No need to specify the "type" of "%s.%s" because %s is a child class of ValueType.', JS.getClassName(classCtor), mainPropName, typename);
-                        defaultDef ? cc.log(info) : cc.warnID(3612, info, typename, JS.getClassName(classCtor), mainPropName, typename);
-                    }
-                }
+                _onAfterProp: false
             };
         }
         module.exports = {
@@ -34947,7 +34694,7 @@
                 return false;
             }
             index = list.indexOf(callback);
-            while (index !== -1) {
+            while (-1 !== index) {
                 callbackTarget = list[index + 1];
                 "object" !== typeof callbackTarget && (callbackTarget = void 0);
                 if (callbackTarget === target) {
@@ -34967,7 +34714,7 @@
                 for (key in this._callbackTable) {
                     list = this._callbackTable[key];
                     index = list.lastIndexOf(target);
-                    while (index !== -1) {
+                    while (-1 !== index) {
                         callback = list[index - 1];
                         "function" === typeof callback ? list.splice(index - 1, 2) : list.splice(index, 1);
                         index = list.lastIndexOf(target);
@@ -34982,7 +34729,7 @@
             var list = this._callbackTable[key], index, callbackTarget;
             if (list) {
                 index = list.indexOf(callback);
-                while (index !== -1) {
+                while (-1 !== index) {
                     callbackTarget = list[index + 1];
                     "object" !== typeof callbackTarget && (callbackTarget = void 0);
                     if (callbackTarget === target) {
@@ -35093,14 +34840,6 @@
             this.uuidPropList.length = 0;
             this.rawProp = "";
         };
-        Details.prototype.assignAssetsBy = function(getter) {
-            for (var i = 0, len = this.uuidList.length; i < len; i++) {
-                var uuid = this.uuidList[i];
-                var obj = this.uuidObjList[i];
-                var prop = this.uuidPropList[i];
-                obj[prop] = getter(uuid);
-            }
-        };
         Details.prototype.getUuidOf = function(obj, propName) {
             for (var i = 0; i < this.uuidObjList.length; i++) {
                 if (this.uuidObjList[i] === obj && this.uuidPropList[i] === propName) {
@@ -35127,8 +34866,6 @@
                 this.deserializedList = [];
                 this.deserializedData = null;
                 this._classFinder = classFinder;
-                this._target = target;
-                this._ignoreEditorOnly = ignoreEditorOnly;
                 this._idList = [];
                 this._idObjList = [];
                 this._idPropList = [];
@@ -35185,17 +34922,15 @@
                         return obj;
                     }
                     cc.Class._isCCClass(klass) ? _deserializeFireClass(this, obj, serialized, klass, target) : this._deserializeTypedObject(obj, serialized, klass);
-                } else {
-                    if (Array.isArray(serialized)) {
-                        obj = new Array(serialized.length);
-                        for (var i = 0; i < serialized.length; i++) {
-                            prop = serialized[i];
-                            "object" === typeof prop && prop ? this._deserializeObjField(obj, prop, "" + i) : obj[i] = prop;
-                        }
-                    } else {
-                        obj = {};
-                        this._deserializePrimitiveObject(obj, serialized);
+                } else if (Array.isArray(serialized)) {
+                    obj = new Array(serialized.length);
+                    for (var i = 0; i < serialized.length; i++) {
+                        prop = serialized[i];
+                        "object" === typeof prop && prop ? this._deserializeObjField(obj, prop, "" + i) : obj[i] = prop;
                     }
+                } else {
+                    obj = {};
+                    this._deserializePrimitiveObject(obj, serialized);
                 }
                 return obj;
             };
@@ -35269,12 +35004,7 @@
                         sources.push('if(s.result.rawProp)\ncc.error("not support multi raw object in a file");');
                         sources.push("s.result.rawProp=" + propNameLiteral + ";");
                     } else {
-                        if (attrs[propName + EDITOR_ONLY]) {
-                            var mayUsedInPersistRoot = "_id" === propName && cc.isChildClassOf(klass, cc.Node);
-                            if (!mayUsedInPersistRoot) {
-                                continue;
-                            }
-                        }
+                        var mayUsedInPersistRoot;
                         if (false === attrs[propName + SERIALIZABLE]) {
                             continue;
                         }
@@ -35321,13 +35051,14 @@
                 }
             }
             function _deserializeFireClass(self, obj, serialized, klass, target) {
-                var deserialize = klass.__deserialize__;
-                if (!deserialize) {
+                var deserialize;
+                if (klass.hasOwnProperty("__deserialize__")) {
+                    deserialize = klass.__deserialize__;
+                } else {
                     deserialize = compileDeserialize(self, klass);
                     JS.value(klass, "__deserialize__", deserialize, true);
                 }
                 deserialize(self, obj, serialized, klass, target);
-                klass !== cc._PrefabInfo || obj.sync || unlinkUnusedPrefab(self, serialized, obj);
             }
             _Deserializer.pool = new JS.Pool(function(obj) {
                 obj.result = null;
@@ -35335,7 +35066,6 @@
                 obj.deserializedList.length = 0;
                 obj.deserializedData = null;
                 obj._classFinder = null;
-                obj._target = null;
                 obj._idList.length = 0;
                 obj._idObjList.length = 0;
                 obj._idPropList.length = 0;
@@ -35346,8 +35076,6 @@
                     cache.result = result;
                     cache.customEnv = customEnv;
                     cache._classFinder = classFinder;
-                    cache._target = target;
-                    cache._ignoreEditorOnly = ignoreEditorOnly;
                     return cache;
                 }
                 return new _Deserializer(result, target, classFinder, customEnv, ignoreEditorOnly);
@@ -35446,6 +35174,16 @@
         var LOCAL_TEMP_OBJ = "t";
         var LOCAL_ARRAY = "a";
         var LINE_INDEX_OF_NEW_OBJ = 0;
+        var DEFAULT_MODULE_CACHE = {
+            "cc.Node": "cc.Node",
+            "cc.Sprite": "cc.Sprite",
+            "cc.Label": "cc.Label",
+            "cc.Button": "cc.Button",
+            "cc.Widget": "cc.Widget",
+            "cc.Animation": "cc.Animation",
+            "cc.ClickEvent": false,
+            "cc.PrefabInfo": false
+        };
         function Declaration(varName, expression) {
             this.varName = varName;
             this.expression = expression;
@@ -35538,6 +35276,8 @@
             this.codeArray = [];
             this.objs = [];
             this.funcs = [];
+            this.funcModuleCache = JS.createMap();
+            JS.mixin(this.funcModuleCache, DEFAULT_MODULE_CACHE);
             this.globalVariables = [];
             this.globalVariableId = 0;
             this.localVariableId = 0;
@@ -35549,7 +35289,7 @@
             this.enumerateObject(this.codeArray, obj);
             var globalVariablesDeclaration;
             this.globalVariables.length > 0 && (globalVariablesDeclaration = VAR + this.globalVariables.join(",") + ";");
-            var code = flattenCodeArray([ "return (function(R){", globalVariablesDeclaration || [], this.codeArray, "return o;", "})" ], "\n");
+            var code = flattenCodeArray([ "return (function(R){", globalVariablesDeclaration || [], this.codeArray, "return o;", "})" ], "");
             this.result = Function("O", "F", code)(this.objs, this.funcs);
             for (var i = 0, len = this.objsToClear_iN$t.length; i < len; ++i) {
                 this.objsToClear_iN$t[i]._iN$t = null;
@@ -35559,14 +35299,23 @@
         var proto = Parser.prototype;
         proto.getFuncModule = function(func, usedInNew) {
             var clsName = JS.getClassName(func);
-            var clsNameIsModule = clsName.indexOf(".") !== -1;
-            if (clsNameIsModule) {
-                try {
-                    clsNameIsModule = func === Function("return " + clsName)();
+            if (clsName) {
+                var cache = this.funcModuleCache[clsName];
+                if (cache) {
+                    return cache;
+                }
+                if (void 0 === cache) {
+                    var clsNameIsModule = -1 !== clsName.indexOf(".");
                     if (clsNameIsModule) {
-                        return clsName;
+                        try {
+                            clsNameIsModule = func === Function("return " + clsName)();
+                            if (clsNameIsModule) {
+                                this.funcModuleCache[clsName] = clsName;
+                                return clsName;
+                            }
+                        } catch (e) {}
                     }
-                } catch (e) {}
+                }
             }
             var index = this.funcs.indexOf(func);
             if (index < 0) {
@@ -35574,7 +35323,9 @@
                 this.funcs.push(func);
             }
             var res = "F[" + index + "]";
-            return usedInNew ? "(" + res + ")" : res;
+            usedInNew && (res = "(" + res + ")");
+            this.funcModuleCache[clsName] = res;
+            return res;
         };
         proto.getObjRef = function(obj) {
             var index = this.objs.indexOf(obj);
@@ -35706,17 +35457,13 @@
                         if (obj instanceof cc._BaseNode || obj instanceof cc.Component) {
                             return this.getObjRef(obj);
                         }
-                    } else {
-                        if (this.parent instanceof cc._BaseNode) {
-                            if (obj instanceof cc._BaseNode) {
-                                if (!obj.isChildOf(this.parent)) {
-                                    return this.getObjRef(obj);
-                                }
-                            } else {
-                                if (obj instanceof cc.Component && !obj.node.isChildOf(this.parent)) {
-                                    return this.getObjRef(obj);
-                                }
+                    } else if (this.parent instanceof cc._BaseNode) {
+                        if (obj instanceof cc._BaseNode) {
+                            if (!obj.isChildOf(this.parent)) {
+                                return this.getObjRef(obj);
                             }
+                        } else if (obj instanceof cc.Component && !obj.node.isChildOf(this.parent)) {
+                            return this.getObjRef(obj);
                         }
                     }
                 }
@@ -35760,18 +35507,14 @@
         function instantiate(original, internal_force) {
             if (!internal_force) {
                 if ("object" !== typeof original || Array.isArray(original)) {
-                    cc.errorID(6900);
                     return null;
                 }
                 if (!original) {
-                    cc.errorID(6901);
                     return null;
                 }
                 if (!cc.isValid(original)) {
-                    cc.errorID(6902);
                     return null;
                 }
-                original instanceof cc.Component && cc.warn("Should not instantiate a single cc.Component directly, you must instantiate the entire node.");
             }
             var clone;
             if (original instanceof CCObject) {
@@ -35782,7 +35525,6 @@
                     return clone;
                 }
                 if (original instanceof cc.Asset) {
-                    cc.errorID(6903);
                     return null;
                 }
             }
@@ -35794,11 +35536,9 @@
         var objsToClearTmpVar = [];
         function doInstantiate(obj, parent) {
             if (Array.isArray(obj)) {
-                cc.errorID(6904);
                 return null;
             }
             if (_isDomNode && _isDomNode(obj)) {
-                cc.errorID(6905);
                 return null;
             }
             var clone;
@@ -35823,7 +35563,7 @@
                 var key = props[p];
                 if (false !== attrs[key + SERIALIZABLE]) {
                     var value = obj[key];
-                    "object" === typeof value && value ? clone[key] = value._iN$t || instantiateObj(value, parent) : clone[key] = value;
+                    clone[key] = "object" === typeof value && value ? value._iN$t || instantiateObj(value, parent) : value;
                 }
             }
         }
@@ -35865,7 +35605,7 @@
                 obj._iN$t = clone;
                 for (var i = 0; i < len; ++i) {
                     var value = obj[i];
-                    "object" === typeof value && value ? clone[i] = value._iN$t || instantiateObj(value, parent) : clone[i] = value;
+                    clone[i] = "object" === typeof value && value ? value._iN$t || instantiateObj(value, parent) : value;
                 }
                 objsToClearTmpVar.push(obj);
                 return clone;
@@ -35880,24 +35620,18 @@
                         if (obj instanceof cc._BaseNode || obj instanceof cc.Component) {
                             return obj;
                         }
-                    } else {
-                        if (parent instanceof cc._BaseNode) {
-                            if (obj instanceof cc._BaseNode) {
-                                if (!obj.isChildOf(parent)) {
-                                    return obj;
-                                }
-                            } else {
-                                if (obj instanceof cc.Component && !obj.node.isChildOf(parent)) {
-                                    return obj;
-                                }
+                    } else if (parent instanceof cc._BaseNode) {
+                        if (obj instanceof cc._BaseNode) {
+                            if (!obj.isChildOf(parent)) {
+                                return obj;
                             }
+                        } else if (obj instanceof cc.Component && !obj.node.isChildOf(parent)) {
+                            return obj;
                         }
                     }
                 }
-            } else {
-                if (ctor !== Object) {
-                    return obj;
-                }
+            } else if (ctor !== Object) {
+                return obj;
             }
             clone = new ctor();
             enumerateObject(obj, clone, parent);
@@ -35969,15 +35703,6 @@
                 return obj;
             },
             extend: function(cls, base) {
-                if (!base) {
-                    cc.errorID(5404);
-                    return;
-                }
-                if (!cls) {
-                    cc.errorID(5405);
-                    return;
-                }
-                Object.keys(cls.prototype).length > 0 && cc.errorID(5406);
                 for (var p in base) {
                     base.hasOwnProperty(p) && (cls[p] = base[p]);
                 }
@@ -36077,7 +35802,7 @@
             }
             return "";
         };
-        function isTempClassId_DEV(id) {
+        function isTempClassId(id) {
             return "string" !== typeof id || id.startsWith(tempCIDGenerater.prefix);
         }
         (function() {
@@ -36127,7 +35852,7 @@
                 var res;
                 if ("function" === typeof obj && obj.prototype.hasOwnProperty("__cid__")) {
                     res = obj.prototype.__cid__;
-                    if (!allowTempId && true && isTempClassId_DEV(res)) {
+                    if (!allowTempId && false && isTempClassId(res)) {
                         return "";
                     }
                     return res;
@@ -36136,7 +35861,7 @@
                     var prototype = obj.constructor.prototype;
                     if (prototype && prototype.hasOwnProperty("__cid__")) {
                         res = obj.__cid__;
-                        if (!allowTempId && true && isTempClassId_DEV(res)) {
+                        if (!allowTempId && false && isTempClassId(res)) {
                             return "";
                         }
                         return res;
@@ -36144,39 +35869,13 @@
                 }
                 return "";
             };
-            js.getset(js, "_registeredClassIds", (function() {
-                var dump = {};
-                for (var id in _idToClass) {
-                    dump[id] = _idToClass[id];
-                }
-                return dump;
-            }), (function(value) {
-                js.clear(_idToClass);
-                for (var id in value) {
-                    _idToClass[id] = value[id];
-                }
-            }));
-            js.getset(js, "_registeredClassNames", (function() {
-                var dump = {};
-                for (var id in _nameToClass) {
-                    dump[id] = _nameToClass[id];
-                }
-                return dump;
-            }), (function(value) {
-                js.clear(_nameToClass);
-                for (var id in value) {
-                    _nameToClass[id] = value[id];
-                }
-            }));
         })();
         js.obsolete = function(obj, obsoleted, newPropName, writable) {
-            var oldName = obsoleted.split(".").slice(-1)[0];
+            var oldName = /([^.]+)$/.exec(obsoleted)[0];
             function get() {
-                cc.warnID(5400, obsoleted, newPropName);
                 return this[newPropName];
             }
             writable ? js.getset(obj, oldName, get, (function(value) {
-                cc.warnID(5401, obsoleted, newPropName);
                 this[newPropName] = value;
             })) : js.get(obj, oldName, get);
         };
@@ -36186,33 +35885,30 @@
                 js.obsolete(obj, objName + "." + obsoleted, newName, writable);
             }
         };
+        var REGEXP_NUM_OR_STR = /(%d)|(%s)/;
+        var REGEXP_STR = /%s/;
         js.formatStr = function() {
-            var args = arguments;
-            var l = args.length;
-            if (l < 1) {
+            var argLen = arguments.length;
+            if (0 === argLen) {
                 return "";
             }
-            var REGEXP_NUM_OR_STR = /(%d)|(%s)/;
-            var i = 1;
-            var str = args[0];
-            var hasSubstitution = "string" === typeof str && REGEXP_NUM_OR_STR.test(str);
+            var msg = arguments[0];
+            if (1 === argLen) {
+                return "" + msg;
+            }
+            var hasSubstitution = "string" === typeof msg && REGEXP_NUM_OR_STR.test(msg);
             if (hasSubstitution) {
-                var REGEXP_STR = /%s/;
-                for (;i < l; ++i) {
-                    var arg = args[i];
+                for (var i = 1; i < argLen; ++i) {
+                    var arg = arguments[i];
                     var regExpToTest = "number" === typeof arg ? REGEXP_NUM_OR_STR : REGEXP_STR;
-                    regExpToTest.test(str) ? str = str.replace(regExpToTest, arg) : str += " " + arg;
+                    regExpToTest.test(msg) ? msg = msg.replace(regExpToTest, arg) : msg += " " + arg;
                 }
             } else {
-                if (l > 1) {
-                    for (;i < l; ++i) {
-                        str += " " + args[i];
-                    }
-                } else {
-                    str = "" + str;
+                for (var _i = 1; _i < argLen; ++_i) {
+                    msg += " " + arguments[_i];
                 }
             }
-            return str;
+            return msg;
         };
         js.shiftArguments = function() {
             var len = arguments.length - 1;
@@ -36221,6 +35917,14 @@
                 args[i] = arguments[i + 1];
             }
             return args;
+        };
+        js.createMap = function(forceDictMode) {
+            var map = Object.create(null);
+            if (forceDictMode) {
+                map["__"] = void 0;
+                delete map["__"];
+            }
+            return map;
         };
         function removeAt(array, index) {
             array.splice(index, 1);
@@ -36331,7 +36035,7 @@
         cc.js = js;
         module.exports = js;
     }), {
-        "../utils/mutable-forward-iterator": 223,
+        "../utils/mutable-forward-iterator": 224,
         "./id-generater": 188
     } ],
     193: [ (function(require, module, exports) {
@@ -36478,15 +36182,9 @@
             editorOnly: {},
             rawType: {}
         };
-        var TYPO_TO_CORRECT_DEV = {
-            extend: "extends",
-            property: "properties",
-            static: "statics",
-            constructor: "ctor"
-        };
+        var TYPO_TO_CORRECT_DEV = false;
         function parseNotify(val, propName, notify, properties) {
             if (val.get || val.set) {
-                cc.warnID(5500);
                 return;
             }
             if (val.hasOwnProperty("default")) {
@@ -36508,8 +36206,6 @@
                         v.canUsedInGet || delete val[attr];
                     }
                 }
-            } else {
-                cc.warnID(5501);
             }
         }
         function checkUrl(val, className, propName, url) {
@@ -36533,11 +36229,6 @@
         function postCheckType(val, type, className, propName) {}
         function getBaseClassWherePropertyDefined_DEV(propName, cls) {
             var res;
-            for (;cls && cls.__props__ && cls.__props__.indexOf(propName) !== -1; cls = cls.$super) {
-                res = cls;
-            }
-            res || cc.error("unknown error");
-            return res;
         }
         exports.getFullFormOfProperty = function(options) {
             var isLiteral = options && options.constructor === Object;
@@ -36575,39 +36266,21 @@
                 fullForm && (val = properties[propName] = fullForm);
                 if (val) {
                     var maybeTypeScript;
-                    if (!val.override && cls.__props__.indexOf(propName) !== -1) {
-                        var baseClass = cc.js.getClassName(getBaseClassWherePropertyDefined_DEV(propName, cls));
-                        cc.warnID(5517, className, propName, baseClass, propName);
-                    }
+                    var baseClass;
                     var notify = val.notify;
-                    notify && (es6 ? cc.error("not yet support notify attribute for ES6 Classes") : parseNotify(val, propName, notify, properties));
+                    notify && parseNotify(val, propName, notify, properties);
                     "type" in val && parseType(val, val.type, className, propName);
                     "url" in val && checkUrl(val, className, propName, val.url);
                     "type" in val && postCheckType(val, val.type, className, propName);
                 }
             }
         };
-        module.exports.validateMethod = function(func, funcName, className, cls, base) {
-            if ("constructor" === funcName) {
-                cc.errorID(3643, className);
-                return false;
-            }
+        exports.validateMethodWithProps = function(func, funcName, className, cls, base) {
             if ("function" !== typeof func && null !== func) {
-                if (false === func && base && base.prototype) {
-                    var overrided = base.prototype[funcName];
-                    if ("function" === typeof overrided) {
-                        var baseFuc = cc.js.getClassName(base) + "." + funcName;
-                        var subFuc = className + "." + funcName;
-                        cc.warnID(3624, subFuc, baseFuc, subFuc, subFuc);
-                    }
-                }
-                var correct = TYPO_TO_CORRECT_DEV[funcName];
-                correct ? cc.warnID(3621, className, funcName, correct) : func && cc.errorID(3622, className, funcName);
-                return false;
-            }
-            if (cls.__props__ && cls.__props__.indexOf(funcName) >= 0) {
-                var baseClassName = cc.js.getClassName(getBaseClassWherePropertyDefined_DEV(funcName, cls));
-                cc.errorID(3648, className, funcName, baseClassName);
+                var overrided;
+                var baseFuc;
+                var subFuc;
+                var correct;
                 return false;
             }
             return true;
@@ -36668,7 +36341,7 @@
             _init: function(mountPaths) {
                 for (var dir in mountPaths) {
                     var path = mountPaths[dir];
-                    path = cc.path._setEndWithSep(path, "/");
+                    path = cc.path.stripSep(path) + "/";
                     _mounts[dir] = path;
                 }
                 this._rawAssets = _mounts.assets;
@@ -36706,20 +36379,49 @@
                 }), 0);
             }
         };
-        module.exports.isPlainEmptyObj_DEV = function(obj) {
-            if (!obj || obj.constructor !== Object) {
-                return false;
-            }
-            for (var k in obj) {
-                return false;
-            }
-            return true;
-        };
-        module.exports.cloneable_DEV = function(obj) {
-            return obj && "function" === typeof obj.clone && (obj.constructor.prototype.hasOwnProperty("clone") || obj.hasOwnProperty("clone"));
-        };
     }), {} ],
     198: [ (function(require, module, exports) {
+        require("./platform/js");
+        require("./value-types");
+        require("./utils");
+        require("./platform/CCInputManager");
+        require("./platform/CCInputExtension");
+        require("./event");
+        require("./platform/CCSys");
+        require("./platform/CCMacro");
+        require("./load-pipeline");
+        require("./textures");
+        require("./CCDirector");
+        require("./CCDirectorWebGL");
+        require("./CCDirectorCanvas");
+        require("./platform/CCSAXParser");
+        require("./platform/CCView");
+        require("./platform/CCScreen");
+        require("./CCScheduler");
+        require("./event-manager");
+        require("./renderer");
+    }), {
+        "./CCDirector": 34,
+        "./CCDirectorCanvas": 35,
+        "./CCDirectorWebGL": 36,
+        "./CCScheduler": 42,
+        "./event": 113,
+        "./event-manager": 109,
+        "./load-pipeline": 134,
+        "./platform/CCInputExtension": 175,
+        "./platform/CCInputManager": 176,
+        "./platform/CCMacro": 177,
+        "./platform/CCSAXParser": 179,
+        "./platform/CCScreen": 180,
+        "./platform/CCSys": 181,
+        "./platform/CCView": 182,
+        "./platform/js": 192,
+        "./renderer": 202,
+        "./textures": 215,
+        "./utils": 222,
+        "./value-types": 236
+    } ],
+    199: [ (function(require, module, exports) {
         var Region = function() {
             this._minX = 0;
             this._minY = 0;
@@ -36965,7 +36667,7 @@
         cc.Region = Region;
         cc.DirtyRegion = DirtyRegion;
     }), {} ],
-    199: [ (function(require, module, exports) {
+    200: [ (function(require, module, exports) {
         cc.rendererCanvas = {
             childrenOrderDirty: true,
             assignedZ: 0,
@@ -36980,7 +36682,7 @@
             _clearFillStyle: "rgb(0, 0, 0)",
             _dirtyRegion: null,
             _allNeedDraw: true,
-            _enableDirtyRegion: true,
+            _enableDirtyRegion: false,
             _debugDirtyRegion: false,
             _dirtyRegionCountThreshold: 10,
             init: function() {
@@ -37039,8 +36741,8 @@
                     var region = dirtyList[index];
                     x = (region._minX * scaleX | 0) - 1;
                     y = (-region._maxY * scaleX | 0) - 1;
-                    width = (region._width * scaleX | 0) + 2;
-                    height = (region._height * scaleY | 0) + 2;
+                    width = 2 + (region._width * scaleX | 0);
+                    height = 2 + (region._height * scaleY | 0);
                     ctx.rect(x, y, width, height);
                 }
                 ctx.clip();
@@ -37068,8 +36770,8 @@
                     var region = dirtyList[index];
                     x = (region._minX * scaleX | 0) - 1;
                     y = (-region._maxY * scaleX | 0) - 1;
-                    width = (region._width * scaleX | 0) + 2;
-                    height = (region._height * scaleY | 0) + 2;
+                    width = 2 + (region._width * scaleX | 0);
+                    height = 2 + (region._height * scaleY | 0);
                     ctx.rect(x, y, width, height);
                 }
                 var oldstyle = ctx.fillStyle;
@@ -37141,7 +36843,7 @@
                 this._isCacheToCanvasOn = true;
                 renderTextureID = renderTextureID || 0;
                 this._cacheToCanvasCmds[renderTextureID] = [];
-                this._cacheInstanceIds.indexOf(renderTextureID) === -1 && this._cacheInstanceIds.push(renderTextureID);
+                -1 === this._cacheInstanceIds.indexOf(renderTextureID) && this._cacheInstanceIds.push(renderTextureID);
                 this._currentID = renderTextureID;
             },
             _turnToNormalMode: function() {
@@ -37192,9 +36894,9 @@
                 if (this._isCacheToCanvasOn) {
                     var currentId = this._currentID, locCmdBuffer = this._cacheToCanvasCmds;
                     var cmdList = locCmdBuffer[currentId];
-                    cmdList.indexOf(cmd) === -1 && cmdList.push(cmd);
+                    -1 === cmdList.indexOf(cmd) && cmdList.push(cmd);
                 } else {
-                    this._renderCmds.indexOf(cmd) === -1 && this._renderCmds.push(cmd);
+                    -1 === this._renderCmds.indexOf(cmd) && this._renderCmds.push(cmd);
                 }
             }
         };
@@ -37247,21 +36949,17 @@
             proto.setGlobalAlpha = function(alpha) {
                 if (this._saveCount > 0) {
                     this._context.globalAlpha = alpha;
-                } else {
-                    if (this._currentAlpha !== alpha) {
-                        this._currentAlpha = alpha;
-                        this._context.globalAlpha = alpha;
-                    }
+                } else if (this._currentAlpha !== alpha) {
+                    this._currentAlpha = alpha;
+                    this._context.globalAlpha = alpha;
                 }
             };
             proto.setCompositeOperation = function(compositionOperation) {
                 if (this._saveCount > 0) {
                     this._context.globalCompositeOperation = compositionOperation;
-                } else {
-                    if (this._currentCompositeOperation !== compositionOperation) {
-                        this._currentCompositeOperation = compositionOperation;
-                        this._context.globalCompositeOperation = compositionOperation;
-                    }
+                } else if (this._currentCompositeOperation !== compositionOperation) {
+                    this._currentCompositeOperation = compositionOperation;
+                    this._context.globalCompositeOperation = compositionOperation;
                 }
             };
             proto.setFillStyle = function(fillStyle) {
@@ -37270,18 +36968,16 @@
             proto.setStrokeStyle = function(strokeStyle) {
                 if (this._saveCount > 0) {
                     this._context.strokeStyle = strokeStyle;
-                } else {
-                    if (this._currentStrokeStyle !== strokeStyle) {
-                        this._currentStrokeStyle = strokeStyle;
-                        this._context.strokeStyle = strokeStyle;
-                    }
+                } else if (this._currentStrokeStyle !== strokeStyle) {
+                    this._currentStrokeStyle = strokeStyle;
+                    this._context.strokeStyle = strokeStyle;
                 }
             };
             proto.setTransform = function(t, scaleX, scaleY) {
                 if (this._armatureMode > 0) {
                     this.restore();
                     this.save();
-                    this._context.transform(t.a, -t.b, -t.c, t.d, t.tx * scaleX, -(t.ty * scaleY));
+                    this._context.transform(t.a, -t.b, -t.c, t.d, t.tx * scaleX, -t.ty * scaleY);
                 } else {
                     this._context.setTransform(t.a * scaleX, -t.b * scaleY, -t.c * scaleX, t.d * scaleY, this._offsetX + t.tx * scaleX, this._realOffsetY - t.ty * scaleY);
                 }
@@ -37298,7 +36994,7 @@
             };
         })();
     }), {} ],
-    200: [ (function(require, module, exports) {
+    201: [ (function(require, module, exports) {
         var _batchedInfo = {
             texture: null,
             blendSrc: null,
@@ -37363,7 +37059,7 @@
                 r: 0,
                 g: 0,
                 b: 0,
-                a: 255
+                a: 1
             },
             init: function() {
                 var gl = cc._renderContext;
@@ -37384,7 +37080,7 @@
                 this._isCacheToBufferOn = true;
                 renderTextureID = renderTextureID || 0;
                 this._cacheToBufferCmds[renderTextureID] ? this._cacheToBufferCmds[renderTextureID].length = 0 : this._cacheToBufferCmds[renderTextureID] = [];
-                this._cacheInstanceIds.indexOf(renderTextureID) === -1 && this._cacheInstanceIds.push(renderTextureID);
+                -1 === this._cacheInstanceIds.indexOf(renderTextureID) && this._cacheInstanceIds.push(renderTextureID);
                 this._currentID = renderTextureID;
             },
             _turnToNormalMode: function() {
@@ -37457,7 +37153,7 @@
                 if (this._isCacheToBufferOn) {
                     var currentId = this._currentID, locCmdBuffer = this._cacheToBufferCmds;
                     var cmdList = locCmdBuffer[currentId];
-                    cmdList.indexOf(cmd) === -1 && cmdList.push(cmd);
+                    -1 === cmdList.indexOf(cmd) && cmdList.push(cmd);
                 } else {
                     this._renderCmds.push(cmd);
                 }
@@ -37502,12 +37198,15 @@
                 _batchingSize += increment;
             },
             _updateBatchedInfo: function(texture, blendFunc, shaderProgram) {
-                texture && (_batchedInfo.texture = texture);
-                if (blendFunc) {
+                if (texture !== _batchedInfo.texture || blendFunc.src !== _batchedInfo.blendSrc || blendFunc.dst !== _batchedInfo.blendDst || shaderProgram !== _batchedInfo.shader) {
+                    this._batchRendering();
+                    _batchedInfo.texture = texture;
                     _batchedInfo.blendSrc = blendFunc.src;
                     _batchedInfo.blendDst = blendFunc.dst;
+                    _batchedInfo.shader = shaderProgram;
+                    return true;
                 }
-                shaderProgram && (_batchedInfo.shader = shaderProgram);
+                return false;
             },
             _breakBatch: function() {
                 _batchBroken = true;
@@ -37624,16 +37323,16 @@
             }
         };
     }), {} ],
-    201: [ (function(require, module, exports) {
+    202: [ (function(require, module, exports) {
         require("./RendererCanvas");
         require("./RendererWebGL");
         require("./DirtyRegion");
     }), {
-        "./DirtyRegion": 198,
-        "./RendererCanvas": 199,
-        "./RendererWebGL": 200
+        "./DirtyRegion": 199,
+        "./RendererCanvas": 200,
+        "./RendererWebGL": 201
     } ],
-    202: [ (function(require, module, exports) {
+    203: [ (function(require, module, exports) {
         _ccsg.Scene = _ccsg.Node.extend({
             _className: "Scene",
             ctor: function() {
@@ -37644,8 +37343,9 @@
             }
         });
     }), {} ],
-    203: [ (function(require, module, exports) {
+    204: [ (function(require, module, exports) {
         var EventTarget = require("../event/event-target");
+        var Misc = require("../utils/misc");
         _ccsg.Sprite = _ccsg.Node.extend({
             dirty: false,
             atlasIndex: 0,
@@ -37795,26 +37495,18 @@
             _softInit: function(fileName, rect, rotated) {
                 if (void 0 === fileName) {
                     _ccsg.Sprite.prototype.init.call(this);
-                } else {
-                    if (cc.js.isString(fileName)) {
-                        "#" === fileName[0] ? cc.logID(2728, fileName) : _ccsg.Sprite.prototype.init.call(this, fileName, rect);
-                    } else {
-                        if ("object" === typeof fileName) {
-                            if (fileName instanceof cc.Texture2D) {
-                                this.initWithTexture(fileName, rect, rotated);
-                            } else {
-                                if (fileName instanceof cc.SpriteFrame) {
-                                    this.initWithSpriteFrame(fileName);
-                                } else {
-                                    if (fileName instanceof HTMLImageElement || fileName instanceof HTMLCanvasElement) {
-                                        var texture2d = new cc.Texture2D();
-                                        texture2d.initWithElement(fileName);
-                                        texture2d.handleLoadedTexture();
-                                        this.initWithTexture(texture2d);
-                                    }
-                                }
-                            }
-                        }
+                } else if (cc.js.isString(fileName)) {
+                    "#" === fileName[0] ? cc.logID(2728, fileName) : _ccsg.Sprite.prototype.init.call(this, fileName, rect);
+                } else if ("object" === typeof fileName) {
+                    if (fileName instanceof cc.Texture2D) {
+                        this.initWithTexture(fileName, rect, rotated);
+                    } else if (fileName instanceof cc.SpriteFrame) {
+                        this.initWithSpriteFrame(fileName);
+                    } else if (fileName instanceof HTMLImageElement || fileName instanceof HTMLCanvasElement) {
+                        var texture2d = new cc.Texture2D();
+                        texture2d.initWithElement(fileName);
+                        texture2d.handleLoadedTexture();
+                        this.initWithTexture(texture2d);
                     }
                 }
             },
@@ -37989,13 +37681,21 @@
             }
         });
         cc.js.addon(_ccsg.Sprite.prototype, EventTarget.prototype);
-        cc.assertID("function" === typeof cc._tmp.PrototypeSprite, 3200, "SpritesPropertyDefine.js");
-        cc._tmp.PrototypeSprite();
-        delete cc._tmp.PrototypeSprite;
+        var SameNameGetSets = [ "opacity", "color", "texture", "quad" ];
+        var DiffNameGetSets = {
+            opacityModifyRGB: [ "isOpacityModifyRGB", "setOpacityModifyRGB" ],
+            flippedX: [ "isFlippedX", "setFlippedX" ],
+            flippedY: [ "isFlippedY", "setFlippedY" ],
+            offsetX: [ "_getOffsetX" ],
+            offsetY: [ "_getOffsetY" ],
+            textureRectRotated: [ "isTextureRectRotated" ]
+        };
+        Misc.propertyDefine(_ccsg.Sprite, SameNameGetSets, DiffNameGetSets);
     }), {
-        "../event/event-target": 112
+        "../event/event-target": 111,
+        "../utils/misc": 223
     } ],
-    204: [ (function(require, module, exports) {
+    205: [ (function(require, module, exports) {
         _ccsg.Sprite.CanvasRenderCmd = function(renderable) {
             this._rootCtor(renderable);
             this._needDraw = true;
@@ -38121,11 +37821,9 @@
                 if (255 !== dColor.r || 255 !== dColor.g || 255 !== dColor.b) {
                     this._textureToRender = texture._generateColorTexture(dColor.r, dColor.g, dColor.b, rect);
                     this._colorized = true;
-                } else {
-                    if (texture) {
-                        this._textureToRender = texture;
-                        this._colorized = false;
-                    }
+                } else if (texture) {
+                    this._textureToRender = texture;
+                    this._colorized = false;
                 }
             }
         };
@@ -38192,7 +37890,7 @@
             return nCanvas;
         };
     }), {} ],
-    205: [ (function(require, module, exports) {
+    206: [ (function(require, module, exports) {
         var macro = cc.macro;
         _ccsg.Sprite.WebGLRenderCmd = function(renderable) {
             this._rootCtor(renderable);
@@ -38425,8 +38123,11 @@
             return len;
         };
     }), {} ],
-    206: [ (function(require, module, exports) {
+    207: [ (function(require, module, exports) {
         var EventTarget = require("../event/event-target");
+        function sortIndex(a, b) {
+            return a - b;
+        }
         var dataPool = {
             _pool: {},
             _lengths: [],
@@ -38437,7 +38138,7 @@
                 } else {
                     this._pool[length] = [ data ];
                     this._lengths.push(length);
-                    this._lengths.sort();
+                    this._lengths.sort(sortIndex);
                 }
             },
             get: function(length) {
@@ -38964,28 +38665,18 @@
                     startAngle -= 2 * Math.PI;
                     endAngle -= 2 * Math.PI;
                     for (var testIndex = 0; testIndex < 3; ++testIndex) {
-                        if (startAngle >= fillEnd) {
-                            ;
+                        if (startAngle >= fillEnd) {} else if (startAngle >= fillStart) {
+                            endAngle >= fillEnd ? this._generateTriangle(wt, offset, center, this._vertPos[triangle[0]], this._intersectPoint_2[triangleIndex]) : this._generateTriangle(wt, offset, center, this._vertPos[triangle[0]], this._vertPos[triangle[1]]);
+                            offset += 6;
+                            count += 3;
+                        } else if (endAngle <= fillStart) {} else if (endAngle <= fillEnd) {
+                            this._generateTriangle(wt, offset, center, this._intersectPoint_1[triangleIndex], this._vertPos[triangle[1]]);
+                            offset += 6;
+                            count += 3;
                         } else {
-                            if (startAngle >= fillStart) {
-                                endAngle >= fillEnd ? this._generateTriangle(wt, offset, center, this._vertPos[triangle[0]], this._intersectPoint_2[triangleIndex]) : this._generateTriangle(wt, offset, center, this._vertPos[triangle[0]], this._vertPos[triangle[1]]);
-                                offset += 6;
-                                count += 3;
-                            } else {
-                                if (endAngle <= fillStart) {
-                                    ;
-                                } else {
-                                    if (endAngle <= fillEnd) {
-                                        this._generateTriangle(wt, offset, center, this._intersectPoint_1[triangleIndex], this._vertPos[triangle[1]]);
-                                        offset += 6;
-                                        count += 3;
-                                    } else {
-                                        this._generateTriangle(wt, offset, center, this._intersectPoint_1[triangleIndex], this._intersectPoint_2[triangleIndex]);
-                                        offset += 6;
-                                        count += 3;
-                                    }
-                                }
-                            }
+                            this._generateTriangle(wt, offset, center, this._intersectPoint_1[triangleIndex], this._intersectPoint_2[triangleIndex]);
+                            offset += 6;
+                            count += 3;
                         }
                         startAngle += 2 * Math.PI;
                         endAngle += 2 * Math.PI;
@@ -39153,7 +38844,7 @@
                     uvs = dataPool.get(dataLength) || new Float32Array(dataLength);
                     sprite._uvs = uvs;
                 }
-                var l = 1 / 0, b = 1 / 0, r = -(1 / 0), t = -(1 / 0);
+                var l = 1 / 0, b = 1 / 0, r = -1 / 0, t = -1 / 0;
                 for (var i = 0; i < count; i++) {
                     var x = srcVerts[i].x * wt.a + srcVerts[i].y * wt.c + wt.tx;
                     var y = srcVerts[i].x * wt.b + srcVerts[i].y * wt.d + wt.ty;
@@ -39467,10 +39158,10 @@
                 vb = rect.bottom.y;
                 if (webgl) {
                     var vert = this._isTriangle ? this._rawVerts : this._vertices, x0 = vert[cornerId[0]], x1 = vert[cornerId[1]], x2 = vert[cornerId[2]], x3 = vert[cornerId[3]], y0 = vert[cornerId[0] + 1], y1 = vert[cornerId[1] + 1], y2 = vert[cornerId[2] + 1], y3 = vert[cornerId[3] + 1];
-                    (x0 - vl & x1 - vl & x2 - vl & x3 - vl) >> 31 || (vr - x0 & vr - x1 & vr - x2 & vr - x3) >> 31 || (y0 - vb & y1 - vb & y2 - vb & y3 - vb) >> 31 || (vt - y0 & vt - y1 & vt - y2 & vt - y3) >> 31 ? this._renderCmd._needDraw = false : this._renderCmd._needDraw = true;
+                    this._renderCmd._needDraw = !((x0 - vl & x1 - vl & x2 - vl & x3 - vl) >> 31 || (vr - x0 & vr - x1 & vr - x2 & vr - x3) >> 31 || (y0 - vb & y1 - vb & y2 - vb & y3 - vb) >> 31 || (vt - y0 & vt - y1 & vt - y2 & vt - y3) >> 31);
                 } else {
                     var bb = this._renderCmd._currentRegion, l = bb._minX, r = bb._maxX, b = bb._minY, t = bb._maxY;
-                    r < vl || l > vr || t < vb || b > vt ? this._renderCmd._needDraw = false : this._renderCmd._needDraw = true;
+                    this._renderCmd._needDraw = !(r < vl || l > vr || t < vb || b > vt);
                 }
                 this._quadsDirty = false;
                 this._uvsDirty = false;
@@ -39512,9 +39203,9 @@
             RADIAL: 2
         });
     }), {
-        "../event/event-target": 112
+        "../event/event-target": 111
     } ],
-    207: [ (function(require, module, exports) {
+    208: [ (function(require, module, exports) {
         cc.Scale9Sprite.CanvasRenderCmd = function(renderable) {
             this._rootCtor(renderable);
             this._node.loaded() ? this._needDraw = true : this._needDraw = false;
@@ -39529,6 +39220,10 @@
         };
         proto._updateDisplayColor = function(parentColor) {
             _ccsg.Node.WebGLRenderCmd.prototype._updateDisplayColor.call(this, parentColor);
+            this._originalTexture = this._textureToRender = null;
+        };
+        proto._syncDisplayColor = function(parentColor) {
+            _ccsg.Node.WebGLRenderCmd.prototype._syncDisplayColor.call(this, parentColor);
             this._originalTexture = this._textureToRender = null;
         };
         proto.setState = function(state) {
@@ -39595,51 +39290,49 @@
                     }
                     wrapper.restore();
                     cc.g_NumberOfDraws += triangleCount;
-                } else {
-                    if (node._renderingType === cc.Scale9Sprite.RenderingType.SLICED) {
-                        for (var r = 0; r < 3; ++r) {
-                            for (var c = 0; c < 3; ++c) {
-                                off = 8 * r + 2 * c;
-                                x = vertices[off];
-                                y = vertices[off + 1];
-                                w = vertices[off + 10] - x;
-                                h = vertices[off + 11] - y;
-                                y = -y - h;
-                                sx = uvs[off] * textureWidth;
-                                sy = uvs[off + 11] * textureHeight;
-                                sw = (uvs[off + 10] - uvs[off]) * textureWidth;
-                                sh = (uvs[off + 1] - uvs[off + 11]) * textureHeight;
-                                sw > 0 && sh > 0 && w > 0 && h > 0 && context.drawImage(image, sx, sy, sw, sh, x, y, w, h);
-                            }
-                        }
-                        cc.g_NumberOfDraws += 9;
-                    } else {
-                        var quadCount = Math.floor(node._vertCount / 4);
-                        for (i = 0, off = 0; i < quadCount; i++) {
+                } else if (node._renderingType === cc.Scale9Sprite.RenderingType.SLICED) {
+                    for (var r = 0; r < 3; ++r) {
+                        for (var c = 0; c < 3; ++c) {
+                            off = 8 * r + 2 * c;
                             x = vertices[off];
                             y = vertices[off + 1];
-                            w = vertices[off + 6] - x;
-                            h = vertices[off + 7] - y;
+                            w = vertices[off + 10] - x;
+                            h = vertices[off + 11] - y;
                             y = -y - h;
                             sx = uvs[off] * textureWidth;
-                            sy = uvs[off + 7] * textureHeight;
-                            sw = (uvs[off + 6] - uvs[off]) * textureWidth;
-                            sh = (uvs[off + 1] - uvs[off + 7]) * textureHeight;
-                            if ("" !== this._textureToRender._pattern) {
-                                wrapper.setFillStyle(context.createPattern(image, this._textureToRender._pattern));
-                                context.fillRect(x, y, w, h);
-                            } else {
-                                sw > 0 && sh > 0 && w > 0 && h > 0 && context.drawImage(image, sx, sy, sw, sh, x, y, w, h);
-                            }
-                            off += 8;
+                            sy = uvs[off + 11] * textureHeight;
+                            sw = (uvs[off + 10] - uvs[off]) * textureWidth;
+                            sh = (uvs[off + 1] - uvs[off + 11]) * textureHeight;
+                            sw > 0 && sh > 0 && w > 0 && h > 0 && context.drawImage(image, sx, sy, sw, sh, x, y, w, h);
                         }
-                        cc.g_NumberOfDraws += quadCount;
                     }
+                    cc.g_NumberOfDraws += 9;
+                } else {
+                    var quadCount = Math.floor(node._vertCount / 4);
+                    for (i = 0, off = 0; i < quadCount; i++) {
+                        x = vertices[off];
+                        y = vertices[off + 1];
+                        w = vertices[off + 6] - x;
+                        h = vertices[off + 7] - y;
+                        y = -y - h;
+                        sx = uvs[off] * textureWidth;
+                        sy = uvs[off + 7] * textureHeight;
+                        sw = (uvs[off + 6] - uvs[off]) * textureWidth;
+                        sh = (uvs[off + 1] - uvs[off + 7]) * textureHeight;
+                        if ("" !== this._textureToRender._pattern) {
+                            wrapper.setFillStyle(context.createPattern(image, this._textureToRender._pattern));
+                            context.fillRect(x, y, w, h);
+                        } else {
+                            sw > 0 && sh > 0 && w > 0 && h > 0 && context.drawImage(image, sx, sy, sw, sh, x, y, w, h);
+                        }
+                        off += 8;
+                    }
+                    cc.g_NumberOfDraws += quadCount;
                 }
             }
         };
     }), {} ],
-    208: [ (function(require, module, exports) {
+    209: [ (function(require, module, exports) {
         var ccgl = cc.gl;
         cc.Scale9Sprite.WebGLRenderCmd = function(renderable) {
             this._rootCtor(renderable);
@@ -39796,7 +39489,7 @@
             fShader: "precision lowp float;\nvarying vec4 v_fragmentColor;\nvarying vec2 v_texCoord;\nuniform vec2 u_offset;\nuniform vec2 u_offset_tiling;\nconst float PI = 3.14159265359;\nvoid main()\n{\nfloat halfPI = 0.5 * PI;\nfloat maxFactor = sin(halfPI);\nvec2 uv = v_texCoord;\nvec2 xy = 2.0 * uv.xy - 1.0;\nfloat d = length(xy);\nif (d < (2.0-maxFactor)) {\nd = length(xy * maxFactor);\nfloat z = sqrt(1.0 - d * d);\nfloat r = atan(d, z) / PI;\nfloat phi = atan(xy.y, xy.x);\nuv.x = r * cos(phi) + 0.5;\nuv.y = r * sin(phi) + 0.5;\n} else {\ndiscard;\n}\nuv = uv * u_offset_tiling + u_offset;\nuv = fract(uv);\ngl_FragColor = v_fragmentColor * texture2D(CC_Texture0, uv);\n}"
         };
     }), {} ],
-    209: [ (function(require, module, exports) {
+    210: [ (function(require, module, exports) {
         cc.SpriteBatchNode = _ccsg.Node.extend({
             _blendFunc: null,
             _texture: null,
@@ -39856,7 +39549,7 @@
                 this._reorderChildDirty = reorder;
             },
             setBlendFunc: function(src, dst) {
-                void 0 === dst ? this._blendFunc = src : this._blendFunc = {
+                this._blendFunc = void 0 === dst ? src : {
                     src: src,
                     dst: dst
                 };
@@ -39943,7 +39636,7 @@
         cc.defineGetterSetter(_p, "texture", _p.getTexture, _p.setTexture);
         cc.defineGetterSetter(_p, "shaderProgram", _p.getShaderProgram, _p.setShaderProgram);
     }), {} ],
-    210: [ (function(require, module, exports) {
+    211: [ (function(require, module, exports) {
         var EventTarget = require("../event/event-target");
         cc.SpriteFrame = cc.Class({
             name: "cc.SpriteFrame",
@@ -40117,36 +39810,9 @@
         proto.copy = proto.clone;
         proto.initWithTexture = proto.setTexture;
     }), {
-        "../assets/CCAsset": 44,
-        "../event/event-target": 112
+        "../assets/CCAsset": 43,
+        "../event/event-target": 111
     } ],
-    211: [ (function(require, module, exports) {
-        cc._tmp.PrototypeSprite = function() {
-            var _p = _ccsg.Sprite.prototype;
-            cc.defineGetterSetter(_p, "opacityModifyRGB", _p.isOpacityModifyRGB, _p.setOpacityModifyRGB);
-            cc.defineGetterSetter(_p, "opacity", _p.getOpacity, _p.setOpacity);
-            cc.defineGetterSetter(_p, "color", _p.getColor, _p.setColor);
-            _p.dirty;
-            _p.flippedX;
-            cc.defineGetterSetter(_p, "flippedX", _p.isFlippedX, _p.setFlippedX);
-            _p.flippedY;
-            cc.defineGetterSetter(_p, "flippedY", _p.isFlippedY, _p.setFlippedY);
-            _p.offsetX;
-            cc.defineGetterSetter(_p, "offsetX", _p._getOffsetX);
-            _p.offsetY;
-            cc.defineGetterSetter(_p, "offsetY", _p._getOffsetY);
-            _p.atlasIndex;
-            _p.texture;
-            cc.defineGetterSetter(_p, "texture", _p.getTexture, _p.setTexture);
-            _p.textureRectRotated;
-            cc.defineGetterSetter(_p, "textureRectRotated", _p.isTextureRectRotated);
-            _p.textureAtlas;
-            _p.batchNode;
-            cc.defineGetterSetter(_p, "batchNode", _p.getBatchNode, _p.setBatchNode);
-            _p.quad;
-            cc.defineGetterSetter(_p, "quad", _p.getQuad);
-        };
-    }), {} ],
     212: [ (function(require, module, exports) {
         var EventTarget = require("../event/event-target");
         var sys = require("../platform/CCSys");
@@ -40179,13 +39845,11 @@
                     this._grayElementObj = null;
                     this._backupElement = null;
                     this._isGray = false;
-                } else {
-                    if (cc._renderType === game.RENDER_TYPE_WEBGL) {
-                        this._pixelFormat = Texture2D.defaultPixelFormat;
-                        this._hasPremultipliedAlpha = false;
-                        this._hasMipmaps = false;
-                        this._webTextureObj = null;
-                    }
+                } else if (cc._renderType === game.RENDER_TYPE_WEBGL) {
+                    this._pixelFormat = Texture2D.defaultPixelFormat;
+                    this._hasPremultipliedAlpha = false;
+                    this._hasMipmaps = false;
+                    this._webTextureObj = null;
                 }
             },
             getPixelWidth: function() {
@@ -40470,256 +40134,248 @@
                     newTexture.handleLoadedTexture();
                     return newTexture;
                 };
-            } else {
-                if (cc._renderType === game.RENDER_TYPE_WEBGL) {
-                    _p.initWithData = function(data, pixelFormat, pixelsWide, pixelsHigh, contentSize) {
-                        var self = this, tex2d = Texture2D;
-                        var gl = cc._renderContext;
-                        var format = gl.RGBA, type = gl.UNSIGNED_BYTE;
-                        var bitsPerPixel = Texture2D._B[pixelFormat];
-                        var bytesPerRow = pixelsWide * bitsPerPixel / 8;
-                        bytesPerRow % 8 === 0 ? gl.pixelStorei(gl.UNPACK_ALIGNMENT, 8) : bytesPerRow % 4 === 0 ? gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4) : bytesPerRow % 2 === 0 ? gl.pixelStorei(gl.UNPACK_ALIGNMENT, 2) : gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
-                        self._webTextureObj = gl.createTexture();
-                        cc.gl.bindTexture2D(self);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-                        switch (pixelFormat) {
-                          case tex2d.PIXEL_FORMAT_RGBA8888:
-                            format = gl.RGBA;
-                            break;
+            } else if (cc._renderType === game.RENDER_TYPE_WEBGL) {
+                _p.initWithData = function(data, pixelFormat, pixelsWide, pixelsHigh, contentSize) {
+                    var self = this, tex2d = Texture2D;
+                    var gl = cc._renderContext;
+                    var format = gl.RGBA, type = gl.UNSIGNED_BYTE;
+                    var bitsPerPixel = Texture2D._B[pixelFormat];
+                    var bytesPerRow = pixelsWide * bitsPerPixel / 8;
+                    bytesPerRow % 8 === 0 ? gl.pixelStorei(gl.UNPACK_ALIGNMENT, 8) : bytesPerRow % 4 === 0 ? gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4) : bytesPerRow % 2 === 0 ? gl.pixelStorei(gl.UNPACK_ALIGNMENT, 2) : gl.pixelStorei(gl.UNPACK_ALIGNMENT, 1);
+                    self._webTextureObj = gl.createTexture();
+                    cc.gl.bindTexture2D(self);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                    switch (pixelFormat) {
+                      case tex2d.PIXEL_FORMAT_RGBA8888:
+                        format = gl.RGBA;
+                        break;
 
-                          case tex2d.PIXEL_FORMAT_RGB888:
-                            format = gl.RGB;
-                            break;
+                      case tex2d.PIXEL_FORMAT_RGB888:
+                        format = gl.RGB;
+                        break;
 
-                          case tex2d.PIXEL_FORMAT_RGBA4444:
-                            type = gl.UNSIGNED_SHORT_4_4_4_4;
-                            break;
+                      case tex2d.PIXEL_FORMAT_RGBA4444:
+                        type = gl.UNSIGNED_SHORT_4_4_4_4;
+                        break;
 
-                          case tex2d.PIXEL_FORMAT_RGB5A1:
-                            type = gl.UNSIGNED_SHORT_5_5_5_1;
-                            break;
+                      case tex2d.PIXEL_FORMAT_RGB5A1:
+                        type = gl.UNSIGNED_SHORT_5_5_5_1;
+                        break;
 
-                          case tex2d.PIXEL_FORMAT_RGB565:
-                            type = gl.UNSIGNED_SHORT_5_6_5;
-                            break;
+                      case tex2d.PIXEL_FORMAT_RGB565:
+                        type = gl.UNSIGNED_SHORT_5_6_5;
+                        break;
 
-                          case tex2d.PIXEL_FORMAT_AI88:
-                            format = gl.LUMINANCE_ALPHA;
-                            break;
+                      case tex2d.PIXEL_FORMAT_AI88:
+                        format = gl.LUMINANCE_ALPHA;
+                        break;
 
-                          case tex2d.PIXEL_FORMAT_A8:
-                            format = gl.ALPHA;
-                            break;
+                      case tex2d.PIXEL_FORMAT_A8:
+                        format = gl.ALPHA;
+                        break;
 
-                          case tex2d.PIXEL_FORMAT_I8:
-                            format = gl.LUMINANCE;
-                            break;
+                      case tex2d.PIXEL_FORMAT_I8:
+                        format = gl.LUMINANCE;
+                        break;
 
-                          default:
-                            cc.assertID(0, 3113);
+                      default:
+                        cc.assertID(0, 3113);
+                    }
+                    gl.texImage2D(gl.TEXTURE_2D, 0, format, pixelsWide, pixelsHigh, 0, format, type, data);
+                    self._contentSize.width = contentSize.width;
+                    self._contentSize.height = contentSize.height;
+                    self._pixelWidth = pixelsWide;
+                    self._pixelHeight = pixelsHigh;
+                    self._pixelFormat = pixelFormat;
+                    self._hasPremultipliedAlpha = false;
+                    self._hasMipmaps = false;
+                    self._textureLoaded = true;
+                    return true;
+                };
+                _p.initWithImage = function(uiImage) {
+                    if (null == uiImage) {
+                        cc.logID(3104);
+                        return false;
+                    }
+                    var imageWidth = uiImage.getWidth();
+                    var imageHeight = uiImage.getHeight();
+                    var maxTextureSize = cc.configuration.getMaxTextureSize();
+                    if (imageWidth > maxTextureSize || imageHeight > maxTextureSize) {
+                        cc.logID(3105, imageWidth, imageHeight, maxTextureSize, maxTextureSize);
+                        return false;
+                    }
+                    this._textureLoaded = true;
+                    return this._initPremultipliedATextureWithImage(uiImage, imageWidth, imageHeight);
+                };
+                _p.initWithElement = function(element) {
+                    if (!element) {
+                        return;
+                    }
+                    this._webTextureObj = cc._renderContext.createTexture();
+                    this._htmlElementObj = element;
+                    this._textureLoaded = true;
+                };
+                _p.handleLoadedTexture = function(premultiplied) {
+                    premultiplied = !!premultiplied;
+                    var self = this;
+                    if (!game._rendererInitialized) {
+                        return;
+                    }
+                    if (!self._htmlElementObj || !self._htmlElementObj.width || !self._htmlElementObj.height) {
+                        return;
+                    }
+                    var gl = cc._renderContext;
+                    cc.gl.bindTexture2D(self);
+                    gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
+                    premultiplied && gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 1);
+                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, self._htmlElementObj);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                    cc.gl.bindTexture2D(null);
+                    premultiplied && gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
+                    var pixelsWide = self._htmlElementObj.width;
+                    var pixelsHigh = self._htmlElementObj.height;
+                    self._pixelWidth = self._contentSize.width = pixelsWide;
+                    self._pixelHeight = self._contentSize.height = pixelsHigh;
+                    self._pixelFormat = Texture2D.PIXEL_FORMAT_RGBA8888;
+                    self._hasPremultipliedAlpha = premultiplied;
+                    self._hasMipmaps = false;
+                    self._textureLoaded = true;
+                    cc.view._antiAliasEnabled ? self.setAntiAliasTexParameters() : self.setAliasTexParameters();
+                    self._htmlElementObj = null;
+                    self.emit("load");
+                };
+                _p.setTexParameters = function(texParams, magFilter, wrapS, wrapT) {
+                    var _t = this;
+                    var gl = cc._renderContext;
+                    void 0 !== magFilter && (texParams = {
+                        minFilter: texParams,
+                        magFilter: magFilter,
+                        wrapS: wrapS,
+                        wrapT: wrapT
+                    });
+                    cc.assertID(_t._pixelWidth === misc.NextPOT(_t._pixelWidth) && _t._pixelHeight === misc.NextPOT(_t._pixelHeight) || texParams.wrapS === gl.CLAMP_TO_EDGE && texParams.wrapT === gl.CLAMP_TO_EDGE, 3116);
+                    cc.gl.bindTexture2D(_t);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, texParams.minFilter);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, texParams.magFilter);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, texParams.wrapS);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, texParams.wrapT);
+                };
+                _p.setAntiAliasTexParameters = function() {
+                    var gl = cc._renderContext;
+                    cc.gl.bindTexture2D(this);
+                    this._hasMipmaps ? gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST) : gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+                };
+                _p.setAliasTexParameters = function() {
+                    var gl = cc._renderContext;
+                    cc.gl.bindTexture2D(this);
+                    this._hasMipmaps ? gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST) : gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+                    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+                };
+                _p.generateMipmap = function() {
+                    var _t = this;
+                    cc.assertID(_t._pixelWidth === misc.NextPOT(_t._pixelWidth) && _t._pixelHeight === misc.NextPOT(_t._pixelHeight), 3117);
+                    cc.gl.bindTexture2D(_t);
+                    cc._renderContext.generateMipmap(cc._renderContext.TEXTURE_2D);
+                    _t._hasMipmaps = true;
+                };
+                _p.stringForFormat = function() {
+                    return Texture2D._M[this._pixelFormat];
+                };
+                _p.bitsPerPixelForFormat = function(format) {
+                    format = format || this._pixelFormat;
+                    var value = Texture2D._B[format];
+                    if (null != value) {
+                        return value;
+                    }
+                    cc.logID(3110, format);
+                    return -1;
+                };
+                _p._initPremultipliedATextureWithImage = function(uiImage, width, height) {
+                    var tex2d = Texture2D;
+                    var tempData = uiImage.getData();
+                    var inPixel32 = null;
+                    var inPixel8 = null;
+                    var outPixel16 = null;
+                    var hasAlpha = uiImage.hasAlpha();
+                    var imageSize = cc.size(uiImage.getWidth(), uiImage.getHeight());
+                    var pixelFormat = tex2d.defaultPixelFormat;
+                    var bpp = uiImage.getBitsPerComponent();
+                    var i;
+                    if (!hasAlpha) {
+                        if (bpp >= 8) {
+                            pixelFormat = tex2d.PIXEL_FORMAT_RGB888;
+                        } else {
+                            cc.logID(3111);
+                            pixelFormat = tex2d.PIXEL_FORMAT_RGB565;
                         }
-                        gl.texImage2D(gl.TEXTURE_2D, 0, format, pixelsWide, pixelsHigh, 0, format, type, data);
-                        self._contentSize.width = contentSize.width;
-                        self._contentSize.height = contentSize.height;
-                        self._pixelWidth = pixelsWide;
-                        self._pixelHeight = pixelsHigh;
-                        self._pixelFormat = pixelFormat;
-                        self._hasPremultipliedAlpha = false;
-                        self._hasMipmaps = false;
-                        self._textureLoaded = true;
-                        return true;
-                    };
-                    _p.initWithImage = function(uiImage) {
-                        if (null == uiImage) {
-                            cc.logID(3104);
-                            return false;
-                        }
-                        var imageWidth = uiImage.getWidth();
-                        var imageHeight = uiImage.getHeight();
-                        var maxTextureSize = cc.configuration.getMaxTextureSize();
-                        if (imageWidth > maxTextureSize || imageHeight > maxTextureSize) {
-                            cc.logID(3105, imageWidth, imageHeight, maxTextureSize, maxTextureSize);
-                            return false;
-                        }
-                        this._textureLoaded = true;
-                        return this._initPremultipliedATextureWithImage(uiImage, imageWidth, imageHeight);
-                    };
-                    _p.initWithElement = function(element) {
-                        if (!element) {
-                            return;
-                        }
-                        this._webTextureObj = cc._renderContext.createTexture();
-                        this._htmlElementObj = element;
-                        this._textureLoaded = true;
-                    };
-                    _p.handleLoadedTexture = function(premultiplied) {
-                        premultiplied = !!premultiplied;
-                        var self = this;
-                        if (!game._rendererInitialized) {
-                            return;
-                        }
-                        if (!self._htmlElementObj || !self._htmlElementObj.width || !self._htmlElementObj.height) {
-                            return;
-                        }
-                        var gl = cc._renderContext;
-                        cc.gl.bindTexture2D(self);
-                        gl.pixelStorei(gl.UNPACK_ALIGNMENT, 4);
-                        premultiplied && gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 1);
-                        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, self._htmlElementObj);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-                        cc.gl.bindTexture2D(null);
-                        premultiplied && gl.pixelStorei(gl.UNPACK_PREMULTIPLY_ALPHA_WEBGL, 0);
-                        var pixelsWide = self._htmlElementObj.width;
-                        var pixelsHigh = self._htmlElementObj.height;
-                        self._pixelWidth = self._contentSize.width = pixelsWide;
-                        self._pixelHeight = self._contentSize.height = pixelsHigh;
-                        self._pixelFormat = Texture2D.PIXEL_FORMAT_RGBA8888;
-                        self._hasPremultipliedAlpha = premultiplied;
-                        self._hasMipmaps = false;
-                        self._textureLoaded = true;
-                        cc.view._antiAliasEnabled ? self.setAntiAliasTexParameters() : self.setAliasTexParameters();
-                        self._htmlElementObj = null;
-                        self.emit("load");
-                    };
-                    _p.setTexParameters = function(texParams, magFilter, wrapS, wrapT) {
-                        var _t = this;
-                        var gl = cc._renderContext;
-                        void 0 !== magFilter && (texParams = {
-                            minFilter: texParams,
-                            magFilter: magFilter,
-                            wrapS: wrapS,
-                            wrapT: wrapT
-                        });
-                        cc.assertID(_t._pixelWidth === misc.NextPOT(_t._pixelWidth) && _t._pixelHeight === misc.NextPOT(_t._pixelHeight) || texParams.wrapS === gl.CLAMP_TO_EDGE && texParams.wrapT === gl.CLAMP_TO_EDGE, 3116);
-                        cc.gl.bindTexture2D(_t);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, texParams.minFilter);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, texParams.magFilter);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, texParams.wrapS);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, texParams.wrapT);
-                    };
-                    _p.setAntiAliasTexParameters = function() {
-                        var gl = cc._renderContext;
-                        cc.gl.bindTexture2D(this);
-                        this._hasMipmaps ? gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST) : gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-                    };
-                    _p.setAliasTexParameters = function() {
-                        var gl = cc._renderContext;
-                        cc.gl.bindTexture2D(this);
-                        this._hasMipmaps ? gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST_MIPMAP_NEAREST) : gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
-                        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-                    };
-                    _p.generateMipmap = function() {
-                        var _t = this;
-                        cc.assertID(_t._pixelWidth === misc.NextPOT(_t._pixelWidth) && _t._pixelHeight === misc.NextPOT(_t._pixelHeight), 3117);
-                        cc.gl.bindTexture2D(_t);
-                        cc._renderContext.generateMipmap(cc._renderContext.TEXTURE_2D);
-                        _t._hasMipmaps = true;
-                    };
-                    _p.stringForFormat = function() {
-                        return Texture2D._M[this._pixelFormat];
-                    };
-                    _p.bitsPerPixelForFormat = function(format) {
-                        format = format || this._pixelFormat;
-                        var value = Texture2D._B[format];
-                        if (null != value) {
-                            return value;
-                        }
-                        cc.logID(3110, format);
-                        return -1;
-                    };
-                    _p._initPremultipliedATextureWithImage = function(uiImage, width, height) {
-                        var tex2d = Texture2D;
-                        var tempData = uiImage.getData();
-                        var inPixel32 = null;
-                        var inPixel8 = null;
-                        var outPixel16 = null;
-                        var hasAlpha = uiImage.hasAlpha();
-                        var imageSize = cc.size(uiImage.getWidth(), uiImage.getHeight());
-                        var pixelFormat = tex2d.defaultPixelFormat;
-                        var bpp = uiImage.getBitsPerComponent();
-                        var i;
-                        if (!hasAlpha) {
-                            if (bpp >= 8) {
-                                pixelFormat = tex2d.PIXEL_FORMAT_RGB888;
-                            } else {
-                                cc.logID(3111);
-                                pixelFormat = tex2d.PIXEL_FORMAT_RGB565;
-                            }
-                        }
-                        var length = width * height;
-                        if (pixelFormat === tex2d.PIXEL_FORMAT_RGB565) {
-                            if (hasAlpha) {
-                                tempData = new Uint16Array(width * height);
-                                inPixel32 = uiImage.getData();
-                                for (i = 0; i < length; ++i) {
-                                    tempData[i] = (inPixel32[i] >> 0 & 255) >> 3 << 11 | (inPixel32[i] >> 8 & 255) >> 2 << 5 | (inPixel32[i] >> 16 & 255) >> 3 << 0;
-                                }
-                            } else {
-                                tempData = new Uint16Array(width * height);
-                                inPixel8 = uiImage.getData();
-                                for (i = 0; i < length; ++i) {
-                                    tempData[i] = (255 & inPixel8[i]) >> 3 << 11 | (255 & inPixel8[i]) >> 2 << 5 | (255 & inPixel8[i]) >> 3 << 0;
-                                }
+                    }
+                    var length = width * height;
+                    if (pixelFormat === tex2d.PIXEL_FORMAT_RGB565) {
+                        if (hasAlpha) {
+                            tempData = new Uint16Array(width * height);
+                            inPixel32 = uiImage.getData();
+                            for (i = 0; i < length; ++i) {
+                                tempData[i] = (inPixel32[i] >> 0 & 255) >> 3 << 11 | (inPixel32[i] >> 8 & 255) >> 2 << 5 | (inPixel32[i] >> 16 & 255) >> 3 << 0;
                             }
                         } else {
-                            if (pixelFormat === tex2d.PIXEL_FORMAT_RGBA4444) {
-                                tempData = new Uint16Array(width * height);
-                                inPixel32 = uiImage.getData();
-                                for (i = 0; i < length; ++i) {
-                                    tempData[i] = (inPixel32[i] >> 0 & 255) >> 4 << 12 | (inPixel32[i] >> 8 & 255) >> 4 << 8 | (inPixel32[i] >> 16 & 255) >> 4 << 4 | (inPixel32[i] >> 24 & 255) >> 4 << 0;
-                                }
-                            } else {
-                                if (pixelFormat === tex2d.PIXEL_FORMAT_RGB5A1) {
-                                    tempData = new Uint16Array(width * height);
-                                    inPixel32 = uiImage.getData();
-                                    for (i = 0; i < length; ++i) {
-                                        tempData[i] = (inPixel32[i] >> 0 & 255) >> 3 << 11 | (inPixel32[i] >> 8 & 255) >> 3 << 6 | (inPixel32[i] >> 16 & 255) >> 3 << 1 | (inPixel32[i] >> 24 & 255) >> 7 << 0;
-                                    }
-                                } else {
-                                    if (pixelFormat === tex2d.PIXEL_FORMAT_A8) {
-                                        tempData = new Uint8Array(width * height);
-                                        inPixel32 = uiImage.getData();
-                                        for (i = 0; i < length; ++i) {
-                                            tempData[i] = inPixel32 >> 24 & 255;
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                        if (hasAlpha && pixelFormat === tex2d.PIXEL_FORMAT_RGB888) {
-                            inPixel32 = uiImage.getData();
-                            tempData = new Uint8Array(width * height * 3);
+                            tempData = new Uint16Array(width * height);
+                            inPixel8 = uiImage.getData();
                             for (i = 0; i < length; ++i) {
-                                tempData[3 * i] = inPixel32 >> 0 & 255;
-                                tempData[3 * i + 1] = inPixel32 >> 8 & 255;
-                                tempData[3 * i + 2] = inPixel32 >> 16 & 255;
+                                tempData[i] = (255 & inPixel8[i]) >> 3 << 11 | (255 & inPixel8[i]) >> 2 << 5 | (255 & inPixel8[i]) >> 3 << 0;
                             }
                         }
-                        this.initWithData(tempData, pixelFormat, width, height, imageSize);
-                        tempData != uiImage.getData() && (tempData = null);
-                        this._hasPremultipliedAlpha = uiImage.isPremultipliedAlpha();
-                        return true;
-                    };
-                }
+                    } else if (pixelFormat === tex2d.PIXEL_FORMAT_RGBA4444) {
+                        tempData = new Uint16Array(width * height);
+                        inPixel32 = uiImage.getData();
+                        for (i = 0; i < length; ++i) {
+                            tempData[i] = (inPixel32[i] >> 0 & 255) >> 4 << 12 | (inPixel32[i] >> 8 & 255) >> 4 << 8 | (inPixel32[i] >> 16 & 255) >> 4 << 4 | (inPixel32[i] >> 24 & 255) >> 4 << 0;
+                        }
+                    } else if (pixelFormat === tex2d.PIXEL_FORMAT_RGB5A1) {
+                        tempData = new Uint16Array(width * height);
+                        inPixel32 = uiImage.getData();
+                        for (i = 0; i < length; ++i) {
+                            tempData[i] = (inPixel32[i] >> 0 & 255) >> 3 << 11 | (inPixel32[i] >> 8 & 255) >> 3 << 6 | (inPixel32[i] >> 16 & 255) >> 3 << 1 | (inPixel32[i] >> 24 & 255) >> 7 << 0;
+                        }
+                    } else if (pixelFormat === tex2d.PIXEL_FORMAT_A8) {
+                        tempData = new Uint8Array(width * height);
+                        inPixel32 = uiImage.getData();
+                        for (i = 0; i < length; ++i) {
+                            tempData[i] = inPixel32 >> 24 & 255;
+                        }
+                    }
+                    if (hasAlpha && pixelFormat === tex2d.PIXEL_FORMAT_RGB888) {
+                        inPixel32 = uiImage.getData();
+                        tempData = new Uint8Array(width * height * 3);
+                        for (i = 0; i < length; ++i) {
+                            tempData[3 * i] = inPixel32 >> 0 & 255;
+                            tempData[3 * i + 1] = inPixel32 >> 8 & 255;
+                            tempData[3 * i + 2] = inPixel32 >> 16 & 255;
+                        }
+                    }
+                    this.initWithData(tempData, pixelFormat, width, height, imageSize);
+                    tempData != uiImage.getData() && (tempData = null);
+                    this._hasPremultipliedAlpha = uiImage.isPremultipliedAlpha();
+                    return true;
+                };
             }
         }));
         cc.Texture2D = module.exports = Texture2D;
     }), {
-        "../CCGame": 40,
-        "../assets/CCRawAsset": 50,
-        "../event/event-target": 112,
+        "../CCGame": 39,
+        "../assets/CCRawAsset": 49,
+        "../event/event-target": 111,
         "../platform/CCClass": 172,
         "../platform/CCSys": 181,
         "../platform/_CCClass": 184,
         "../platform/js": 192,
-        "../utils/misc": 222
+        "../utils/misc": 223
     } ],
     213: [ (function(require, module, exports) {
         var Class = require("../platform/_CCClass");
@@ -40982,14 +40638,12 @@
                 }
                 if (null === this._indices) {
                     this._indices = new Uint16Array(6 * capacity);
+                } else if (capacity > oldCapacity) {
+                    var tempIndices = new Uint16Array(6 * capacity);
+                    tempIndices.set(this._indices, 0);
+                    this._indices = tempIndices;
                 } else {
-                    if (capacity > oldCapacity) {
-                        var tempIndices = new Uint16Array(6 * capacity);
-                        tempIndices.set(this._indices, 0);
-                        this._indices = tempIndices;
-                    } else {
-                        this._indices = this._indices.subarray(0, 6 * capacity);
-                    }
+                    this._indices = this._indices.subarray(0, 6 * capacity);
                 }
                 this._setupIndices();
                 this._mapBuffers();
@@ -41108,7 +40762,7 @@
         }));
         cc.TextureAtlas = module.exports = TextureAtlas;
     }), {
-        "../CCGame": 40,
+        "../CCGame": 39,
         "../platform/_CCClass": 184,
         "../platform/js": 192
     } ],
@@ -41286,53 +40940,51 @@
                     return tex;
                 };
                 _p.addImageAsync = _p.addImage;
-            } else {
-                if (cc._renderType === game.RENDER_TYPE_WEBGL) {
-                    _p.handleLoadedTexture = function(url) {
-                        var locTexs = this._textures, tex, premultiplied;
-                        cc.game._rendererInitialized || (locTexs = this._loadedTexturesBefore);
-                        tex = locTexs[url];
-                        if (!tex) {
-                            cc.assertID(url, 3009);
-                            tex = locTexs[url] = new Texture2D();
-                            tex.url = url;
-                        }
-                        premultiplied = cc.macro.AUTO_PREMULTIPLIED_ALPHA_FOR_PNG && ".png" === cc.path.extname(url);
-                        tex.handleLoadedTexture(premultiplied);
-                    };
-                    _p.addImage = function(url, cb, target) {
-                        cc.assertID(url, 3112);
-                        var locTexs = this._textures;
-                        cc.game._rendererInitialized || (locTexs = this._loadedTexturesBefore);
-                        var tex = locTexs[url];
-                        if (tex) {
-                            if (tex.isLoaded()) {
-                                cb && cb.call(target, tex);
-                                return tex;
-                            }
-                            tex.once("load", (function() {
-                                cb && cb.call(target, tex);
-                            }), target);
-                            return tex;
-                        }
+            } else if (cc._renderType === game.RENDER_TYPE_WEBGL) {
+                _p.handleLoadedTexture = function(url) {
+                    var locTexs = this._textures, tex, premultiplied;
+                    cc.game._rendererInitialized || (locTexs = this._loadedTexturesBefore);
+                    tex = locTexs[url];
+                    if (!tex) {
+                        cc.assertID(url, 3009);
                         tex = locTexs[url] = new Texture2D();
                         tex.url = url;
-                        cc.loader.load(url, (function(err, texture) {
-                            if (err) {
-                                return cb && cb.call(target, err || new Error("Unknown error"));
-                            }
-                            textureCache.handleLoadedTexture(url);
+                    }
+                    premultiplied = cc.macro.AUTO_PREMULTIPLIED_ALPHA_FOR_PNG && ".png" === cc.path.extname(url);
+                    tex.handleLoadedTexture(premultiplied);
+                };
+                _p.addImage = function(url, cb, target) {
+                    cc.assertID(url, 3112);
+                    var locTexs = this._textures;
+                    cc.game._rendererInitialized || (locTexs = this._loadedTexturesBefore);
+                    var tex = locTexs[url];
+                    if (tex) {
+                        if (tex.isLoaded()) {
                             cb && cb.call(target, tex);
-                        }));
+                            return tex;
+                        }
+                        tex.once("load", (function() {
+                            cb && cb.call(target, tex);
+                        }), target);
                         return tex;
-                    };
-                    _p.addImageAsync = _p.addImage;
-                }
+                    }
+                    tex = locTexs[url] = new Texture2D();
+                    tex.url = url;
+                    cc.loader.load(url, (function(err, texture) {
+                        if (err) {
+                            return cb && cb.call(target, err || new Error("Unknown error"));
+                        }
+                        textureCache.handleLoadedTexture(url);
+                        cb && cb.call(target, tex);
+                    }));
+                    return tex;
+                };
+                _p.addImageAsync = _p.addImage;
             }
         }));
         cc.textureCache = module.exports = textureCache;
     }), {
-        "../CCGame": 40,
+        "../CCGame": 39,
         "./CCTexture2D": 212
     } ],
     215: [ (function(require, module, exports) {
@@ -41364,7 +41016,7 @@
             mainFileName: function(fileName) {
                 if (fileName) {
                     var idx = fileName.lastIndexOf(".");
-                    if (idx !== -1) {
+                    if (-1 !== idx) {
                         return fileName.substring(0, idx);
                     }
                 }
@@ -41425,20 +41077,8 @@
                 return url;
             },
             sep: cc.sys.os === cc.sys.OS_WINDOWS ? "\\" : "/",
-            _setEndWithSep: function(path, endsWithSep) {
-                var sep = cc.path.sep;
-                if ("undefined" === typeof endsWithSep) {
-                    endsWithSep = true;
-                } else {
-                    if ("string" === typeof endsWithSep) {
-                        sep = endsWithSep;
-                        endsWithSep = !!endsWithSep;
-                    }
-                }
-                var endChar = path[path.length - 1];
-                var oldEndWithSep = "\\" === endChar || "/" === endChar;
-                !oldEndWithSep && endsWithSep ? path += sep : oldEndWithSep && !endsWithSep && (path = path.slice(0, -1));
-                return path;
+            stripSep: function(path) {
+                return path.replace(/[\/\\]$/, "");
             }
         };
         module.exports = cc.path;
@@ -41450,39 +41090,7 @@
         var macro = require("../platform/CCMacro");
         var _fps = document.createElement("div");
         _fps.id = "fps";
-        var stats = PStats.new(_fps, {
-            values: {
-                frame: {
-                    desc: "Frame time (ms)",
-                    min: 0,
-                    max: 50,
-                    average: 500
-                },
-                fps: {
-                    desc: "Framerate (FPS)",
-                    below: 30,
-                    average: 500
-                },
-                draws: {
-                    desc: "Draw call"
-                },
-                logic: {
-                    desc: "Game Logic (ms)",
-                    min: 0,
-                    max: 50,
-                    average: 500,
-                    color: "#080"
-                },
-                render: {
-                    desc: "Renderer (ms)",
-                    min: 0,
-                    max: 50,
-                    average: 500,
-                    color: "#f90"
-                }
-            },
-            css: ".pstats {left: " + macro.DIRECTOR_STATS_POSITION.x + "px; bottom: " + macro.DIRECTOR_STATS_POSITION.y + "px;}"
-        });
+        var stats = null;
         var _showFPS = false;
         function beforeUpdate() {
             stats("frame").start();
@@ -41514,6 +41122,44 @@
             },
             showStats: function() {
                 if (!_showFPS) {
+                    stats || (stats = PStats.new(_fps, {
+                        showGraph: false,
+                        values: {
+                            frame: {
+                                desc: "Frame time (ms)",
+                                min: 0,
+                                max: 50,
+                                average: 500
+                            },
+                            fps: {
+                                desc: "Framerate (FPS)",
+                                below: 30,
+                                average: 500
+                            },
+                            draws: {
+                                desc: "Draw call"
+                            },
+                            logic: {
+                                desc: "Game Logic (ms)",
+                                min: 0,
+                                max: 50,
+                                average: 500,
+                                color: "#080"
+                            },
+                            render: {
+                                desc: "Renderer (ms)",
+                                min: 0,
+                                max: 50,
+                                average: 500,
+                                color: "#f90"
+                            },
+                            mode: {
+                                desc: cc._renderType === cc.game.RENDER_TYPE_WEBGL ? "WebGL" : "Canvas",
+                                min: 1
+                            }
+                        },
+                        css: ".pstats {left: " + macro.DIRECTOR_STATS_POSITION.x + "px; bottom: " + macro.DIRECTOR_STATS_POSITION.y + "px;}"
+                    }));
                     null === _fps.parentElement && document.body.appendChild(_fps);
                     cc.director.on(cc.Director.EVENT_BEFORE_UPDATE, beforeUpdate);
                     cc.director.on(cc.Director.EVENT_AFTER_VISIT, afterVisit);
@@ -41523,7 +41169,7 @@
             }
         };
     }), {
-        "../../../external/pstats/pstats": 311,
+        "../../../external/pstats/pstats": 312,
         "../platform/CCMacro": 177
     } ],
     218: [ (function(require, module, exports) {
@@ -41608,10 +41254,6 @@
                         return this._name;
                     },
                     set: function(value) {
-                        if (value.indexOf("/") !== -1) {
-                            cc.errorID(1632);
-                            return;
-                        }
                         this._name = value;
                     }
                 },
@@ -41688,9 +41330,6 @@
                 if (oldParent) {
                     if (!(oldParent._objFlags & Destroying)) {
                         var removeAt = oldParent._children.indexOf(this);
-                        if (removeAt < 0) {
-                            return cc.errorID(1633);
-                        }
                         oldParent._children.splice(removeAt, 1);
                         oldParent.emit(CHILD_REMOVED, this);
                         this._onHierarchyChanged(oldParent);
@@ -41703,9 +41342,7 @@
                 return true;
             },
             attr: function(attrs) {
-                for (var key in attrs) {
-                    this[key] = attrs[key];
-                }
+                JS.mixin(this, attrs);
             },
             getChildByTag: function(aTag) {
                 var children = this._children;
@@ -41746,12 +41383,13 @@
                 return null;
             },
             addChild: function(child) {
-                if (!(child instanceof cc._BaseNode)) {
-                    return cc.errorID(1634, cc.js.getClassName(child));
-                }
                 cc.assertID(child, 1606);
                 cc.assertID(null === child._parent, 1605);
                 child.setParent(this);
+            },
+            insertChild: function(child, siblingIndex) {
+                child.parent = this;
+                child.setSiblingIndex(siblingIndex);
             },
             getSiblingIndex: function() {
                 return this._parent ? this._parent._children.indexOf(this) : 0;
@@ -41761,7 +41399,7 @@
                     return;
                 }
                 var siblings = this._parent._children;
-                index = index !== -1 ? index : siblings.length - 1;
+                index = -1 !== index ? index : siblings.length - 1;
                 var oldIndex = siblings.indexOf(this);
                 if (index !== oldIndex) {
                     siblings.splice(oldIndex, 1);
@@ -41891,7 +41529,7 @@
                 }
                 if (!(this._objFlags & Destroying)) {
                     var i = this._components.indexOf(component);
-                    i !== -1 ? this._components.splice(i, 1) : component.node !== this && cc.errorID(3815);
+                    -1 !== i ? this._components.splice(i, 1) : component.node !== this && cc.errorID(3815);
                 }
             },
             _disableChildComps: function() {
@@ -41979,20 +41617,11 @@
         BaseNode.prototype._onHierarchyChangedBase = BaseNode.prototype._onHierarchyChanged;
         var SameNameGetSets = [ "name", "children", "childrenCount" ];
         Misc.propertyDefine(BaseNode, SameNameGetSets, {});
-        JS.get(BaseNode.prototype, " INFO ", (function() {
-            var path = "";
-            var node = this;
-            while (node && !(node instanceof cc.Scene)) {
-                path = path ? node.name + "/" + path : node.name;
-                node = node._parent;
-            }
-            return this.name + ", path: " + path;
-        }));
         cc._BaseNode = module.exports = BaseNode;
     }), {
         "../platform/CCObject": 178,
         "../platform/id-generater": 188,
-        "./misc": 222
+        "./misc": 223
     } ],
     219: [ (function(require, module, exports) {
         var EPSILON = 1e-6;
@@ -42015,24 +41644,40 @@
         };
     }), {} ],
     220: [ (function(require, module, exports) {
+        var Base64Values = require("./misc").BASE64_VALUES;
+        var HexChars = "0123456789abcdef".split("");
+        var _t = [ "", "", "", "" ];
+        var UuidTemplate = _t.concat(_t, "-", _t, "-", _t, "-", _t, "-", _t, _t, _t);
+        var Indices = UuidTemplate.map((function(x, i) {
+            return "-" === x ? NaN : i;
+        })).filter(isFinite);
+        module.exports = function(base64) {
+            if (22 !== base64.length) {
+                return base64;
+            }
+            UuidTemplate[0] = base64[0];
+            UuidTemplate[1] = base64[1];
+            for (var i = 2, j = 2; i < 22; i += 2) {
+                var lhs = Base64Values[base64.charCodeAt(i)];
+                var rhs = Base64Values[base64.charCodeAt(i + 1)];
+                UuidTemplate[Indices[j++]] = HexChars[lhs >> 2];
+                UuidTemplate[Indices[j++]] = HexChars[(3 & lhs) << 2 | rhs >> 4];
+                UuidTemplate[Indices[j++]] = HexChars[15 & rhs];
+            }
+            return UuidTemplate.join("");
+        };
+    }), {
+        "./misc": 223
+    } ],
+    221: [ (function(require, module, exports) {
         cc.find = module.exports = function(path, referenceNode) {
             if (null == path) {
                 cc.errorID(5600);
                 return null;
             }
-            if (referenceNode) {
-                if (!referenceNode.isValid) {
-                    cc.warnID(5603);
-                    return null;
-                }
-            } else {
+            if (!referenceNode) {
                 var scene = cc.director.getScene();
                 if (!scene) {
-                    cc.warnID(5601);
-                    return null;
-                }
-                if (!scene.isValid) {
-                    cc.warnID(5602);
                     return null;
                 }
                 referenceNode = scene;
@@ -42058,7 +41703,7 @@
             return match;
         };
     }), {} ],
-    221: [ (function(require, module, exports) {
+    222: [ (function(require, module, exports) {
         require("./CCPath");
         require("./CCProfiler");
         require("./find");
@@ -42066,13 +41711,13 @@
     }), {
         "./CCPath": 216,
         "./CCProfiler": 217,
-        "./find": 220,
-        "./mutable-forward-iterator": 223
+        "./find": 221,
+        "./mutable-forward-iterator": 224
     } ],
-    222: [ (function(require, module, exports) {
+    223: [ (function(require, module, exports) {
         var JS = require("../platform/js");
         var sys = require("../platform/CCSys");
-        var misc = {};
+        var misc = exports;
         misc.propertyDefine = function(ctor, sameNameGetSets, diffNameGetSets) {
             function define(np, propName, getter, setter) {
                 var pd = Object.getOwnPropertyDescriptor(np, propName);
@@ -42081,12 +41726,8 @@
                     pd.set && setter && (np[setter] = pd.set);
                 } else {
                     var getterFunc = np[getter];
-                    if (getterFunc) {
-                        cc.js.getset(np, propName, getterFunc, np[setter]);
-                    } else {
-                        var clsName = cc.Class._isCCClass(ctor) && cc.js.getClassName(ctor) || ctor.name || "(anonymous class)";
-                        cc.warnID(5700, propName, getter, clsName);
-                    }
+                    var clsName;
+                    cc.js.getset(np, propName, getterFunc, np[setter]);
                 }
             }
             var propName, np = ctor.prototype;
@@ -42120,16 +41761,24 @@
             return this._get() || new Image();
         };
         misc.imagePool._smallImg = "data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=";
-        sys.os === sys.OS_WINDOWS && sys.browser !== sys.BROWSER_TYPE_CHROME && misc.imagePool.resize(0);
+        sys.os !== sys.OS_WINDOWS && sys.os !== sys.OS_LINUX || sys.browser === sys.BROWSER_TYPE_CHROME || misc.imagePool.resize(0);
         misc.isBuiltinClassId = function(id) {
             return id.startsWith("cc.") || id.startsWith("dragonBones.") || id.startsWith("sp.") || id.startsWith("ccsg.");
         };
-        module.exports = misc;
+        var BASE64_KEYS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+        var BASE64_VALUES = new Array(123);
+        for (var i = 0; i < 123; ++i) {
+            BASE64_VALUES[i] = 64;
+        }
+        for (var _i = 0; _i < 64; ++_i) {
+            BASE64_VALUES[BASE64_KEYS.charCodeAt(_i)] = _i;
+        }
+        misc.BASE64_VALUES = BASE64_VALUES;
     }), {
         "../platform/CCSys": 181,
         "../platform/js": 192
     } ],
-    223: [ (function(require, module, exports) {
+    224: [ (function(require, module, exports) {
         function MutableForwardIterator(array) {
             this.i = 0;
             this.array = array;
@@ -42158,7 +41807,7 @@
         };
         module.exports = MutableForwardIterator;
     }), {} ],
-    224: [ (function(require, module, exports) {
+    225: [ (function(require, module, exports) {
         cc._PrefabInfo = cc.Class({
             name: "cc.PrefabInfo",
             properties: {
@@ -42186,7 +41835,8 @@
                 var _id = node._id;
                 var _name = node._name;
                 var _active = node._active;
-                var _position = node._position;
+                var x = node._position.x;
+                var y = node._position.y;
                 var _rotationX = node._rotationX;
                 var _rotationY = node._rotationY;
                 var _localZOrder = node._localZOrder;
@@ -42200,7 +41850,8 @@
                 node._prefab = _prefab;
                 node._name = _name;
                 node._active = _active;
-                node._position = _position;
+                node._position.x = x;
+                node._position.y = y;
                 node._rotationX = _rotationX;
                 node._rotationY = _rotationY;
                 node._localZOrder = _localZOrder;
@@ -42208,7 +41859,7 @@
             }
         };
     }), {} ],
-    225: [ (function(require, module, exports) {
+    226: [ (function(require, module, exports) {
         var SceneGraphUtils = {
             removeSgNode: function() {
                 var node = this._sgNode;
@@ -42220,45 +41871,9 @@
                 }
             }
         };
-        SceneGraphUtils._getChildrenOffset = function(entityParent) {
-            if (entityParent) {
-                var sgParent = entityParent._sgNode;
-                var firstChildEntity = entityParent._children[0];
-                if (firstChildEntity) {
-                    var firstChildSg = firstChildEntity._sgNode;
-                    var offset = sgParent._children.indexOf(firstChildSg);
-                    if (offset !== -1) {
-                        return offset;
-                    }
-                    cc.errorID(3510, firstChildEntity.name);
-                    return -1;
-                }
-                return sgParent._children.length;
-            }
-            return 0;
-        };
-        SceneGraphUtils.checkMatchCurrentScene = function() {
-            var scene = cc.director.getScene();
-            var sgScene = cc.director.getRunningScene();
-            function checkMatch(ent, sgNode) {
-                if (ent._sgNode !== sgNode) {
-                    throw new Error("scene graph node not equal: " + ent.name);
-                }
-                var childCount = ent._children.length;
-                var childrenOffset = SceneGraphUtils._getChildrenOffset(ent);
-                if (sgNode._children.length !== childCount + childrenOffset) {
-                    throw new Error("Mismatched child scene graphs: " + ent.name);
-                }
-                for (var i = 0; i < childCount; i++) {
-                    checkMatch(ent._children[i], sgNode._children[childrenOffset + i]);
-                }
-            }
-            checkMatch(scene, sgScene);
-        };
-        cc._Test.SceneGraphUtils = SceneGraphUtils;
         module.exports = SceneGraphUtils;
     }), {} ],
-    226: [ (function(require, module, exports) {
+    227: [ (function(require, module, exports) {
         cc.AffineTransform = function(a, b, c, d, tx, ty) {
             this.a = a;
             this.b = b;
@@ -42485,7 +42100,7 @@
             out.ty = determinant * (b * t.tx - a * t.ty);
         };
     }), {} ],
-    227: [ (function(require, module, exports) {
+    228: [ (function(require, module, exports) {
         var ValueType = require("./CCValueType");
         var JS = require("../platform/js");
         var Color = (function() {
@@ -42594,7 +42209,7 @@
             proto.fromHEX = function(hexString) {
                 hexString.length < 8 && (hexString += "FF");
                 var hex = parseInt(hexString.indexOf("#") > -1 ? hexString.substring(1) : hexString, 16);
-                this._val = (4278190080 & this._val | hex) >>> 0;
+                this._val = (0 & this._val | hex) >>> 0;
                 return this;
             };
             proto.toHEX = function(fmt) {
@@ -42604,11 +42219,9 @@
                     for (i = 0; i < hex.length; ++i) {
                         hex[i].length > 1 && (hex[i] = hex[i][0]);
                     }
-                } else {
-                    if ("#rrggbb" === fmt) {
-                        for (i = 0; i < hex.length; ++i) {
-                            1 === hex[i].length && (hex[i] = "0" + hex[i]);
-                        }
+                } else if ("#rrggbb" === fmt) {
+                    for (i = 0; i < hex.length; ++i) {
+                        1 === hex[i].length && (hex[i] = "0" + hex[i]);
                     }
                 }
                 return hex.join("");
@@ -42652,7 +42265,7 @@
             hsv.s = max ? (max - min) / max : 0;
             if (hsv.s) {
                 delta = max - min;
-                r === max ? hsv.h = (g - b) / delta : g === max ? hsv.h = 2 + (b - r) / delta : hsv.h = 4 + (r - g) / delta;
+                hsv.h = r === max ? (g - b) / delta : g === max ? 2 + (b - r) / delta : 4 + (r - g) / delta;
                 hsv.h /= 6;
                 hsv.h < 0 && (hsv.h += 1);
             } else {
@@ -42668,55 +42281,53 @@
             };
             if (0 === s) {
                 rgb.r = rgb.g = rgb.b = v;
+            } else if (0 === v) {
+                rgb.r = rgb.g = rgb.b = 0;
             } else {
-                if (0 === v) {
-                    rgb.r = rgb.g = rgb.b = 0;
-                } else {
-                    1 === h && (h = 0);
-                    h *= 6;
-                    s = s;
-                    v = v;
-                    var i = Math.floor(h);
-                    var f = h - i;
-                    var p = v * (1 - s);
-                    var q = v * (1 - s * f);
-                    var t = v * (1 - s * (1 - f));
-                    switch (i) {
-                      case 0:
-                        rgb.r = v;
-                        rgb.g = t;
-                        rgb.b = p;
-                        break;
+                1 === h && (h = 0);
+                h *= 6;
+                s = s;
+                v = v;
+                var i = Math.floor(h);
+                var f = h - i;
+                var p = v * (1 - s);
+                var q = v * (1 - s * f);
+                var t = v * (1 - s * (1 - f));
+                switch (i) {
+                  case 0:
+                    rgb.r = v;
+                    rgb.g = t;
+                    rgb.b = p;
+                    break;
 
-                      case 1:
-                        rgb.r = q;
-                        rgb.g = v;
-                        rgb.b = p;
-                        break;
+                  case 1:
+                    rgb.r = q;
+                    rgb.g = v;
+                    rgb.b = p;
+                    break;
 
-                      case 2:
-                        rgb.r = p;
-                        rgb.g = v;
-                        rgb.b = t;
-                        break;
+                  case 2:
+                    rgb.r = p;
+                    rgb.g = v;
+                    rgb.b = t;
+                    break;
 
-                      case 3:
-                        rgb.r = p;
-                        rgb.g = q;
-                        rgb.b = v;
-                        break;
+                  case 3:
+                    rgb.r = p;
+                    rgb.g = q;
+                    rgb.b = v;
+                    break;
 
-                      case 4:
-                        rgb.r = t;
-                        rgb.g = p;
-                        rgb.b = v;
-                        break;
+                  case 4:
+                    rgb.r = t;
+                    rgb.g = p;
+                    rgb.b = v;
+                    break;
 
-                      case 5:
-                        rgb.r = v;
-                        rgb.g = p;
-                        rgb.b = q;
-                    }
+                  case 5:
+                    rgb.r = v;
+                    rgb.g = p;
+                    rgb.b = q;
                 }
             }
             rgb.r *= 255;
@@ -42754,9 +42365,9 @@
     }), {
         "../platform/CCClass": 172,
         "../platform/js": 192,
-        "./CCValueType": 233
+        "./CCValueType": 234
     } ],
-    228: [ (function(require, module, exports) {
+    229: [ (function(require, module, exports) {
         var POINT_EPSILON = parseFloat("1.192092896e-07F");
         cc.pNeg = function(point) {
             return cc.p(-point.x, -point.y);
@@ -42936,7 +42547,7 @@
             cc.pMultIn(v, 1 / Math.sqrt(v.x * v.x + v.y * v.y));
         };
     }), {} ],
-    229: [ (function(require, module, exports) {
+    230: [ (function(require, module, exports) {
         var ValueType = require("./CCValueType");
         var JS = require("../platform/js");
         function Rect(x, y, w, h) {
@@ -43107,9 +42718,9 @@
     }), {
         "../platform/CCClass": 172,
         "../platform/js": 192,
-        "./CCValueType": 233
+        "./CCValueType": 234
     } ],
-    230: [ (function(require, module, exports) {
+    231: [ (function(require, module, exports) {
         var ValueType = require("./CCValueType");
         var JS = require("../platform/js");
         function Size(width, height) {
@@ -43156,9 +42767,9 @@
     }), {
         "../platform/CCClass": 172,
         "../platform/js": 192,
-        "./CCValueType": 233
+        "./CCValueType": 234
     } ],
-    231: [ (function(require, module, exports) {
+    232: [ (function(require, module, exports) {
         cc.Acceleration = function(x, y, z, timestamp) {
             this.x = x || 0;
             this.y = y || 0;
@@ -43313,7 +42924,7 @@
             }
         });
     }), {} ],
-    232: [ (function(require, module, exports) {
+    233: [ (function(require, module, exports) {
         cc.WebGLColor = function(r, g, b, a, arrayBuffer, offset) {
             this._arrayBuffer = arrayBuffer || new ArrayBuffer(cc.WebGLColor.BYTES_PER_ELEMENT);
             this._offset = offset || 0;
@@ -43770,7 +43381,7 @@
         cc.js.getset(_p, "b", _p._getB, _p._setB);
         cc.js.getset(_p, "c", _p._getC, _p._setC);
     }), {} ],
-    233: [ (function(require, module, exports) {
+    234: [ (function(require, module, exports) {
         var JS = require("../platform/js");
         function ValueType() {}
         JS.setClassName("cc.ValueType", ValueType);
@@ -43783,7 +43394,7 @@
     }), {
         "../platform/js": 192
     } ],
-    234: [ (function(require, module, exports) {
+    235: [ (function(require, module, exports) {
         var ValueType = require("./CCValueType");
         var JS = require("../platform/js");
         var CCClass = require("../platform/CCClass");
@@ -43975,9 +43586,9 @@
     }), {
         "../platform/CCClass": 172,
         "../platform/js": 192,
-        "./CCValueType": 233
+        "./CCValueType": 234
     } ],
-    235: [ (function(require, module, exports) {
+    236: [ (function(require, module, exports) {
         require("./CCValueType");
         require("./CCVec2");
         require("./CCPointExtension");
@@ -43988,17 +43599,17 @@
         require("./CCAffineTransform");
         require("./CCTypesWebGL");
     }), {
-        "./CCAffineTransform": 226,
-        "./CCColor": 227,
-        "./CCPointExtension": 228,
-        "./CCRect": 229,
-        "./CCSize": 230,
-        "./CCTypes": 231,
-        "./CCTypesWebGL": 232,
-        "./CCValueType": 233,
-        "./CCVec2": 234
+        "./CCAffineTransform": 227,
+        "./CCColor": 228,
+        "./CCPointExtension": 229,
+        "./CCRect": 230,
+        "./CCSize": 231,
+        "./CCTypes": 232,
+        "./CCTypesWebGL": 233,
+        "./CCValueType": 234,
+        "./CCVec2": 235
     } ],
-    236: [ (function(require, module, exports) {
+    237: [ (function(require, module, exports) {
         var Utils = require("../platform/utils");
         _ccsg.VideoPlayer = _ccsg.Node.extend({
             ctor: function() {
@@ -44082,7 +43693,7 @@
             onEnter: function() {
                 _ccsg.Node.prototype.onEnter.call(this);
                 var list = _ccsg.VideoPlayer.elements;
-                list.indexOf(this) === -1 && list.push(this);
+                -1 === list.indexOf(this) && list.push(this);
             },
             cleanup: function() {
                 this._super();
@@ -44092,7 +43703,7 @@
                 _ccsg.Node.prototype.onExit.call(this);
                 var list = _ccsg.VideoPlayer.elements;
                 var index = list.indexOf(this);
-                index !== -1 && list.splice(index, 1);
+                -1 !== index && list.splice(index, 1);
             },
             setVisible: function(visible) {
                 _ccsg.Node.prototype.setVisible.call(this, visible);
@@ -44190,6 +43801,7 @@
                 this._video.style["-webkit-transform-origin"] = "0px 100% 0px";
             };
             proto.updateURL = function(path) {
+                cc.loader.md5Pipe && (path = cc.loader.md5Pipe.transformURL(path));
                 var source, video, extname;
                 var node = this._node;
                 if (this._url == path) {
@@ -44392,7 +44004,7 @@
     }), {
         "../platform/utils": 197
     } ],
-    237: [ (function(require, module, exports) {
+    238: [ (function(require, module, exports) {
         var Utils = require("../platform/utils");
         _ccsg.WebView = _ccsg.Node.extend({
             ctor: function() {
@@ -44403,6 +44015,7 @@
             createDomElementIfNeeded: function() {
                 this._renderCmd._div || this._renderCmd.createNativeControl();
             },
+            setOnJSCallback: function(callback) {},
             setJavascriptInterfaceScheme: function(scheme) {},
             loadData: function(data, MIMEType, encoding, baseURL) {},
             loadHTMLString: function(string, baseURL) {},
@@ -44654,429 +44267,63 @@
     }), {
         "../platform/utils": 197
     } ],
-    238: [ (function(require, module, exports) {
+    239: [ (function(require, module, exports) {
         var js = cc.js;
-        js.get(cc, "spriteFrameCache", (function() {
-            cc.errorID(1404);
-        }));
-        cc.Label && js.obsolete(cc.Label.prototype, "cc.Label.file", "font", true);
-        js.get(cc, "inject", (function() {
-            cc.warnID(1400, "cc.inject", "cc.js.mixin");
-            cc.warnID(1401);
-            return function(lhs, rhs) {
-                return js.mixin(rhs, lhs);
-            };
-        }));
-        js.get(cc, "extend", (function() {
-            cc.warnID(1400, "cc.extend", "cc.js.mixin");
-            return js.mixin;
-        }));
-        js.get(cc, "newElement", (function() {
-            cc.warnID(1400, "cc.newElement", "document.createElement");
-            return document.createElement;
-        }));
-        js.get(cc, "isFunction", (function() {
-            cc.warnID(1400, "cc.isFunction", "\"typeof obj === 'function'\"");
-            return function(obj) {
-                return "function" === typeof obj;
-            };
-        }));
-        js.get(cc.js, "isFunction", (function() {
-            cc.warnID(1400, "cc.js.isFunction", "\"typeof obj === 'function'\"");
-            return function(obj) {
-                return "function" === typeof obj;
-            };
-        }));
-        js.get(cc, "isNumber", (function() {
-            cc.warnID(1400, "cc.isNumber", "cc.js.isNumber");
-            return js.isNumber;
-        }));
-        js.get(cc, "isString", (function() {
-            cc.warnID(1400, "cc.isString", "cc.js.isString");
-            return js.isString;
-        }));
-        js.get(cc, "isArray", (function() {
-            cc.warnID(1400, "cc.isArray", "cc.js.isArray");
-            return function(obj) {
-                return Array.isArray(obj);
-            };
-        }));
-        js.get(cc.js, "isArray", (function() {
-            cc.warnID(1400, "cc.js.isArray", '"Array.isArray(obj)"');
-            return function(obj) {
-                return Array.isArray(obj);
-            };
-        }));
-        js.get(cc, "isUndefined", (function() {
-            cc.warnID(1400, "cc.isUndefined", "\"typeof obj === 'undefined'\"");
-            return function(obj) {
-                return "undefined" === typeof obj;
-            };
-        }));
-        js.get(cc.js, "isUndefined", (function() {
-            cc.warnID(1400, "cc.js.isUndefined", "\"typeof obj === 'undefined'\"");
-            return function(obj) {
-                return "undefined" === typeof obj;
-            };
-        }));
-        js.get(cc, "isObject", (function() {
-            cc.warnID(1400, "cc.isObject", "\"typeof obj === 'object'\"");
-            return function(obj) {
-                return "object" === typeof obj;
-            };
-        }));
-        js.get(cc.js, "isObject", (function() {
-            cc.warnID(1400, "cc.js.isObject", "\"typeof obj === 'object'\"");
-            return function(obj) {
-                return "object" === typeof obj;
-            };
-        }));
-        js.obsoletes(cc, "cc", {
-            Point: "Vec2"
-        });
-        js.get(cc, "arrayVerifyType", (function() {
-            cc.warnID(1400, "cc.arrayVerifyType", "cc.js.array.verifyType");
-            return cc.js.array.verifyType;
-        }));
-        js.get(cc, "arrayRemoveObject", (function() {
-            cc.warnID(1400, "cc.arrayRemoveObject", "cc.js.array.remove");
-            return cc.js.array.remove;
-        }));
-        js.get(cc, "arrayRemoveArray", (function() {
-            cc.warnID(1400, "cc.arrayRemoveArray", "cc.js.array.removeArray");
-            return cc.js.array.removeArray;
-        }));
-        js.get(cc, "arrayAppendObjectsToIndex", (function() {
-            cc.warnID(1400, "cc.arrayAppendObjectsToIndex", "cc.js.array.appendObjectsAt");
-            return cc.js.array.appendObjectsAt;
-        }));
-        js.get(cc, "copyArray", (function() {
-            cc.warnID(1400, "cc.copyArray", "cc.js.array.copy");
-            return cc.js.array.copy;
-        }));
-        js.get(cc, "PI", (function() {
-            cc.warnID(1400, "cc.PI", "Math.PI");
-            return Math.PI;
-        }));
-        if (cc.TiledLayer) {
-            js.obsolete(cc.TiledLayer.prototype, "cc.TiledLayer.getTileset", "getTileSet");
-            js.obsolete(cc.TiledLayer.prototype, "cc.TiledLayer.setTileset", "setTileSet");
-        }
-        Object.defineProperty(cc._SGComponent.prototype, "visible", {
-            get: function() {
-                cc.warnID(1402, cc.js.getClassName(this));
-                return this.enabled;
-            },
-            set: function(value) {
-                var printWarning = this.visible;
-                this.enabled = value;
-            }
-        });
-        function deprecateEnum(obj, oldPath, newPath, hasTypePrefixBefore) {
-            hasTypePrefixBefore = false !== hasTypePrefixBefore;
-            var enumDef = Function("return " + newPath)();
-            var entries = cc.Enum.getList(enumDef);
-            var delimiter = hasTypePrefixBefore ? "_" : ".";
-            for (var i = 0; i < entries.length; i++) {
-                var entry = entries[i].name;
-                var oldPropName;
-                if (hasTypePrefixBefore) {
-                    var oldTypeName = oldPath.split(".").slice(-1)[0];
-                    oldPropName = oldTypeName + "_" + entry;
-                } else {
-                    oldPropName = entry;
-                }
-                js.get(obj, oldPropName, function(entry) {
-                    cc.warnID(1400, oldPath + delimiter + entry, newPath + "." + entry);
-                    return enumDef[entry];
-                }.bind(null, entry));
-            }
-        }
-        deprecateEnum(cc, "cc.TEXT_ALIGNMENT", "cc.TextAlignment");
-        deprecateEnum(cc, "cc.VERTICAL_TEXT_ALIGNMENT", "cc.VerticalTextAlignment");
-        if (_ccsg.ParticleSystem) {
-            deprecateEnum(_ccsg.ParticleSystem, "_ccsg.ParticleSystem.TYPE", "_ccsg.ParticleSystem.Type");
-            deprecateEnum(_ccsg.ParticleSystem, "_ccsg.ParticleSystem.MODE", "_ccsg.ParticleSystem.Mode");
-        }
-        if (cc.ParticleSystem) {
-            deprecateEnum(cc.ParticleSystem, "cc.ParticleSystem.TYPE", "cc.ParticleSystem.PositionType");
-            deprecateEnum(cc.ParticleSystem, "cc.ParticleSystem.MODE", "cc.ParticleSystem.EmitterMode");
-        }
-        deprecateEnum(cc.game, "cc.game.DEBUG_MODE", "cc.DebugMode");
-        deprecateEnum(cc, "cc", "cc.Texture2D.WrapMode", false);
-        if (_ccsg.EditBox) {
-            deprecateEnum(cc, "cc.KEYBOARD_RETURNTYPE", "_ccsg.EditBox.KeyboardReturnType");
-            deprecateEnum(cc, "cc.EDITBOX_INPUT_MODE", "_ccsg.EditBox.InputMode");
-            deprecateEnum(cc, "cc.EDITBOX_INPUT_FLAG", "_ccsg.EditBox.InputFlag");
-        }
-        function markAsRemoved(ownerCtor, removedProps, ownerName) {
-            if (!ownerCtor) {
-                return;
-            }
-            ownerName = ownerName || js.getClassName(ownerCtor);
-            removedProps.forEach((function(prop) {
-                function error() {
-                    cc.error("Sorry, %s.%s is removed.", ownerName, prop);
-                }
-                js.getset(ownerCtor.prototype, prop, error, error);
-            }));
-        }
-        function provideClearError(owner, obj, ownerName) {
-            if (!owner) {
-                return;
-            }
-            var className = ownerName || cc.js.getClassName(owner);
-            var Info = "Sorry, " + className + ".%s is removed, please use %s instead.";
-            var _loop = function() {
-                function define(prop, getset) {
-                    function accessor(newProp) {
-                        cc.error(Info, prop, newProp);
-                    }
-                    Array.isArray(getset) || (getset = getset.split(",").map((function(x) {
-                        return x.trim();
-                    })));
-                    try {
-                        js.getset(owner, prop, accessor.bind(null, getset[0]), getset[1] && accessor.bind(null, getset[1]));
-                    } catch (e) {}
-                }
-                getset = obj[prop];
-                if ("*" === prop[0]) {
-                    etProp = prop.slice(1);
-                    define("g" + etProp, getset);
-                    define("s" + etProp, getset);
-                } else {
-                    prop.split(",").map((function(x) {
-                        return x.trim();
-                    })).forEach((function(x) {
-                        define(x, getset);
-                    }));
-                }
-            };
-            for (var prop in obj) {
-                var getset;
-                var etProp;
-                _loop();
-            }
-        }
-        provideClearError(cc.Director.prototype, {
-            getSecondsPerFrame: "getDeltaTime"
-        });
-        markAsRemoved(cc.Pipeline, [ "loadJsWithImg", "loadCsb", "getUrl", "loadAliases", "register" ], "cc.loader");
-        provideClearError(cc.loader, {
-            loadJs: "load",
-            loadTxt: "load",
-            loadJson: "load",
-            loadImg: "load"
-        }, "cc.loader");
-        markAsRemoved(cc.Node, [ "_componentContainer", "_camera", "_additionalTransform", "_scheduler", "_actionManager", "actionManager", "_isTransitionFinished", "_additionalTransformDirty", "_shaderProgram", "shaderProgram", "_normalizedPositionDirty", "_normalizedPosition", "_usingNormalizedPosition", "_renderCmd", "_vertexZ", "_showNode", "_arrayMakeObjectsPerformSelector", "getActionManager", "setActionManager", "getScheduler", "setScheduler", "reorderChild", "draw", "transformAncestors", "onEnter", "onEnterTransitionDidFinish", "onExitTransitionDidStart", "onExit", "scheduleUpdate", "scheduleUpdateWithPriority", "unscheduleUpdate", "schedule", "scheduleOnce", "unschedule", "unscheduleAllCallbacks", "resumeSchedulerAndActions", "resume", "pauseSchedulerAndActions", "pause", "setAdditionalTransform", "updateTransform", "retain", "release", "visit", "transform", "getCamera", "grid", "getOrderOfArrival", "setOrderOfArrival", "getGrid", "setGrid", "getShaderProgram", "setShaderProgram", "getGLServerState", "setGLServerState", "_initRendererCmd", "_createRenderCmd", "updateDisplayedOpacity", "updateDisplayedColor", "userData", "userObject", "_cascadeColorEnabled", "cascadeColor", "isCascadeColorEnabled", "setCascadeColorEnabled", "ignoreAnchor", "isIgnoreAnchorPointForPosition", "ignoreAnchorPointForPosition" ]);
-        provideClearError(cc.Node.prototype, {
-            arrivalOrder: "getSiblingIndex, setSiblingIndex",
-            _visible: "_activeInHierarchy, active",
-            _running: "_activeInHierarchy, active",
-            running: "activeInHierarchy, active",
-            _realOpacity: "_opacity, _opacity",
-            _realColor: "_color, _color",
-            _insertChild: "addChild",
-            _addChildHelper: "addChild",
-            _detachChild: "removeChild",
-            getZOrder: "getLocalZOrder",
-            setZOrder: "setLocalZOrder",
-            boundingBox: "getBoundingBox",
-            removeFromParentAndCleanup: "removeFromParent",
-            removeAllChildrenWithCleanup: "removeAllChildren",
-            parentToNodeTransform: "getParentToNodeTransform",
-            nodeToWorldTransform: "getNodeToWorlshaderProgramdTransform",
-            worldToNodeTransform: "getWorldToNodeTransform",
-            nodeToParentTransform: "getNodeToParentTransform",
-            removeAllComponents: "removeComponent",
-            getNodeToParentAffineTransform: "getNodeToParentTransform"
-        });
-        function shouldNotUseNodeProp(component) {
-            var compProto = component.prototype;
-            for (var prop in cc.Node.prototype) {
-                (function(prop) {
-                    prop in compProto || "_" === prop[0] || Object.defineProperty(compProto, prop, {
-                        get: function() {
-                            var compName = cc.js.getClassName(this);
-                            var Info = "Sorry, " + compName + ".%s is undefined, please use cc.Node.%s instead.";
-                            cc.error(Info, prop, prop);
-                        },
-                        enumerable: false,
-                        configurable: true
-                    });
-                })(prop);
-            }
-        }
-        shouldNotUseNodeProp(cc._SGComponent);
-        markAsRemoved(cc.Sprite, [ "textureLoaded", "setBlendFunc", "getBlendFunc", "setState", "getState", "resizableSpriteWithCapInsets", "flippedX", "flippedY", "setFlippedX", "setFlippedY", "isFlippedX", "isFlippedY", "getCapInsets", "setCapInsets" ]);
-        provideClearError(cc.Sprite, {
-            create: "node.addComponent",
-            createWithTexture: "node.addComponent",
-            createWithSpriteFrameName: "node.addComponent",
-            createWithSpriteFrame: "node.addComponent"
-        });
-        provideClearError(cc.Sprite.prototype, {
-            getPreferredSize: "node.getContentSize",
-            setPreferredSize: "node.setContentSize",
-            updateWithSprite: "spriteFrame",
-            getSpriteFrame: "spriteFrame",
-            setSpriteFrame: "spriteFrame",
-            useOriginalSize: "sizeMode"
-        });
-        if (cc.ParticleSystem) {
-            markAsRemoved(cc.ParticleSystem, [ "batchNode", "drawMode", "getDrawMode", "setDrawMode", "shapeType", "getShapeType", "setShapeType", "atlasIndex", "init", "initParticle", "updateWithNoTime" ]);
-            provideClearError(cc.ParticleSystem, {
-                initWithFile: "instance.file",
-                initWithDictionary: "instance.file",
-                initWithTotalParticles: "instance.totalParticles"
-            });
-            provideClearError(cc.ParticleSystem.prototype, {
-                destroyParticleSystem: "destroy",
-                clone: "cc.instantiate",
-                isActive: "active",
-                "*etParticleCount": "particleCount",
-                "*etDuration": "duration",
-                "*etSourcePosition": "sourcePos",
-                "*etPosVar": "posVar",
-                "*etGravity": "gravity",
-                "*etSpeed": "speed",
-                "*etSpeedVar": "speedVar",
-                "*etTangentialAccel": "tangentialAccel",
-                "*etTangentialAccelVar": "tangentialAccelVar",
-                "*etRadialAccel": "radialAccel",
-                "*etRadialAccelVar": "radialAccelVar",
-                "*etRotationIsDir": "rotationIsDir",
-                "*etStartRadius": "startRadius",
-                "*etStartRadiusVar": "startRadiusVar",
-                "*etEndRadius": "endRadius",
-                "*etEndRadiusVar": "endRadiusVar",
-                "*etRotatePerSecond": "rotatePerS",
-                "*etRotatePerSecondVar": "rotatePerSVar",
-                "*etStartColor": "startColor",
-                "*etStartColorVar": "startColorVar",
-                "*etEndColor": "endColor",
-                "*etEndColorVar": "endColorVar",
-                "*etTotalParticles": "totalParticles",
-                "*etTexture": "texture"
-            });
-            js.obsoletes(cc.ParticleSystem, "cc.ParticleSystem", {
-                Type: "PositionType",
-                Mode: "EmitterMode"
-            });
-        }
-        markAsRemoved(_ccsg.Node, [ "_normalizedPositionDirty", "_normalizedPosition", "_usingNormalizedPosition", "grid", "userData", "userObject", "actionManager", "getActionManager", "setActionManager", "getNormalizedPosition", "setNormalizedPosition", "getCamera", "getUserData", "setUserData", "getUserObject", "setUserObject", "getComponent", "addComponent", "removeComponent", "removeAllComponents", "enumerateChildren", "setCameraMask", "getCameraMask" ], "_ccsg.Node");
-        js.obsolete(_ccsg.Node.prototype, "_ccsg.Node.ignoreAnchorPointForPosition", "setIgnoreAnchorPointForPosition");
-        js.obsoletes(cc.Scale9Sprite.prototype, "cc.Scale9Sprite", {
-            setPreferredSize: "setContentSize",
-            getPreferredSize: "getContentSize"
-        });
-        cc.ActionManager && js.obsoletes(cc.ActionManager.prototype, "cc.ActionManager", {
-            numberOfRunningActionsInTarget: "getNumberOfRunningActionsInTarget"
-        });
-        if (cc.Layout) {
-            js.obsolete(cc.Layout.prototype, "cc.Layout.layoutType", "type");
-            js.obsolete(cc.Layout.prototype, "cc.Layout.ResizeType", "ResizeMode");
-            js.obsolete(cc.Layout.prototype, "cc.Layout.resize", "resizeMode");
-        }
-        markAsRemoved(cc.Scale9Sprite, [ "resizableSpriteWithCapInsets", "updateWithSprite", "getOriginalSize", "setCapInsets", "getCapInsets", "setScale9Enabled", "isScale9Enabled", "getSprite", "setFlippedX", "isFlippedX", "setFlippedY", "isFlippedY" ]);
-        if ("undefined" !== typeof sp) {
-            deprecateEnum(sp, "sp.ANIMATION_EVENT_TYPE", "sp.AnimationEventType");
-            js.obsolete(sp, "sp.SkeletonAnimation", "Skeleton");
-            provideClearError(sp.Skeleton, {
-                create: "node.addComponent"
-            });
-            provideClearError(sp.Skeleton.prototype, {
-                "*etDebugSlotsEnabled": "debugSlots",
-                "*etDebugBonesEnabled": "debugBones",
-                setDebugSolots: "debugSlots",
-                setDebugBones: "debugBones",
-                "*etTimeScale": "timeScale"
-            });
-        }
-        var ERR = '"%s" is not defined in the Scene, it is only defined in normal nodes.';
-        Object.defineProperties(cc.Scene.prototype, {
-            active: {
-                get: function() {
-                    cc.error(ERR, "active");
-                    return true;
-                },
-                set: function() {
-                    cc.error(ERR, "active");
-                }
-            },
-            activeInHierarchy: {
-                get: function() {
-                    cc.error(ERR, "activeInHierarchy");
-                    return true;
-                }
-            },
-            getComponent: {
-                get: function() {
-                    cc.error(ERR, "getComponent");
-                    return function() {
-                        return null;
-                    };
-                }
-            },
-            addComponent: {
-                get: function() {
-                    cc.error(ERR, "addComponent");
-                    return function() {
-                        return null;
-                    };
-                }
-            }
-        });
+        var deprecateEnum;
+        var markAsRemoved;
+        var provideClearError;
+        var shouldNotUseNodeProp;
+        var ERR;
         js.obsolete(cc.loader, "cc.loader.loadResAll", "loadResDir");
     }), {} ],
-    239: [ (function(require, module, exports) {
-        require("./core/base-nodes/BaseNodesPropertyDefine.js");
-        require("./core/base-nodes/CCSGNode.js");
-        require("./core/base-nodes/CCSGNodeCanvasRenderCmd.js");
-        require("./core/base-nodes/CCSGNodeWebGLRenderCmd.js");
-        require("./core/scenes/CCSGScene.js");
-        require("./core/CCConfiguration.js");
-        require("./core/CCDrawingPrimitivesCanvas.js");
-        require("./core/CCDrawingPrimitivesWebGL.js");
-        require("./core/sprites/SpritesPropertyDefine.js");
-        require("./core/sprites/CCSGSprite.js");
-        require("./core/sprites/CCSGSpriteCanvasRenderCmd.js");
-        require("./core/sprites/CCSGSpriteWebGLRenderCmd.js");
-        require("./core/sprites/CCScale9Sprite.js");
-        require("./core/sprites/CCScale9SpriteCanvasRenderCmd.js");
-        require("./core/sprites/CCScale9SpriteWebGLRenderCmd.js");
-        require("./core/sprites/CCSpriteBatchNode.js");
-        require("./shape-nodes/CCDrawNode.js");
-        require("./shape-nodes/CCDrawNodeCanvasRenderCmd.js");
-        require("./shape-nodes/CCDrawNodeWebGLRenderCmd.js");
-        require("./render-texture/CCRenderTexture.js");
-        require("./render-texture/CCRenderTextureCanvasRenderCmd.js");
-        require("./render-texture/CCRenderTextureWebGLRenderCmd.js");
-    }), {
-        "./core/CCConfiguration.js": 34,
-        "./core/CCDrawingPrimitivesCanvas.js": 38,
-        "./core/CCDrawingPrimitivesWebGL.js": 39,
-        "./core/base-nodes/BaseNodesPropertyDefine.js": 56,
-        "./core/base-nodes/CCSGNode.js": 57,
-        "./core/base-nodes/CCSGNodeCanvasRenderCmd.js": 58,
-        "./core/base-nodes/CCSGNodeWebGLRenderCmd.js": 59,
-        "./core/scenes/CCSGScene.js": 202,
-        "./core/sprites/CCSGSprite.js": 203,
-        "./core/sprites/CCSGSpriteCanvasRenderCmd.js": 204,
-        "./core/sprites/CCSGSpriteWebGLRenderCmd.js": 205,
-        "./core/sprites/CCScale9Sprite.js": 206,
-        "./core/sprites/CCScale9SpriteCanvasRenderCmd.js": 207,
-        "./core/sprites/CCScale9SpriteWebGLRenderCmd.js": 208,
-        "./core/sprites/CCSpriteBatchNode.js": 209,
-        "./core/sprites/SpritesPropertyDefine.js": 211,
-        "./render-texture/CCRenderTexture.js": 266,
-        "./render-texture/CCRenderTextureCanvasRenderCmd.js": 267,
-        "./render-texture/CCRenderTextureWebGLRenderCmd.js": 268,
-        "./shape-nodes/CCDrawNode.js": 274,
-        "./shape-nodes/CCDrawNodeCanvasRenderCmd.js": 275,
-        "./shape-nodes/CCDrawNodeWebGLRenderCmd.js": 276
-    } ],
     240: [ (function(require, module, exports) {
+        require("./core/CCGame");
+        require("./actions");
+        require("./core/base-nodes/CCSGNode");
+        require("./core/base-nodes/CCSGNodeCanvasRenderCmd");
+        require("./core/base-nodes/CCSGNodeWebGLRenderCmd");
+        require("./core/scenes/CCSGScene");
+        require("./core/CCConfiguration");
+        require("./core/CCDrawingPrimitivesCanvas");
+        require("./core/CCDrawingPrimitivesWebGL");
+        require("./core/sprites/CCSGSprite");
+        require("./core/sprites/CCSGSpriteCanvasRenderCmd");
+        require("./core/sprites/CCSGSpriteWebGLRenderCmd");
+        require("./core/sprites/CCScale9Sprite");
+        require("./core/sprites/CCScale9SpriteCanvasRenderCmd");
+        require("./core/sprites/CCScale9SpriteWebGLRenderCmd");
+        require("./core/sprites/CCSpriteBatchNode");
+        require("./shape-nodes/CCDrawNode");
+        require("./shape-nodes/CCDrawNodeCanvasRenderCmd");
+        require("./shape-nodes/CCDrawNodeWebGLRenderCmd");
+        require("./render-texture/CCRenderTexture");
+        require("./render-texture/CCRenderTextureCanvasRenderCmd");
+        require("./render-texture/CCRenderTextureWebGLRenderCmd");
+    }), {
+        "./actions": 10,
+        "./core/CCConfiguration": 33,
+        "./core/CCDrawingPrimitivesCanvas": 37,
+        "./core/CCDrawingPrimitivesWebGL": 38,
+        "./core/CCGame": 39,
+        "./core/base-nodes/CCSGNode": 55,
+        "./core/base-nodes/CCSGNodeCanvasRenderCmd": 56,
+        "./core/base-nodes/CCSGNodeWebGLRenderCmd": 57,
+        "./core/scenes/CCSGScene": 203,
+        "./core/sprites/CCSGSprite": 204,
+        "./core/sprites/CCSGSpriteCanvasRenderCmd": 205,
+        "./core/sprites/CCSGSpriteWebGLRenderCmd": 206,
+        "./core/sprites/CCScale9Sprite": 207,
+        "./core/sprites/CCScale9SpriteCanvasRenderCmd": 208,
+        "./core/sprites/CCScale9SpriteWebGLRenderCmd": 209,
+        "./core/sprites/CCSpriteBatchNode": 210,
+        "./render-texture/CCRenderTexture": 267,
+        "./render-texture/CCRenderTextureCanvasRenderCmd": 268,
+        "./render-texture/CCRenderTextureWebGLRenderCmd": 269,
+        "./shape-nodes/CCDrawNode": 275,
+        "./shape-nodes/CCDrawNodeCanvasRenderCmd": 276,
+        "./shape-nodes/CCDrawNodeWebGLRenderCmd": 277
+    } ],
+    241: [ (function(require, module, exports) {
         cc.math.AABB = function(min, max) {
             this.min = min || new cc.math.Vec3();
             this.max = max || new cc.math.Vec3();
@@ -45097,7 +44344,7 @@
             return pOut;
         };
     }), {} ],
-    241: [ (function(require, module, exports) {
+    242: [ (function(require, module, exports) {
         cc.math.Matrix4Stack = function(top, stack) {
             this.top = top;
             this.stack = stack || [];
@@ -45139,7 +44386,7 @@
             this._matrixPool.push(matrix);
         };
     }), {} ],
-    242: [ (function(require, module, exports) {
+    243: [ (function(require, module, exports) {
         var math = cc.math;
         math.KM_GL_MODELVIEW = 5888;
         math.KM_GL_PROJECTION = 5889;
@@ -45252,7 +44499,7 @@
             }
         };
     }), {} ],
-    243: [ (function(require, module, exports) {
+    244: [ (function(require, module, exports) {
         require("./utility");
         require("./vec2");
         require("./vec3");
@@ -45266,20 +44513,20 @@
         require("./gl/mat4stack");
         require("./gl/matrix");
     }), {
-        "./aabb": 240,
-        "./gl/mat4stack": 241,
-        "./gl/matrix": 242,
-        "./mat3": 244,
-        "./mat4": 245,
-        "./plane": 246,
-        "./quaternion": 247,
-        "./ray2": 248,
-        "./utility": 249,
-        "./vec2": 250,
-        "./vec3": 251,
-        "./vec4": 252
+        "./aabb": 241,
+        "./gl/mat4stack": 242,
+        "./gl/matrix": 243,
+        "./mat3": 245,
+        "./mat4": 246,
+        "./plane": 247,
+        "./quaternion": 248,
+        "./ray2": 249,
+        "./utility": 250,
+        "./vec2": 251,
+        "./vec3": 252,
+        "./vec4": 253
     } ],
-    244: [ (function(require, module, exports) {
+    245: [ (function(require, module, exports) {
         window.Uint16Array = window.Uint16Array || window.Array;
         window.Float32Array = window.Float32Array || window.Array;
         cc.math.Matrix3 = function(mat3) {
@@ -45508,7 +44755,7 @@
             return cc.math.Quaternion.rotationMatrix(this).toAxisAndAngle();
         };
     }), {} ],
-    245: [ (function(require, module, exports) {
+    246: [ (function(require, module, exports) {
         cc.math.Matrix4 = function(mat4) {
             mat4 && mat4.mat ? this.mat = new Float32Array(mat4.mat) : this.mat = new Float32Array(16);
         };
@@ -45974,9 +45221,9 @@
             pOut.mat[0] = 2 / (right - left);
             pOut.mat[5] = 2 / (top - bottom);
             pOut.mat[10] = -2 / (farVal - nearVal);
-            pOut.mat[12] = -((right + left) / (right - left));
-            pOut.mat[13] = -((top + bottom) / (top - bottom));
-            pOut.mat[14] = -((farVal + nearVal) / (farVal - nearVal));
+            pOut.mat[12] = -(right + left) / (right - left);
+            pOut.mat[13] = -(top + bottom) / (top - bottom);
+            pOut.mat[14] = -(farVal + nearVal) / (farVal - nearVal);
             return pOut;
         };
         cc.math.Matrix4.createOrthographicProjection = function(left, right, bottom, top, nearVal, farVal) {
@@ -45985,9 +45232,9 @@
             mat[0] = 2 / (right - left);
             mat[5] = 2 / (top - bottom);
             mat[10] = -2 / (farVal - nearVal);
-            mat[12] = -((right + left) / (right - left));
-            mat[13] = -((top + bottom) / (top - bottom));
-            mat[14] = -((farVal + nearVal) / (farVal - nearVal));
+            mat[12] = -(right + left) / (right - left);
+            mat[13] = -(top + bottom) / (top - bottom);
+            mat[14] = -(farVal + nearVal) / (farVal - nearVal);
             return matrix;
         };
         cc.math.mat4LookAt = function(pOut, pEye, pCenter, pUp) {
@@ -46158,7 +45405,7 @@
             return temp.toAxisAndAngle();
         };
     }), {} ],
-    246: [ (function(require, module, exports) {
+    247: [ (function(require, module, exports) {
         cc.math.Plane = function(a, b, c, d) {
             if (a && void 0 === b) {
                 this.a = a.a;
@@ -46226,7 +45473,7 @@
             return cc.math.Plane.POINT_ON_PLANE;
         };
     }), {} ],
-    247: [ (function(require, module, exports) {
+    248: [ (function(require, module, exports) {
         cc.math.Quaternion = function(x, y, z, w) {
             if (x && void 0 === y) {
                 this.x = x.x;
@@ -46330,28 +45577,24 @@
                 y = (pMatrix[2] - pMatrix[8]) / scale;
                 z = (pMatrix[4] - pMatrix[1]) / scale;
                 w = .25 * scale;
+            } else if (pMatrix[0] > pMatrix[5] && pMatrix[0] > pMatrix[10]) {
+                scale = 2 * Math.sqrt(1 + pMatrix[0] - pMatrix[5] - pMatrix[10]);
+                x = .25 * scale;
+                y = (pMatrix[4] + pMatrix[1]) / scale;
+                z = (pMatrix[2] + pMatrix[8]) / scale;
+                w = (pMatrix[9] - pMatrix[6]) / scale;
+            } else if (pMatrix[5] > pMatrix[10]) {
+                scale = 2 * Math.sqrt(1 + pMatrix[5] - pMatrix[0] - pMatrix[10]);
+                x = (pMatrix[4] + pMatrix[1]) / scale;
+                y = .25 * scale;
+                z = (pMatrix[9] + pMatrix[6]) / scale;
+                w = (pMatrix[2] - pMatrix[8]) / scale;
             } else {
-                if (pMatrix[0] > pMatrix[5] && pMatrix[0] > pMatrix[10]) {
-                    scale = 2 * Math.sqrt(1 + pMatrix[0] - pMatrix[5] - pMatrix[10]);
-                    x = .25 * scale;
-                    y = (pMatrix[4] + pMatrix[1]) / scale;
-                    z = (pMatrix[2] + pMatrix[8]) / scale;
-                    w = (pMatrix[9] - pMatrix[6]) / scale;
-                } else {
-                    if (pMatrix[5] > pMatrix[10]) {
-                        scale = 2 * Math.sqrt(1 + pMatrix[5] - pMatrix[0] - pMatrix[10]);
-                        x = (pMatrix[4] + pMatrix[1]) / scale;
-                        y = .25 * scale;
-                        z = (pMatrix[9] + pMatrix[6]) / scale;
-                        w = (pMatrix[2] - pMatrix[8]) / scale;
-                    } else {
-                        scale = 2 * Math.sqrt(1 + pMatrix[10] - pMatrix[0] - pMatrix[5]);
-                        x = (pMatrix[2] + pMatrix[8]) / scale;
-                        y = (pMatrix[9] + pMatrix[6]) / scale;
-                        z = .25 * scale;
-                        w = (pMatrix[4] - pMatrix[1]) / scale;
-                    }
-                }
+                scale = 2 * Math.sqrt(1 + pMatrix[10] - pMatrix[0] - pMatrix[5]);
+                x = (pMatrix[2] + pMatrix[8]) / scale;
+                y = (pMatrix[9] + pMatrix[6]) / scale;
+                z = .25 * scale;
+                w = (pMatrix[4] - pMatrix[1]) / scale;
             }
             return new cc.math.Quaternion(x, y, z, w);
         };
@@ -46478,7 +45721,7 @@
             return retVec;
         };
     }), {} ],
-    248: [ (function(require, module, exports) {
+    249: [ (function(require, module, exports) {
         cc.math.Ray2 = function(start, dir) {
             this.start = start || new cc.math.Vec2();
             this.dir = dir || new cc.math.Vec2();
@@ -46564,7 +45807,7 @@
             return intersected;
         };
     }), {} ],
-    249: [ (function(require, module, exports) {
+    250: [ (function(require, module, exports) {
         cc.math = cc.math || {};
         cc.math.EPSILON = 1 / 64;
         cc.math.square = function(s) {
@@ -46574,7 +45817,7 @@
             return lhs + cc.math.EPSILON > rhs && lhs - cc.math.EPSILON < rhs;
         };
     }), {} ],
-    250: [ (function(require, module, exports) {
+    251: [ (function(require, module, exports) {
         cc.math.Vec2 = function(x, y) {
             if (void 0 === y) {
                 this.x = x.x;
@@ -46644,7 +45887,7 @@
             return this.x < vec.x + cc.math.EPSILON && this.x > vec.x - cc.math.EPSILON && this.y < vec.y + cc.math.EPSILON && this.y > vec.y - cc.math.EPSILON;
         };
     }), {} ],
-    251: [ (function(require, module, exports) {
+    252: [ (function(require, module, exports) {
         cc.math.Vec3 = cc.math.Vec3 = function(x, y, z) {
             if (x && void 0 === y) {
                 this.x = x.x;
@@ -46775,7 +46018,7 @@
             return tyArr;
         };
     }), {} ],
-    252: [ (function(require, module, exports) {
+    253: [ (function(require, module, exports) {
         cc.math.Vec4 = function(x, y, z, w) {
             if (x && void 0 === y) {
                 this.x = x.x;
@@ -46884,9 +46127,9 @@
             return tyArr;
         };
     }), {} ],
-    253: [ (function(require, module, exports) {
-        require("./CCSGMotionStreak.js");
-        require("./CCSGMotionStreakWebGLRenderCmd.js");
+    254: [ (function(require, module, exports) {
+        require("./CCSGMotionStreak");
+        require("./CCSGMotionStreakWebGLRenderCmd");
         var MotionStreak = cc.Class({
             name: "cc.MotionStreak",
             extends: cc.Component,
@@ -46912,7 +46155,7 @@
                         this._motionStreak && this._motionStreak.setFadeTime(value);
                     },
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.motionStreak.fadeTime"
+                    tooltip: false
                 },
                 _minSeg: 1,
                 minSeg: {
@@ -46924,7 +46167,7 @@
                         this._motionStreak && this._motionStreak.setMinSeg(value);
                     },
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.motionStreak.minSeg"
+                    tooltip: false
                 },
                 _stroke: 64,
                 stroke: {
@@ -46936,7 +46179,7 @@
                         this._motionStreak && this._motionStreak.setStroke(value);
                     },
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.motionStreak.stroke"
+                    tooltip: false
                 },
                 _texture: {
                     default: "",
@@ -46949,13 +46192,13 @@
                     set: function(value) {
                         this._texture = value;
                         if (this._motionStreak) {
-                            cc.js.isString(value) && (value = cc.textureCache.addImage(value));
+                            value && cc.js.isString(value) && (value = cc.textureCache.addImage(value));
                             this._motionStreak.setTexture(value);
                         }
                     },
                     url: cc.Texture2D,
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.motionStreak.texture"
+                    tooltip: false
                 },
                 _color: cc.Color.WHITE,
                 color: {
@@ -46966,7 +46209,7 @@
                         this._color = value;
                         this._motionStreak && this._motionStreak.tintWithColor(value);
                     },
-                    tooltip: "i18n:COMPONENT.motionStreak.color"
+                    tooltip: false
                 },
                 _fastMode: false,
                 fastMode: {
@@ -46978,7 +46221,7 @@
                         this._motionStreak && this._motionStreak.setFastMode(value);
                     },
                     animatable: false,
-                    tooltip: "i18n:COMPONENT.motionStreak.fastMode"
+                    tooltip: false
                 }
             },
             onFocusInEditor: false,
@@ -47019,10 +46262,10 @@
         });
         cc.MotionStreak = module.exports = MotionStreak;
     }), {
-        "./CCSGMotionStreak.js": 254,
-        "./CCSGMotionStreakWebGLRenderCmd.js": 255
+        "./CCSGMotionStreak": 255,
+        "./CCSGMotionStreakWebGLRenderCmd": 256
     } ],
-    254: [ (function(require, module, exports) {
+    255: [ (function(require, module, exports) {
         function vertexLineToPolygon(points, stroke, vertices, offset, nuPoints) {
             nuPoints += offset;
             if (nuPoints <= 1) {
@@ -47037,17 +46280,15 @@
                 var perpVector;
                 if (0 === i) {
                     perpVector = cc.pPerp(cc.pNormalize(cc.pSub(p1, cc.p(points[2 * (i + 1)], points[2 * (i + 1) + 1]))));
+                } else if (i === nuPointsMinus) {
+                    perpVector = cc.pPerp(cc.pNormalize(cc.pSub(cc.p(points[2 * (i - 1)], points[2 * (i - 1) + 1]), p1)));
                 } else {
-                    if (i === nuPointsMinus) {
-                        perpVector = cc.pPerp(cc.pNormalize(cc.pSub(cc.p(points[2 * (i - 1)], points[2 * (i - 1) + 1]), p1)));
-                    } else {
-                        var p0 = cc.p(points[2 * (i - 1)], points[2 * (i - 1) + 1]);
-                        var p2 = cc.p(points[2 * (i + 1)], points[2 * (i + 1) + 1]);
-                        var p2p1 = cc.pNormalize(cc.pSub(p2, p1));
-                        var p0p1 = cc.pNormalize(cc.pSub(p0, p1));
-                        var angle = Math.acos(cc.pDot(p2p1, p0p1));
-                        perpVector = angle < cc.degreesToRadians(70) ? cc.pPerp(cc.pNormalize(cc.pMidpoint(p2p1, p0p1))) : angle < cc.degreesToRadians(170) ? cc.pNormalize(cc.pMidpoint(p2p1, p0p1)) : cc.pPerp(cc.pNormalize(cc.pSub(p2, p0)));
-                    }
+                    var p0 = cc.p(points[2 * (i - 1)], points[2 * (i - 1) + 1]);
+                    var p2 = cc.p(points[2 * (i + 1)], points[2 * (i + 1) + 1]);
+                    var p2p1 = cc.pNormalize(cc.pSub(p2, p1));
+                    var p0p1 = cc.pNormalize(cc.pSub(p0, p1));
+                    var angle = Math.acos(cc.pDot(p2p1, p0p1));
+                    perpVector = angle < cc.degreesToRadians(70) ? cc.pPerp(cc.pNormalize(cc.pMidpoint(p2p1, p0p1))) : angle < cc.degreesToRadians(170) ? cc.pNormalize(cc.pMidpoint(p2p1, p0p1)) : cc.pPerp(cc.pNormalize(cc.pSub(p2, p0)));
                 }
                 perpVector = cc.pMult(perpVector, stroke);
                 vertices[2 * idx] = p1.x + perpVector.x;
@@ -47213,7 +46454,7 @@
             },
             setFadeTime: function(fade) {
                 this._fadeDelta = 1 / fade;
-                var locMaxPoints = (0 | 60 * fade) + 2;
+                var locMaxPoints = 2 + (0 | 60 * fade);
                 this._maxPoints = locMaxPoints;
                 this._nuPoints = 0;
                 this._pointState = new Float32Array(locMaxPoints);
@@ -47235,7 +46476,7 @@
                 return this._minSeg;
             },
             setMinSeg: function(minSeg) {
-                this._minSeg = minSeg === -1 ? this._stroke / 5 : minSeg;
+                this._minSeg = -1 === minSeg ? this._stroke / 5 : minSeg;
                 this._minSeg *= this._minSeg;
             },
             isFastMode: function() {
@@ -47338,14 +46579,12 @@
                 var appendNewPoint = true;
                 if (locNuPoints >= this._maxPoints) {
                     appendNewPoint = false;
-                } else {
-                    if (locNuPoints > 0) {
-                        var locPoint1 = cc.p(locPointVertexes[2 * (locNuPoints - 1)], locPointVertexes[2 * (locNuPoints - 1) + 1]);
-                        var a1 = cc.pDistanceSQ(locPoint1, this._positionR) < this._minSeg;
-                        var locPoint2 = cc.p(locPointVertexes[2 * (locNuPoints - 2)], locPointVertexes[2 * (locNuPoints - 2) + 1]);
-                        var a2 = 1 !== locNuPoints && cc.pDistanceSQ(locPoint2, this._positionR) < 2 * this._minSeg;
-                        (a1 || a2) && (appendNewPoint = false);
-                    }
+                } else if (locNuPoints > 0) {
+                    var locPoint1 = cc.p(locPointVertexes[2 * (locNuPoints - 1)], locPointVertexes[2 * (locNuPoints - 1) + 1]);
+                    var a1 = cc.pDistanceSQ(locPoint1, this._positionR) < this._minSeg;
+                    var locPoint2 = cc.p(locPointVertexes[2 * (locNuPoints - 2)], locPointVertexes[2 * (locNuPoints - 2) + 1]);
+                    var a2 = 1 !== locNuPoints && cc.pDistanceSQ(locPoint2, this._positionR) < 2 * this._minSeg;
+                    (a1 || a2) && (appendNewPoint = false);
                 }
                 if (appendNewPoint) {
                     locPointVertexes[2 * locNuPoints] = this._positionR.x;
@@ -47392,7 +46631,7 @@
             set: motionStreakPro.setPositionY
         });
     }), {} ],
-    255: [ (function(require, module, exports) {
+    256: [ (function(require, module, exports) {
         _ccsg.MotionStreak.WebGLRenderCmd = function(renderableObject) {
             this._rootCtor(renderableObject);
             this._needDraw = true;
@@ -47438,7 +46677,8 @@
             }
         };
     }), {} ],
-    256: [ (function(require, module, exports) {
+    257: [ (function(require, module, exports) {
+        var Zlib = require("../compression/zlib.min");
         var PNGReader = cc._Class.extend({
             ctor: function(data) {
                 var chunkSize, colors, delayDen, delayNum, frame, i, index, key, section, ccshort, text, _i, _j, _ref;
@@ -47742,15 +46982,17 @@
             }
         });
         module.exports = PNGReader;
-    }), {} ],
-    257: [ (function(require, module, exports) {
+    }), {
+        "../compression/zlib.min": 32
+    } ],
+    258: [ (function(require, module, exports) {
         var ParticleAsset = cc.Class({
             name: "cc.ParticleAsset",
             extends: cc.RawAsset
         });
         cc.ParticleAsset = module.exports = ParticleAsset;
     }), {} ],
-    258: [ (function(require, module, exports) {
+    259: [ (function(require, module, exports) {
         cc.ParticleBatchNode = _ccsg.Node.extend({
             textureAtlas: null,
             _blendFunc: null,
@@ -47806,11 +47048,9 @@
                 var childBlendFunc = child.getBlendFunc();
                 if (0 === this._children.length) {
                     this.setBlendFunc(childBlendFunc);
-                } else {
-                    if (childBlendFunc.src !== this._blendFunc.src || childBlendFunc.dst !== this._blendFunc.dst) {
-                        cc.logID(6002);
-                        return;
-                    }
+                } else if (childBlendFunc.src !== this._blendFunc.src || childBlendFunc.dst !== this._blendFunc.dst) {
+                    cc.logID(6002);
+                    return;
                 }
                 var pos = this._addChildHelper(child, zOrder, tag);
                 var atlasIndex = 0;
@@ -47843,7 +47083,7 @@
                 if (!(child instanceof _ccsg.ParticleSystem)) {
                     throw new Error("cc.ParticleBatchNode.removeChild(): only supports _ccsg.ParticleSystem as children");
                 }
-                if (this._children.indexOf(child) === -1) {
+                if (-1 === this._children.indexOf(child)) {
                     cc.logID(6003);
                     return;
                 }
@@ -47861,7 +47101,7 @@
                 if (!(child instanceof _ccsg.ParticleSystem)) {
                     throw new Error("cc.ParticleBatchNode.reorderChild(): only supports cc.QuadParticleSystems as children");
                 }
-                if (this._children.indexOf(child) === -1) {
+                if (-1 === this._children.indexOf(child)) {
                     cc.logID(6004);
                     return;
                 }
@@ -48021,7 +47261,7 @@
         _p.texture;
         cc.defineGetterSetter(_p, "texture", _p.getTexture, _p.setTexture);
     }), {} ],
-    259: [ (function(require, module, exports) {
+    260: [ (function(require, module, exports) {
         cc.ParticleBatchNode.CanvasRenderCmd = function(renderable) {
             this._rootCtor(renderable);
             this._needDraw = false;
@@ -48030,7 +47270,7 @@
         proto.constructor = cc.ParticleBatchNode.CanvasRenderCmd;
         proto._initWithTexture = function() {};
     }), {} ],
-    260: [ (function(require, module, exports) {
+    261: [ (function(require, module, exports) {
         cc.ParticleBatchNode.WebGLRenderCmd = function(renderable) {
             this._rootCtor(renderable);
             this._needDraw = true;
@@ -48060,13 +47300,14 @@
             this._shaderProgram = cc.shaderCache.programForKey(cc.macro.SHADER_POSITION_TEXTURECOLOR);
         };
     }), {} ],
-    261: [ (function(require, module, exports) {
-        require("./CCSGParticleSystem.js");
-        require("./CCSGParticleSystemCanvasRenderCmd.js");
-        require("./CCSGParticleSystemWebGLRenderCmd.js");
-        require("./CCParticleBatchNode.js");
-        require("./CCParticleBatchNodeCanvasRenderCmd.js");
-        require("./CCParticleBatchNodeWebGLRenderCmd.js");
+    262: [ (function(require, module, exports) {
+        require("./CCParticleAsset");
+        require("./CCSGParticleSystem");
+        require("./CCSGParticleSystemCanvasRenderCmd");
+        require("./CCSGParticleSystemWebGLRenderCmd");
+        require("./CCParticleBatchNode");
+        require("./CCParticleBatchNodeCanvasRenderCmd");
+        require("./CCParticleBatchNodeWebGLRenderCmd");
         var BlendFactor = cc.BlendFunc.BlendFactor;
         var EmitterMode = cc.Enum({
             GRAVITY: 0,
@@ -48083,7 +47324,7 @@
                 editorOnly: true,
                 notify: false,
                 animatable: false,
-                tooltip: "i18n:COMPONENT.particle_system.preview"
+                tooltip: false
             },
             _custom: false,
             custom: {
@@ -48097,7 +47338,7 @@
                     }
                 },
                 animatable: false,
-                tooltip: "i18n:COMPONENT.particle_system.custom"
+                tooltip: false
             },
             _file: {
                 default: "",
@@ -48115,7 +47356,7 @@
                 },
                 animatable: false,
                 url: cc.ParticleAsset,
-                tooltip: "i18n:COMPONENT.particle_system.file"
+                tooltip: false
             },
             _texture: {
                 default: "",
@@ -48131,7 +47372,7 @@
                     !value && this._file && this._applyFile();
                 },
                 url: cc.Texture2D,
-                tooltip: "i18n:COMPONENT.particle_system.texture"
+                tooltip: false
             },
             particleCount: {
                 get: function() {
@@ -48141,7 +47382,7 @@
                     this._sgNode.particleCount = value;
                 },
                 visible: false,
-                tooltip: "i18n:COMPONENT.particle_system.particleCount"
+                tooltip: false
             },
             _srcBlendFactor: BlendFactor.SRC_ALPHA,
             srcBlendFactor: {
@@ -48155,7 +47396,7 @@
                 },
                 animatable: false,
                 type: BlendFactor,
-                tooltip: "i18n:COMPONENT.particle_system.srcBlendFactor"
+                tooltip: false
             },
             _dstBlendFactor: BlendFactor.ONE_MINUS_SRC_ALPHA,
             dstBlendFactor: {
@@ -48169,7 +47410,7 @@
                 },
                 animatable: false,
                 type: BlendFactor,
-                tooltip: "i18n:COMPONENT.particle_system.dstBlendFactor"
+                tooltip: false
             },
             playOnLoad: true,
             _autoRemoveOnFinish: false,
@@ -48184,7 +47425,7 @@
                     }
                 },
                 animatable: false,
-                tooltip: "i18n:COMPONENT.particle_system.autoRemoveOnFinish"
+                tooltip: false
             },
             active: {
                 get: function() {
@@ -48393,26 +47634,26 @@
                         self._originOnExit.call(this);
                         self.node.destroy();
                     };
-                } else {
-                    if (this._originOnExit) {
-                        sgNode.onExit = this._originOnExit;
-                        this._originOnExit = null;
-                    }
+                } else if (this._originOnExit) {
+                    sgNode.onExit = this._originOnExit;
+                    this._originOnExit = null;
                 }
             }
         });
         cc.ParticleSystem = module.exports = ParticleSystem;
     }), {
-        "./CCParticleBatchNode.js": 258,
-        "./CCParticleBatchNodeCanvasRenderCmd.js": 259,
-        "./CCParticleBatchNodeWebGLRenderCmd.js": 260,
-        "./CCSGParticleSystem.js": 262,
-        "./CCSGParticleSystemCanvasRenderCmd.js": 263,
-        "./CCSGParticleSystemWebGLRenderCmd.js": 264
+        "./CCParticleAsset": 258,
+        "./CCParticleBatchNode": 259,
+        "./CCParticleBatchNodeCanvasRenderCmd": 260,
+        "./CCParticleBatchNodeWebGLRenderCmd": 261,
+        "./CCSGParticleSystem": 263,
+        "./CCSGParticleSystemCanvasRenderCmd": 264,
+        "./CCSGParticleSystemWebGLRenderCmd": 265
     } ],
-    262: [ (function(require, module, exports) {
+    263: [ (function(require, module, exports) {
         var PNGReader = require("./CCPNGReader");
         var tiffReader = require("./CCTIFFReader");
+        require("../compression/ZipUtils");
         cc.Particle = function(pos, startPos, color, deltaColor, size, deltaSize, rotation, deltaRotation, timeToLive, atlasIndex, modeA, modeB) {
             this.pos = pos || cc.v2(0, 0);
             this.startPos = startPos || cc.v2(0, 0);
@@ -48429,13 +47670,13 @@
             this.deltaRotation = deltaRotation || 0;
             this.timeToLive = timeToLive || 0;
             this.atlasIndex = atlasIndex || 0;
-            this.modeA = modeA ? modeA : new cc.Particle.ModeA();
-            this.modeB = modeB ? modeB : new cc.Particle.ModeB();
+            this.modeA = modeA || new cc.Particle.ModeA();
+            this.modeB = modeB || new cc.Particle.ModeB();
             this.isChangeColor = false;
             this.drawPos = cc.p(0, 0);
         };
         cc.Particle.ModeA = function(dir, radialAccel, tangentialAccel) {
-            this.dir = dir ? dir : cc.p(0, 0);
+            this.dir = dir || cc.p(0, 0);
             this.radialAccel = radialAccel || 0;
             this.tangentialAccel = tangentialAccel || 0;
         };
@@ -48850,14 +48091,12 @@
                         this._blendFunc = src;
                         this._updateBlendFunc();
                     }
-                } else {
-                    if (this._blendFunc.src !== src || this._blendFunc.dst !== dst) {
-                        this._blendFunc = {
-                            src: src,
-                            dst: dst
-                        };
-                        this._updateBlendFunc();
-                    }
+                } else if (this._blendFunc.src !== src || this._blendFunc.dst !== dst) {
+                    this._blendFunc = {
+                        src: src,
+                        dst: dst
+                    };
+                    this._updateBlendFunc();
                 }
             },
             isOpacityModifyRGB: function() {
@@ -49116,11 +48355,9 @@
                 particle.deltaRotation = (endA - startA) / locParticleTimeToLive;
                 if (this.positionType === _ccsg.ParticleSystem.Type.FREE) {
                     particle.startPos = this.convertToWorldSpace(this._pointZeroForParticle);
-                } else {
-                    if (this.positionType === _ccsg.ParticleSystem.Type.RELATIVE) {
-                        particle.startPos.x = this._position.x;
-                        particle.startPos.y = this._position.y;
-                    }
+                } else if (this.positionType === _ccsg.ParticleSystem.Type.RELATIVE) {
+                    particle.startPos.x = this._position.x;
+                    particle.startPos.y = this._position.y;
                 }
                 var a = cc.degreesToRadians(this.angle + this.angleVar * locRandomMinus11());
                 if (this.emitterMode === _ccsg.ParticleSystem.Mode.GRAVITY) {
@@ -49174,18 +48411,16 @@
                         this._emitCounter -= rate;
                     }
                     this._elapsed += dt;
-                    this.duration !== -1 && this.duration < this._elapsed && this.stopSystem();
+                    -1 !== this.duration && this.duration < this._elapsed && this.stopSystem();
                 }
                 this._particleIdx = 0;
                 var worldToNodeTransform = this.getWorldToNodeTransform();
                 var currentPosition = cc.Particle.TemporaryPoints[0];
                 if (this.positionType === _ccsg.ParticleSystem.Type.FREE) {
                     cc.pIn(currentPosition, this.convertToWorldSpace(this._pointZeroForParticle));
-                } else {
-                    if (this.positionType === _ccsg.ParticleSystem.Type.RELATIVE) {
-                        currentPosition.x = this._position.x;
-                        currentPosition.y = this._position.y;
-                    }
+                } else if (this.positionType === _ccsg.ParticleSystem.Type.RELATIVE) {
+                    currentPosition.x = this._position.x;
+                    currentPosition.y = this._position.y;
                 }
                 if (this._visible) {
                     var tpa = cc.Particle.TemporaryPoints[1], tpb = cc.Particle.TemporaryPoints[2], tpc = cc.Particle.TemporaryPoints[3];
@@ -49334,15 +48569,13 @@
                         retParticle.setRadialAccelVar(this.getRadialAccelVar());
                         retParticle.setTangentialAccel(this.getTangentialAccel());
                         retParticle.setTangentialAccelVar(this.getTangentialAccelVar());
-                    } else {
-                        if (this.getEmitterMode() === _ccsg.ParticleSystem.Mode.RADIUS) {
-                            retParticle.setStartRadius(this.getStartRadius());
-                            retParticle.setStartRadiusVar(this.getStartRadiusVar());
-                            retParticle.setEndRadius(this.getEndRadius());
-                            retParticle.setEndRadiusVar(this.getEndRadiusVar());
-                            retParticle.setRotatePerSecond(this.getRotatePerSecond());
-                            retParticle.setRotatePerSecondVar(this.getRotatePerSecondVar());
-                        }
+                    } else if (this.getEmitterMode() === _ccsg.ParticleSystem.Mode.RADIUS) {
+                        retParticle.setStartRadius(this.getStartRadius());
+                        retParticle.setStartRadiusVar(this.getStartRadiusVar());
+                        retParticle.setEndRadius(this.getEndRadius());
+                        retParticle.setEndRadiusVar(this.getEndRadiusVar());
+                        retParticle.setRotatePerSecond(this.getRotatePerSecond());
+                        retParticle.setRotatePerSecondVar(this.getRotatePerSecondVar());
                     }
                     retParticle.setLife(this.getLife());
                     retParticle.setLifeVar(this.getLifeVar());
@@ -49433,7 +48666,7 @@
         _p.texture;
         cc.defineGetterSetter(_p, "texture", _p.getTexture, _p.setTexture);
         _ccsg.ParticleSystem.ModeA = function(gravity, speed, speedVar, tangentialAccel, tangentialAccelVar, radialAccel, radialAccelVar, rotationIsDir) {
-            this.gravity = gravity ? gravity : cc.p(0, 0);
+            this.gravity = gravity || cc.p(0, 0);
             this.speed = speed || 0;
             this.speedVar = speedVar || 0;
             this.tangentialAccel = tangentialAccel || 0;
@@ -49467,10 +48700,11 @@
             GROUPED: 2
         });
     }), {
-        "./CCPNGReader": 256,
-        "./CCTIFFReader": 265
+        "../compression/ZipUtils": 29,
+        "./CCPNGReader": 257,
+        "./CCTIFFReader": 266
     } ],
-    263: [ (function(require, module, exports) {
+    264: [ (function(require, module, exports) {
         _ccsg.ParticleSystem.CanvasRenderCmd = function(renderable) {
             this._rootCtor(renderable);
             this._needDraw = true;
@@ -49634,7 +48868,7 @@
             }
         };
     }), {} ],
-    264: [ (function(require, module, exports) {
+    265: [ (function(require, module, exports) {
         _ccsg.ParticleSystem.WebGLRenderCmd = function(renderable) {
             this._rootCtor(renderable);
             this._needDraw = true;
@@ -49925,7 +49159,7 @@
             selParticle.isChangeColor = true;
         };
     }), {} ],
-    265: [ (function(require, module, exports) {
+    266: [ (function(require, module, exports) {
         var tiffReader = {
             _littleEndian: false,
             _tiffData: null,
@@ -49975,16 +49209,16 @@
                 return "Tag" + fieldTag;
             },
             getFieldTypeLength: function(fieldTypeName) {
-                if ([ "BYTE", "ASCII", "SBYTE", "UNDEFINED" ].indexOf(fieldTypeName) !== -1) {
+                if (-1 !== [ "BYTE", "ASCII", "SBYTE", "UNDEFINED" ].indexOf(fieldTypeName)) {
                     return 1;
                 }
-                if ([ "SHORT", "SSHORT" ].indexOf(fieldTypeName) !== -1) {
+                if (-1 !== [ "SHORT", "SSHORT" ].indexOf(fieldTypeName)) {
                     return 2;
                 }
-                if ([ "LONG", "SLONG", "FLOAT" ].indexOf(fieldTypeName) !== -1) {
+                if (-1 !== [ "LONG", "SLONG", "FLOAT" ].indexOf(fieldTypeName)) {
                     return 4;
                 }
-                if ([ "RATIONAL", "SRATIONAL", "DOUBLE" ].indexOf(fieldTypeName) !== -1) {
+                if (-1 !== [ "RATIONAL", "SRATIONAL", "DOUBLE" ].indexOf(fieldTypeName)) {
                     return 8;
                 }
                 return null;
@@ -49999,7 +49233,7 @@
                     for (var i = 0; i < typeCount; i++) {
                         var indexOffset = fieldTypeLength * i;
                         if (fieldTypeLength >= 8) {
-                            if ([ "RATIONAL", "SRATIONAL" ].indexOf(fieldTypeName) !== -1) {
+                            if (-1 !== [ "RATIONAL", "SRATIONAL" ].indexOf(fieldTypeName)) {
                                 fieldValues.push(this.getUint32(valueOffset + indexOffset));
                                 fieldValues.push(this.getUint32(valueOffset + indexOffset + 4));
                             } else {
@@ -50043,23 +49277,17 @@
                 var shiftLeft, rawBits;
                 if (totalBits <= 0) {
                     console.log("No bits requested");
+                } else if (totalBits <= 8) {
+                    shiftLeft = 24 + bitOffset;
+                    rawBits = this.getUint8(newByteOffset);
+                } else if (totalBits <= 16) {
+                    shiftLeft = 16 + bitOffset;
+                    rawBits = this.getUint16(newByteOffset);
+                } else if (totalBits <= 32) {
+                    shiftLeft = bitOffset;
+                    rawBits = this.getUint32(newByteOffset);
                 } else {
-                    if (totalBits <= 8) {
-                        shiftLeft = 24 + bitOffset;
-                        rawBits = this.getUint8(newByteOffset);
-                    } else {
-                        if (totalBits <= 16) {
-                            shiftLeft = 16 + bitOffset;
-                            rawBits = this.getUint16(newByteOffset);
-                        } else {
-                            if (totalBits <= 32) {
-                                shiftLeft = bitOffset;
-                                rawBits = this.getUint32(newByteOffset);
-                            } else {
-                                console.log("Too many bits requested");
-                            }
-                        }
-                    }
+                    console.log("Too many bits requested");
                 }
                 return {
                     bits: rawBits << shiftLeft >>> shiftRight,
@@ -50168,20 +49396,10 @@
                             break;
 
                           case 2:
-                            break;
-
                           case 3:
-                            break;
-
                           case 4:
-                            break;
-
                           case 5:
-                            break;
-
                           case 6:
-                            break;
-
                           case 7:
                             break;
 
@@ -50191,7 +49409,7 @@
                                 var blockLength = 1;
                                 var iterations = 1;
                                 var header = this.getInt8(stripOffset + byteOffset);
-                                header >= 0 && header <= 127 ? blockLength = header + 1 : header >= -127 && header <= -1 ? iterations = -header + 1 : getHeader = true;
+                                header >= 0 && header <= 127 ? blockLength = header + 1 : header >= -127 && header <= -1 ? iterations = 1 - header : getHeader = true;
                             } else {
                                 var currentByte = this.getUint8(stripOffset + byteOffset);
                                 for (var m = 0; m < iterations; m++) {
@@ -50409,7 +49627,7 @@
         };
         module.exports = tiffReader;
     }), {} ],
-    266: [ (function(require, module, exports) {
+    267: [ (function(require, module, exports) {
         cc.RenderTexture = _ccsg.Node.extend({
             sprite: null,
             clearFlags: 0,
@@ -50546,7 +49764,7 @@
             return new cc.RenderTexture(width, height, format, depthStencilFormat);
         };
     }), {} ],
-    267: [ (function(require, module, exports) {
+    268: [ (function(require, module, exports) {
         cc.RenderTexture.CanvasRenderCmd = function(renderableObject) {
             this._rootCtor(renderableObject);
             this._needDraw = false;
@@ -50605,7 +49823,7 @@
             cc.log("clearDepth isn't supported on Cocos2d-Html5");
         };
     }), {} ],
-    268: [ (function(require, module, exports) {
+    269: [ (function(require, module, exports) {
         var misc = require("../core/utils/misc");
         cc.RenderTexture.WebGLRenderCmd = function(renderableObject) {
             this._rootCtor(renderableObject);
@@ -50817,9 +50035,9 @@
             node.end();
         };
     }), {
-        "../core/utils/misc": 222
+        "../core/utils/misc": 223
     } ],
-    269: [ (function(require, module, exports) {
+    270: [ (function(require, module, exports) {
         var macro = cc.macro;
         var math = cc.math;
         cc.GLProgram = cc._Class.extend({
@@ -50896,12 +50114,10 @@
                     this._compileShader(this._fragShader, locGL.FRAGMENT_SHADER, fragShaderStr) || cc.logID(8102);
                 }
                 this._vertShader && locGL.attachShader(this._programObj, this._vertShader);
-                cc.checkGLErrorDebug();
                 this._fragShader && locGL.attachShader(this._programObj, this._fragShader);
                 for (var key in this._hashForUniforms) {
                     delete this._hashForUniforms[key];
                 }
-                cc.checkGLErrorDebug();
                 return true;
             },
             initWithString: function(vertShaderStr, fragShaderStr) {
@@ -51152,7 +50368,7 @@
                     this.setUniformLocationWith4f(this._uniforms[macro.UNIFORM_SINTIME], time / 8, time / 4, time / 2, Math.sin(time));
                     this.setUniformLocationWith4f(this._uniforms[macro.UNIFORM_COSTIME], time / 8, time / 4, time / 2, Math.cos(time));
                 }
-                this._uniforms[macro.UNIFORM_RANDOM01] !== -1 && this.setUniformLocationWith4f(this._uniforms[macro.UNIFORM_RANDOM01], Math.random(), Math.random(), Math.random(), Math.random());
+                -1 !== this._uniforms[macro.UNIFORM_RANDOM01] && this.setUniformLocationWith4f(this._uniforms[macro.UNIFORM_RANDOM01], Math.random(), Math.random(), Math.random(), Math.random());
             },
             _setUniformsForBuiltinsForRenderer: function(node) {
                 if (!node || !node._renderCmd) {
@@ -51172,7 +50388,7 @@
                     this.setUniformLocationWith4f(this._uniforms[macro.UNIFORM_SINTIME], time / 8, time / 4, time / 2, Math.sin(time));
                     this.setUniformLocationWith4f(this._uniforms[macro.UNIFORM_COSTIME], time / 8, time / 4, time / 2, Math.cos(time));
                 }
-                this._uniforms[macro.UNIFORM_RANDOM01] !== -1 && this.setUniformLocationWith4f(this._uniforms[macro.UNIFORM_RANDOM01], Math.random(), Math.random(), Math.random(), Math.random());
+                -1 !== this._uniforms[macro.UNIFORM_RANDOM01] && this.setUniformLocationWith4f(this._uniforms[macro.UNIFORM_RANDOM01], Math.random(), Math.random(), Math.random(), Math.random());
             },
             setUniformForModelViewProjectionMatrix: function() {
                 this._glContext.uniformMatrix4fv(this._uniforms[macro.UNIFORM_MVPMATRIX], false, math.getMat4MultiplyValue(math.projection_matrix_stack.top, math.modelview_matrix_stack.top));
@@ -51244,7 +50460,7 @@
             return cc.GLProgram._highpSupported;
         };
     }), {} ],
-    270: [ (function(require, module, exports) {
+    271: [ (function(require, module, exports) {
         var _currentProjectionMatrix = -1;
         var macro = cc.macro;
         var ENABLE_GL_STATE_CACHE = macro.ENABLE_GL_STATE_CACHE;
@@ -51354,7 +50570,7 @@
             ENABLE_GL_STATE_CACHE;
         };
     }), {} ],
-    271: [ (function(require, module, exports) {
+    272: [ (function(require, module, exports) {
         var shaders = cc.PresetShaders;
         var macro = cc.macro;
         cc.shaderCache = {
@@ -51488,7 +50704,7 @@
             }
         };
     }), {} ],
-    272: [ (function(require, module, exports) {
+    273: [ (function(require, module, exports) {
         cc.PresetShaders = {
             POSITION_UCOLOR_FRAG: "precision lowp float;\nvarying vec4 v_fragmentColor;\nvoid main()\n{\ngl_FragColor = v_fragmentColor;\n}",
             POSITION_UCOLOR_VERT: "attribute vec4 a_position;\nuniform vec4 u_color;\nuniform float u_pointSize;\nvarying lowp vec4 v_fragmentColor;\nvoid main(void)\n{\ngl_Position = (CC_PMatrix * CC_MVMatrix) * a_position;\ngl_PointSize = u_pointSize;\nv_fragmentColor = u_color;\n}",
@@ -51510,18 +50726,18 @@
             EX_SWITCHMASK_FRAG: "precision lowp float;\nvarying vec4 v_fragmentColor;\nvarying vec2 v_texCoord;\nuniform sampler2D u_texture;\nuniform sampler2D u_mask;\nvoid main()\n{\nvec4 texColorc=texture2D(u_texture, v_texCoord);\nvec4 maskColor=texture2D(u_mask, v_texCoord);\nvec4 finalColor=vec4(texColor.r, texColor.g, texColor.b, maskColor.a*texColor.a);\ngl_FragColor=v_fragmentColor*finalColor;\n}"
         };
     }), {} ],
-    273: [ (function(require, module, exports) {
+    274: [ (function(require, module, exports) {
         require("./CCShaders");
         require("./CCShaderCache");
         require("./CCGLProgram");
         require("./CCGLStateCache");
     }), {
-        "./CCGLProgram": 269,
-        "./CCGLStateCache": 270,
-        "./CCShaderCache": 271,
-        "./CCShaders": 272
+        "./CCGLProgram": 270,
+        "./CCGLStateCache": 271,
+        "./CCShaderCache": 272,
+        "./CCShaders": 273
     } ],
-    274: [ (function(require, module, exports) {
+    275: [ (function(require, module, exports) {
         var __t = function(v) {
             return {
                 u: v.x,
@@ -51756,489 +50972,387 @@
                 proto._createRenderCmd = function() {
                     return new cc.DrawNode.CanvasRenderCmd(this);
                 };
-            } else {
-                if (cc._renderType === cc.game.RENDER_TYPE_WEBGL) {
-                    proto._bufferCapacity = 0;
-                    proto._trianglesArrayBuffer = null;
-                    proto._trianglesWebBuffer = null;
-                    proto._trianglesReader = null;
-                    proto._dirty = false;
-                    proto._className = "DrawNodeWebGL";
-                    proto.ctor = function() {
-                        _ccsg.Node.prototype.ctor.call(this);
-                        this._buffer = [];
-                        this._blendFunc = new cc.BlendFunc(cc.macro.SRC_ALPHA, cc.macro.ONE_MINUS_SRC_ALPHA);
-                        this._drawColor = cc.color(255, 255, 255, 255);
-                        this.init();
-                    };
-                    proto.init = function() {
-                        if (_ccsg.Node.prototype.init.call(this)) {
-                            this.shaderProgram = cc.shaderCache.programForKey(cc.macro.SHADER_POSITION_LENGTHTEXTURECOLOR);
-                            this._ensureCapacity(64);
-                            this._trianglesWebBuffer = cc._renderContext.createBuffer();
-                            this._dirty = true;
-                            return true;
-                        }
-                        return false;
-                    };
-                    proto.drawRect = function(origin, destination, fillColor, lineWidth, lineColor) {
-                        lineWidth = null == lineWidth ? this._lineWidth : lineWidth;
-                        lineColor = lineColor || this.getDrawColor();
-                        null == lineColor.a && (lineColor.a = 255);
-                        var vertices = [ origin, cc.p(destination.x, origin.y), destination, cc.p(origin.x, destination.y) ];
-                        null == fillColor ? this._drawSegments(vertices, lineWidth, lineColor, true) : this.drawPoly(vertices, fillColor, lineWidth, lineColor);
-                    };
-                    proto.drawCircle = function(center, radius, angle, segments, drawLineToCenter, lineWidth, color) {
-                        lineWidth = lineWidth || this._lineWidth;
-                        color = color || this.getDrawColor();
-                        null == color.a && (color.a = 255);
-                        var coef = 2 * Math.PI / segments, vertices = [], i, len;
-                        for (i = 0; i <= segments; i++) {
-                            var rads = i * coef;
-                            var j = radius * Math.cos(rads + angle) + center.x;
-                            var k = radius * Math.sin(rads + angle) + center.y;
-                            vertices.push(cc.p(j, k));
-                        }
-                        drawLineToCenter && vertices.push(cc.p(center.x, center.y));
-                        lineWidth *= .5;
-                        for (i = 0, len = vertices.length; i < len - 1; i++) {
-                            this.drawSegment(vertices[i], vertices[i + 1], lineWidth, color);
-                        }
-                    };
-                    proto.drawQuadBezier = function(origin, control, destination, segments, lineWidth, color) {
-                        lineWidth = lineWidth || this._lineWidth;
-                        color = color || this.getDrawColor();
-                        null == color.a && (color.a = 255);
-                        var vertices = [], t = 0;
-                        for (var i = 0; i < segments; i++) {
-                            var x = Math.pow(1 - t, 2) * origin.x + 2 * (1 - t) * t * control.x + t * t * destination.x;
-                            var y = Math.pow(1 - t, 2) * origin.y + 2 * (1 - t) * t * control.y + t * t * destination.y;
-                            vertices.push(cc.p(x, y));
-                            t += 1 / segments;
-                        }
-                        vertices.push(cc.p(destination.x, destination.y));
-                        this._drawSegments(vertices, lineWidth, color, false);
-                    };
-                    proto.drawCubicBezier = function(origin, control1, control2, destination, segments, lineWidth, color) {
-                        lineWidth = lineWidth || this._lineWidth;
-                        color = color || this.getDrawColor();
-                        null == color.a && (color.a = 255);
-                        var vertices = [], t = 0;
-                        for (var i = 0; i < segments; i++) {
-                            var x = Math.pow(1 - t, 3) * origin.x + 3 * Math.pow(1 - t, 2) * t * control1.x + 3 * (1 - t) * t * t * control2.x + t * t * t * destination.x;
-                            var y = Math.pow(1 - t, 3) * origin.y + 3 * Math.pow(1 - t, 2) * t * control1.y + 3 * (1 - t) * t * t * control2.y + t * t * t * destination.y;
-                            vertices.push(cc.p(x, y));
-                            t += 1 / segments;
-                        }
-                        vertices.push(cc.p(destination.x, destination.y));
-                        this._drawSegments(vertices, lineWidth, color, false);
-                    };
-                    proto.drawCatmullRom = function(points, segments, lineWidth, color) {
-                        this.drawCardinalSpline(points, .5, segments, lineWidth, color);
-                    };
-                    proto.drawCardinalSpline = function(config, tension, segments, lineWidth, color) {
-                        lineWidth = lineWidth || this._lineWidth;
-                        color = color || this.getDrawColor();
-                        null == color.a && (color.a = 255);
-                        var vertices = [], p, lt, deltaT = 1 / config.length;
-                        for (var i = 0; i < segments + 1; i++) {
-                            var dt = i / segments;
-                            if (1 === dt) {
-                                p = config.length - 1;
-                                lt = 1;
-                            } else {
-                                p = 0 | dt / deltaT;
-                                lt = (dt - deltaT * p) / deltaT;
-                            }
-                            var newPos = cc.cardinalSplineAt(cc.getControlPointAt(config, p - 1), cc.getControlPointAt(config, p - 0), cc.getControlPointAt(config, p + 1), cc.getControlPointAt(config, p + 2), tension, lt);
-                            vertices.push(newPos);
-                        }
-                        lineWidth *= .5;
-                        for (var j = 0, len = vertices.length; j < len - 1; j++) {
-                            this.drawSegment(vertices[j], vertices[j + 1], lineWidth, color);
-                        }
-                    };
-                    proto._render = function() {
-                        var gl = cc._renderContext;
-                        gl.bindBuffer(gl.ARRAY_BUFFER, this._trianglesWebBuffer);
-                        if (this._dirty) {
-                            gl.bufferData(gl.ARRAY_BUFFER, this._trianglesArrayBuffer, gl.STREAM_DRAW);
-                            this._dirty = false;
-                        }
-                        var triangleSize = cc.V2F_C4B_T2F.BYTES_PER_ELEMENT;
-                        gl.enableVertexAttribArray(cc.macro.VERTEX_ATTRIB_POSITION);
-                        gl.enableVertexAttribArray(cc.macro.VERTEX_ATTRIB_COLOR);
-                        gl.enableVertexAttribArray(cc.macro.VERTEX_ATTRIB_TEX_COORDS);
-                        gl.vertexAttribPointer(cc.macro.VERTEX_ATTRIB_POSITION, 2, gl.FLOAT, false, triangleSize, 0);
-                        gl.vertexAttribPointer(cc.macro.VERTEX_ATTRIB_COLOR, 4, gl.UNSIGNED_BYTE, true, triangleSize, 8);
-                        gl.vertexAttribPointer(cc.macro.VERTEX_ATTRIB_TEX_COORDS, 2, gl.FLOAT, false, triangleSize, 12);
-                        gl.drawArrays(gl.TRIANGLES, 0, 3 * this._buffer.length);
-                        cc.incrementGLDraws(1);
-                    };
-                    proto._ensureCapacity = function(count) {
-                        var _t = this;
-                        var locBuffer = _t._buffer;
-                        if (locBuffer.length + count > _t._bufferCapacity) {
-                            var TriangleLength = cc.V2F_C4B_T2F_Triangle.BYTES_PER_ELEMENT;
-                            _t._bufferCapacity += Math.max(_t._bufferCapacity, count);
-                            if (null == locBuffer || 0 === locBuffer.length) {
-                                _t._buffer = [];
-                                _t._trianglesArrayBuffer = new ArrayBuffer(TriangleLength * _t._bufferCapacity);
-                                _t._trianglesReader = new Uint8Array(_t._trianglesArrayBuffer);
-                            } else {
-                                var newTriangles = [];
-                                var newArrayBuffer = new ArrayBuffer(TriangleLength * _t._bufferCapacity);
-                                for (var i = 0; i < locBuffer.length; i++) {
-                                    newTriangles[i] = new cc.V2F_C4B_T2F_Triangle(locBuffer[i].a, locBuffer[i].b, locBuffer[i].c, newArrayBuffer, i * TriangleLength);
-                                }
-                                _t._trianglesReader = new Uint8Array(newArrayBuffer);
-                                _t._trianglesArrayBuffer = newArrayBuffer;
-                                _t._buffer = newTriangles;
-                            }
-                        }
-                    };
-                    proto.drawDot = function(pos, radius, color) {
-                        color = color || this.getDrawColor();
-                        null == color.a && (color.a = 255);
-                        var c4bColor = {
-                            r: 0 | color.r,
-                            g: 0 | color.g,
-                            b: 0 | color.b,
-                            a: 0 | color.a
-                        };
-                        var a = {
-                            vertices: {
-                                x: pos.x - radius,
-                                y: pos.y - radius
-                            },
-                            colors: c4bColor,
-                            texCoords: {
-                                u: -1,
-                                v: -1
-                            }
-                        };
-                        var b = {
-                            vertices: {
-                                x: pos.x - radius,
-                                y: pos.y + radius
-                            },
-                            colors: c4bColor,
-                            texCoords: {
-                                u: -1,
-                                v: 1
-                            }
-                        };
-                        var c = {
-                            vertices: {
-                                x: pos.x + radius,
-                                y: pos.y + radius
-                            },
-                            colors: c4bColor,
-                            texCoords: {
-                                u: 1,
-                                v: 1
-                            }
-                        };
-                        var d = {
-                            vertices: {
-                                x: pos.x + radius,
-                                y: pos.y - radius
-                            },
-                            colors: c4bColor,
-                            texCoords: {
-                                u: 1,
-                                v: -1
-                            }
-                        };
-                        this._ensureCapacity(6);
-                        this._buffer.push(new cc.V2F_C4B_T2F_Triangle(a, b, c, this._trianglesArrayBuffer, this._buffer.length * cc.V2F_C4B_T2F_Triangle.BYTES_PER_ELEMENT));
-                        this._buffer.push(new cc.V2F_C4B_T2F_Triangle(a, c, d, this._trianglesArrayBuffer, this._buffer.length * cc.V2F_C4B_T2F_Triangle.BYTES_PER_ELEMENT));
+            } else if (cc._renderType === cc.game.RENDER_TYPE_WEBGL) {
+                proto._bufferCapacity = 0;
+                proto._trianglesArrayBuffer = null;
+                proto._trianglesWebBuffer = null;
+                proto._trianglesReader = null;
+                proto._dirty = false;
+                proto._className = "DrawNodeWebGL";
+                proto.ctor = function() {
+                    _ccsg.Node.prototype.ctor.call(this);
+                    this._buffer = [];
+                    this._blendFunc = new cc.BlendFunc(cc.macro.SRC_ALPHA, cc.macro.ONE_MINUS_SRC_ALPHA);
+                    this._drawColor = cc.color(255, 255, 255, 255);
+                    this.init();
+                };
+                proto.init = function() {
+                    if (_ccsg.Node.prototype.init.call(this)) {
+                        this.shaderProgram = cc.shaderCache.programForKey(cc.macro.SHADER_POSITION_LENGTHTEXTURECOLOR);
+                        this._ensureCapacity(64);
+                        this._trianglesWebBuffer = cc._renderContext.createBuffer();
                         this._dirty = true;
-                    };
-                    proto.drawDots = function(points, radius, color) {
-                        if (!points || 0 === points.length) {
-                            return;
+                        return true;
+                    }
+                    return false;
+                };
+                proto.drawRect = function(origin, destination, fillColor, lineWidth, lineColor) {
+                    lineWidth = null == lineWidth ? this._lineWidth : lineWidth;
+                    lineColor = lineColor || this.getDrawColor();
+                    null == lineColor.a && (lineColor.a = 255);
+                    var vertices = [ origin, cc.p(destination.x, origin.y), destination, cc.p(origin.x, destination.y) ];
+                    null == fillColor ? this._drawSegments(vertices, lineWidth, lineColor, true) : this.drawPoly(vertices, fillColor, lineWidth, lineColor);
+                };
+                proto.drawCircle = function(center, radius, angle, segments, drawLineToCenter, lineWidth, color) {
+                    lineWidth = lineWidth || this._lineWidth;
+                    color = color || this.getDrawColor();
+                    null == color.a && (color.a = 255);
+                    var coef = 2 * Math.PI / segments, vertices = [], i, len;
+                    for (i = 0; i <= segments; i++) {
+                        var rads = i * coef;
+                        var j = radius * Math.cos(rads + angle) + center.x;
+                        var k = radius * Math.sin(rads + angle) + center.y;
+                        vertices.push(cc.p(j, k));
+                    }
+                    drawLineToCenter && vertices.push(cc.p(center.x, center.y));
+                    lineWidth *= .5;
+                    for (i = 0, len = vertices.length; i < len - 1; i++) {
+                        this.drawSegment(vertices[i], vertices[i + 1], lineWidth, color);
+                    }
+                };
+                proto.drawQuadBezier = function(origin, control, destination, segments, lineWidth, color) {
+                    lineWidth = lineWidth || this._lineWidth;
+                    color = color || this.getDrawColor();
+                    null == color.a && (color.a = 255);
+                    var vertices = [], t = 0;
+                    for (var i = 0; i < segments; i++) {
+                        var x = Math.pow(1 - t, 2) * origin.x + 2 * (1 - t) * t * control.x + t * t * destination.x;
+                        var y = Math.pow(1 - t, 2) * origin.y + 2 * (1 - t) * t * control.y + t * t * destination.y;
+                        vertices.push(cc.p(x, y));
+                        t += 1 / segments;
+                    }
+                    vertices.push(cc.p(destination.x, destination.y));
+                    this._drawSegments(vertices, lineWidth, color, false);
+                };
+                proto.drawCubicBezier = function(origin, control1, control2, destination, segments, lineWidth, color) {
+                    lineWidth = lineWidth || this._lineWidth;
+                    color = color || this.getDrawColor();
+                    null == color.a && (color.a = 255);
+                    var vertices = [], t = 0;
+                    for (var i = 0; i < segments; i++) {
+                        var x = Math.pow(1 - t, 3) * origin.x + 3 * Math.pow(1 - t, 2) * t * control1.x + 3 * (1 - t) * t * t * control2.x + t * t * t * destination.x;
+                        var y = Math.pow(1 - t, 3) * origin.y + 3 * Math.pow(1 - t, 2) * t * control1.y + 3 * (1 - t) * t * t * control2.y + t * t * t * destination.y;
+                        vertices.push(cc.p(x, y));
+                        t += 1 / segments;
+                    }
+                    vertices.push(cc.p(destination.x, destination.y));
+                    this._drawSegments(vertices, lineWidth, color, false);
+                };
+                proto.drawCatmullRom = function(points, segments, lineWidth, color) {
+                    this.drawCardinalSpline(points, .5, segments, lineWidth, color);
+                };
+                proto.drawCardinalSpline = function(config, tension, segments, lineWidth, color) {
+                    lineWidth = lineWidth || this._lineWidth;
+                    color = color || this.getDrawColor();
+                    null == color.a && (color.a = 255);
+                    var vertices = [], p, lt, deltaT = 1 / config.length;
+                    for (var i = 0; i < segments + 1; i++) {
+                        var dt = i / segments;
+                        if (1 === dt) {
+                            p = config.length - 1;
+                            lt = 1;
+                        } else {
+                            p = 0 | dt / deltaT;
+                            lt = (dt - deltaT * p) / deltaT;
                         }
-                        color = color || this.getDrawColor();
-                        null == color.a && (color.a = 255);
-                        for (var i = 0, len = points.length; i < len; i++) {
-                            this.drawDot(points[i], radius, color);
+                        var newPos = cc.cardinalSplineAt(cc.getControlPointAt(config, p - 1), cc.getControlPointAt(config, p - 0), cc.getControlPointAt(config, p + 1), cc.getControlPointAt(config, p + 2), tension, lt);
+                        vertices.push(newPos);
+                    }
+                    lineWidth *= .5;
+                    for (var j = 0, len = vertices.length; j < len - 1; j++) {
+                        this.drawSegment(vertices[j], vertices[j + 1], lineWidth, color);
+                    }
+                };
+                proto._render = function() {
+                    var gl = cc._renderContext;
+                    gl.bindBuffer(gl.ARRAY_BUFFER, this._trianglesWebBuffer);
+                    if (this._dirty) {
+                        gl.bufferData(gl.ARRAY_BUFFER, this._trianglesArrayBuffer, gl.STREAM_DRAW);
+                        this._dirty = false;
+                    }
+                    var triangleSize = cc.V2F_C4B_T2F.BYTES_PER_ELEMENT;
+                    gl.enableVertexAttribArray(cc.macro.VERTEX_ATTRIB_POSITION);
+                    gl.enableVertexAttribArray(cc.macro.VERTEX_ATTRIB_COLOR);
+                    gl.enableVertexAttribArray(cc.macro.VERTEX_ATTRIB_TEX_COORDS);
+                    gl.vertexAttribPointer(cc.macro.VERTEX_ATTRIB_POSITION, 2, gl.FLOAT, false, triangleSize, 0);
+                    gl.vertexAttribPointer(cc.macro.VERTEX_ATTRIB_COLOR, 4, gl.UNSIGNED_BYTE, true, triangleSize, 8);
+                    gl.vertexAttribPointer(cc.macro.VERTEX_ATTRIB_TEX_COORDS, 2, gl.FLOAT, false, triangleSize, 12);
+                    gl.drawArrays(gl.TRIANGLES, 0, 3 * this._buffer.length);
+                    cc.incrementGLDraws(1);
+                };
+                proto._ensureCapacity = function(count) {
+                    var _t = this;
+                    var locBuffer = _t._buffer;
+                    if (locBuffer.length + count > _t._bufferCapacity) {
+                        var TriangleLength = cc.V2F_C4B_T2F_Triangle.BYTES_PER_ELEMENT;
+                        _t._bufferCapacity += Math.max(_t._bufferCapacity, count);
+                        if (null == locBuffer || 0 === locBuffer.length) {
+                            _t._buffer = [];
+                            _t._trianglesArrayBuffer = new ArrayBuffer(TriangleLength * _t._bufferCapacity);
+                            _t._trianglesReader = new Uint8Array(_t._trianglesArrayBuffer);
+                        } else {
+                            var newTriangles = [];
+                            var newArrayBuffer = new ArrayBuffer(TriangleLength * _t._bufferCapacity);
+                            for (var i = 0; i < locBuffer.length; i++) {
+                                newTriangles[i] = new cc.V2F_C4B_T2F_Triangle(locBuffer[i].a, locBuffer[i].b, locBuffer[i].c, newArrayBuffer, i * TriangleLength);
+                            }
+                            _t._trianglesReader = new Uint8Array(newArrayBuffer);
+                            _t._trianglesArrayBuffer = newArrayBuffer;
+                            _t._buffer = newTriangles;
+                        }
+                    }
+                };
+                proto.drawDot = function(pos, radius, color) {
+                    color = color || this.getDrawColor();
+                    null == color.a && (color.a = 255);
+                    var c4bColor = {
+                        r: 0 | color.r,
+                        g: 0 | color.g,
+                        b: 0 | color.b,
+                        a: 0 | color.a
+                    };
+                    var a = {
+                        vertices: {
+                            x: pos.x - radius,
+                            y: pos.y - radius
+                        },
+                        colors: c4bColor,
+                        texCoords: {
+                            u: -1,
+                            v: -1
                         }
                     };
-                    proto.drawSegment = function(from, to, radius, color) {
-                        color = color || this.getDrawColor();
-                        null == color.a && (color.a = 255);
-                        radius = radius || .5 * this._lineWidth;
-                        var vertexCount = 18;
-                        this._ensureCapacity(vertexCount);
-                        var c4bColor = {
-                            r: 0 | color.r,
-                            g: 0 | color.g,
-                            b: 0 | color.b,
-                            a: 0 | color.a
+                    var b = {
+                        vertices: {
+                            x: pos.x - radius,
+                            y: pos.y + radius
+                        },
+                        colors: c4bColor,
+                        texCoords: {
+                            u: -1,
+                            v: 1
+                        }
+                    };
+                    var c = {
+                        vertices: {
+                            x: pos.x + radius,
+                            y: pos.y + radius
+                        },
+                        colors: c4bColor,
+                        texCoords: {
+                            u: 1,
+                            v: 1
+                        }
+                    };
+                    var d = {
+                        vertices: {
+                            x: pos.x + radius,
+                            y: pos.y - radius
+                        },
+                        colors: c4bColor,
+                        texCoords: {
+                            u: 1,
+                            v: -1
+                        }
+                    };
+                    this._ensureCapacity(6);
+                    this._buffer.push(new cc.V2F_C4B_T2F_Triangle(a, b, c, this._trianglesArrayBuffer, this._buffer.length * cc.V2F_C4B_T2F_Triangle.BYTES_PER_ELEMENT));
+                    this._buffer.push(new cc.V2F_C4B_T2F_Triangle(a, c, d, this._trianglesArrayBuffer, this._buffer.length * cc.V2F_C4B_T2F_Triangle.BYTES_PER_ELEMENT));
+                    this._dirty = true;
+                };
+                proto.drawDots = function(points, radius, color) {
+                    if (!points || 0 === points.length) {
+                        return;
+                    }
+                    color = color || this.getDrawColor();
+                    null == color.a && (color.a = 255);
+                    for (var i = 0, len = points.length; i < len; i++) {
+                        this.drawDot(points[i], radius, color);
+                    }
+                };
+                proto.drawSegment = function(from, to, radius, color) {
+                    color = color || this.getDrawColor();
+                    null == color.a && (color.a = 255);
+                    radius = radius || .5 * this._lineWidth;
+                    var vertexCount = 18;
+                    this._ensureCapacity(vertexCount);
+                    var c4bColor = {
+                        r: 0 | color.r,
+                        g: 0 | color.g,
+                        b: 0 | color.b,
+                        a: 0 | color.a
+                    };
+                    var a = cc.v2(from), b = cc.v2(to);
+                    var n = cc.pNormalize(cc.pPerp(cc.pSub(b, a))), t = cc.pPerp(n);
+                    var nw = cc.pMult(n, radius), tw = cc.pMult(t, radius);
+                    var v0 = cc.pSub(b, cc.pAdd(nw, tw));
+                    var v1 = cc.pAdd(b, cc.pSub(nw, tw));
+                    var v2 = cc.pSub(b, nw);
+                    var v3 = cc.pAdd(b, nw);
+                    var v4 = cc.pSub(a, nw);
+                    var v5 = cc.pAdd(a, nw);
+                    var v6 = cc.pSub(a, cc.pSub(nw, tw));
+                    var v7 = cc.pAdd(a, cc.pAdd(nw, tw));
+                    var TriangleLength = cc.V2F_C4B_T2F_Triangle.BYTES_PER_ELEMENT, triangleBuffer = this._trianglesArrayBuffer, locBuffer = this._buffer;
+                    locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
+                        vertices: v0,
+                        colors: c4bColor,
+                        texCoords: __t(cc.pNeg(cc.pAdd(n, t)))
+                    }, {
+                        vertices: v1,
+                        colors: c4bColor,
+                        texCoords: __t(cc.pSub(n, t))
+                    }, {
+                        vertices: v2,
+                        colors: c4bColor,
+                        texCoords: __t(cc.pNeg(n))
+                    }, triangleBuffer, locBuffer.length * TriangleLength));
+                    locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
+                        vertices: v3,
+                        colors: c4bColor,
+                        texCoords: __t(n)
+                    }, {
+                        vertices: v1,
+                        colors: c4bColor,
+                        texCoords: __t(cc.pSub(n, t))
+                    }, {
+                        vertices: v2,
+                        colors: c4bColor,
+                        texCoords: __t(cc.pNeg(n))
+                    }, triangleBuffer, locBuffer.length * TriangleLength));
+                    locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
+                        vertices: v3,
+                        colors: c4bColor,
+                        texCoords: __t(n)
+                    }, {
+                        vertices: v4,
+                        colors: c4bColor,
+                        texCoords: __t(cc.pNeg(n))
+                    }, {
+                        vertices: v2,
+                        colors: c4bColor,
+                        texCoords: __t(cc.pNeg(n))
+                    }, triangleBuffer, locBuffer.length * TriangleLength));
+                    locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
+                        vertices: v3,
+                        colors: c4bColor,
+                        texCoords: __t(n)
+                    }, {
+                        vertices: v4,
+                        colors: c4bColor,
+                        texCoords: __t(cc.pNeg(n))
+                    }, {
+                        vertices: v5,
+                        colors: c4bColor,
+                        texCoords: __t(n)
+                    }, triangleBuffer, locBuffer.length * TriangleLength));
+                    locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
+                        vertices: v6,
+                        colors: c4bColor,
+                        texCoords: __t(cc.pSub(t, n))
+                    }, {
+                        vertices: v4,
+                        colors: c4bColor,
+                        texCoords: __t(cc.pNeg(n))
+                    }, {
+                        vertices: v5,
+                        colors: c4bColor,
+                        texCoords: __t(n)
+                    }, triangleBuffer, locBuffer.length * TriangleLength));
+                    locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
+                        vertices: v6,
+                        colors: c4bColor,
+                        texCoords: __t(cc.pSub(t, n))
+                    }, {
+                        vertices: v7,
+                        colors: c4bColor,
+                        texCoords: __t(cc.pAdd(n, t))
+                    }, {
+                        vertices: v5,
+                        colors: c4bColor,
+                        texCoords: __t(n)
+                    }, triangleBuffer, locBuffer.length * TriangleLength));
+                    this._dirty = true;
+                };
+                proto.drawPoly = function(verts, fillColor, borderWidth, borderColor, notClosePoly) {
+                    if (null == fillColor) {
+                        this._drawSegments(verts, borderWidth, borderColor, !notClosePoly);
+                        return;
+                    }
+                    null == fillColor.a && (fillColor.a = 255);
+                    null == borderColor.a && (borderColor.a = 255);
+                    borderWidth = null == borderWidth ? this._lineWidth : borderWidth;
+                    borderWidth *= .5;
+                    var c4bFillColor = {
+                        r: 0 | fillColor.r,
+                        g: 0 | fillColor.g,
+                        b: 0 | fillColor.b,
+                        a: 0 | fillColor.a
+                    };
+                    var c4bBorderColor = {
+                        r: 0 | borderColor.r,
+                        g: 0 | borderColor.g,
+                        b: 0 | borderColor.b,
+                        a: 0 | borderColor.a
+                    };
+                    var extrude = [], i, v0, v1, v2, count = verts.length;
+                    for (i = 0; i < count; i++) {
+                        v0 = cc.v2(verts[(i - 1 + count) % count]);
+                        v1 = cc.v2(verts[i]);
+                        v2 = cc.v2(verts[(i + 1) % count]);
+                        var n1 = cc.pNormalize(cc.pPerp(cc.pSub(v1, v0)));
+                        var n2 = cc.pNormalize(cc.pPerp(cc.pSub(v2, v1)));
+                        var offset = cc.pMult(cc.pAdd(n1, n2), 1 / (cc.pDot(n1, n2) + 1));
+                        extrude[i] = {
+                            offset: offset,
+                            n: n2
                         };
-                        var a = cc.v2(from), b = cc.v2(to);
-                        var n = cc.pNormalize(cc.pPerp(cc.pSub(b, a))), t = cc.pPerp(n);
-                        var nw = cc.pMult(n, radius), tw = cc.pMult(t, radius);
-                        var v0 = cc.pSub(b, cc.pAdd(nw, tw));
-                        var v1 = cc.pAdd(b, cc.pSub(nw, tw));
-                        var v2 = cc.pSub(b, nw);
-                        var v3 = cc.pAdd(b, nw);
-                        var v4 = cc.pSub(a, nw);
-                        var v5 = cc.pAdd(a, nw);
-                        var v6 = cc.pSub(a, cc.pSub(nw, tw));
-                        var v7 = cc.pAdd(a, cc.pAdd(nw, tw));
-                        var TriangleLength = cc.V2F_C4B_T2F_Triangle.BYTES_PER_ELEMENT, triangleBuffer = this._trianglesArrayBuffer, locBuffer = this._buffer;
+                    }
+                    var outline = borderWidth > 0, triangleCount = 3 * count - 2, vertexCount = 3 * triangleCount;
+                    this._ensureCapacity(vertexCount);
+                    var triangleBytesLen = cc.V2F_C4B_T2F_Triangle.BYTES_PER_ELEMENT, trianglesBuffer = this._trianglesArrayBuffer;
+                    var locBuffer = this._buffer;
+                    var inset = false == outline ? .5 : 0;
+                    for (i = 0; i < count - 2; i++) {
+                        v0 = cc.pSub(cc.v2(verts[0]), cc.pMult(extrude[0].offset, inset));
+                        v1 = cc.pSub(cc.v2(verts[i + 1]), cc.pMult(extrude[i + 1].offset, inset));
+                        v2 = cc.pSub(cc.v2(verts[i + 2]), cc.pMult(extrude[i + 2].offset, inset));
                         locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
                             vertices: v0,
-                            colors: c4bColor,
-                            texCoords: __t(cc.pNeg(cc.pAdd(n, t)))
+                            colors: c4bFillColor,
+                            texCoords: __t(cc.v2())
                         }, {
                             vertices: v1,
-                            colors: c4bColor,
-                            texCoords: __t(cc.pSub(n, t))
+                            colors: c4bFillColor,
+                            texCoords: __t(cc.v2())
                         }, {
                             vertices: v2,
-                            colors: c4bColor,
-                            texCoords: __t(cc.pNeg(n))
-                        }, triangleBuffer, locBuffer.length * TriangleLength));
-                        locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
-                            vertices: v3,
-                            colors: c4bColor,
-                            texCoords: __t(n)
-                        }, {
-                            vertices: v1,
-                            colors: c4bColor,
-                            texCoords: __t(cc.pSub(n, t))
-                        }, {
-                            vertices: v2,
-                            colors: c4bColor,
-                            texCoords: __t(cc.pNeg(n))
-                        }, triangleBuffer, locBuffer.length * TriangleLength));
-                        locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
-                            vertices: v3,
-                            colors: c4bColor,
-                            texCoords: __t(n)
-                        }, {
-                            vertices: v4,
-                            colors: c4bColor,
-                            texCoords: __t(cc.pNeg(n))
-                        }, {
-                            vertices: v2,
-                            colors: c4bColor,
-                            texCoords: __t(cc.pNeg(n))
-                        }, triangleBuffer, locBuffer.length * TriangleLength));
-                        locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
-                            vertices: v3,
-                            colors: c4bColor,
-                            texCoords: __t(n)
-                        }, {
-                            vertices: v4,
-                            colors: c4bColor,
-                            texCoords: __t(cc.pNeg(n))
-                        }, {
-                            vertices: v5,
-                            colors: c4bColor,
-                            texCoords: __t(n)
-                        }, triangleBuffer, locBuffer.length * TriangleLength));
-                        locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
-                            vertices: v6,
-                            colors: c4bColor,
-                            texCoords: __t(cc.pSub(t, n))
-                        }, {
-                            vertices: v4,
-                            colors: c4bColor,
-                            texCoords: __t(cc.pNeg(n))
-                        }, {
-                            vertices: v5,
-                            colors: c4bColor,
-                            texCoords: __t(n)
-                        }, triangleBuffer, locBuffer.length * TriangleLength));
-                        locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
-                            vertices: v6,
-                            colors: c4bColor,
-                            texCoords: __t(cc.pSub(t, n))
-                        }, {
-                            vertices: v7,
-                            colors: c4bColor,
-                            texCoords: __t(cc.pAdd(n, t))
-                        }, {
-                            vertices: v5,
-                            colors: c4bColor,
-                            texCoords: __t(n)
-                        }, triangleBuffer, locBuffer.length * TriangleLength));
-                        this._dirty = true;
-                    };
-                    proto.drawPoly = function(verts, fillColor, borderWidth, borderColor, notClosePoly) {
-                        if (null == fillColor) {
-                            this._drawSegments(verts, borderWidth, borderColor, !notClosePoly);
-                            return;
-                        }
-                        null == fillColor.a && (fillColor.a = 255);
-                        null == borderColor.a && (borderColor.a = 255);
-                        borderWidth = null == borderWidth ? this._lineWidth : borderWidth;
-                        borderWidth *= .5;
-                        var c4bFillColor = {
-                            r: 0 | fillColor.r,
-                            g: 0 | fillColor.g,
-                            b: 0 | fillColor.b,
-                            a: 0 | fillColor.a
-                        };
-                        var c4bBorderColor = {
-                            r: 0 | borderColor.r,
-                            g: 0 | borderColor.g,
-                            b: 0 | borderColor.b,
-                            a: 0 | borderColor.a
-                        };
-                        var extrude = [], i, v0, v1, v2, count = verts.length;
-                        for (i = 0; i < count; i++) {
-                            v0 = cc.v2(verts[(i - 1 + count) % count]);
-                            v1 = cc.v2(verts[i]);
-                            v2 = cc.v2(verts[(i + 1) % count]);
-                            var n1 = cc.pNormalize(cc.pPerp(cc.pSub(v1, v0)));
-                            var n2 = cc.pNormalize(cc.pPerp(cc.pSub(v2, v1)));
-                            var offset = cc.pMult(cc.pAdd(n1, n2), 1 / (cc.pDot(n1, n2) + 1));
-                            extrude[i] = {
-                                offset: offset,
-                                n: n2
-                            };
-                        }
-                        var outline = borderWidth > 0, triangleCount = 3 * count - 2, vertexCount = 3 * triangleCount;
-                        this._ensureCapacity(vertexCount);
-                        var triangleBytesLen = cc.V2F_C4B_T2F_Triangle.BYTES_PER_ELEMENT, trianglesBuffer = this._trianglesArrayBuffer;
-                        var locBuffer = this._buffer;
-                        var inset = false == outline ? .5 : 0;
-                        for (i = 0; i < count - 2; i++) {
-                            v0 = cc.pSub(cc.v2(verts[0]), cc.pMult(extrude[0].offset, inset));
-                            v1 = cc.pSub(cc.v2(verts[i + 1]), cc.pMult(extrude[i + 1].offset, inset));
-                            v2 = cc.pSub(cc.v2(verts[i + 2]), cc.pMult(extrude[i + 2].offset, inset));
-                            locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
-                                vertices: v0,
-                                colors: c4bFillColor,
-                                texCoords: __t(cc.v2())
-                            }, {
-                                vertices: v1,
-                                colors: c4bFillColor,
-                                texCoords: __t(cc.v2())
-                            }, {
-                                vertices: v2,
-                                colors: c4bFillColor,
-                                texCoords: __t(cc.v2())
-                            }, trianglesBuffer, locBuffer.length * triangleBytesLen));
-                        }
-                        for (i = 0; i < count; i++) {
-                            var j = (i + 1) % count;
-                            v0 = cc.v2(verts[i]);
-                            v1 = cc.v2(verts[j]);
-                            var n0 = extrude[i].n;
-                            var offset0 = extrude[i].offset;
-                            var offset1 = extrude[j].offset;
-                            var inner0 = outline ? cc.pSub(v0, cc.pMult(offset0, borderWidth)) : cc.pSub(v0, cc.pMult(offset0, .5));
-                            var inner1 = outline ? cc.pSub(v1, cc.pMult(offset1, borderWidth)) : cc.pSub(v1, cc.pMult(offset1, .5));
-                            var outer0 = outline ? cc.pAdd(v0, cc.pMult(offset0, borderWidth)) : cc.pAdd(v0, cc.pMult(offset0, .5));
-                            var outer1 = outline ? cc.pAdd(v1, cc.pMult(offset1, borderWidth)) : cc.pAdd(v1, cc.pMult(offset1, .5));
-                            if (outline) {
-                                locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
-                                    vertices: inner0,
-                                    colors: c4bBorderColor,
-                                    texCoords: __t(cc.pNeg(n0))
-                                }, {
-                                    vertices: inner1,
-                                    colors: c4bBorderColor,
-                                    texCoords: __t(cc.pNeg(n0))
-                                }, {
-                                    vertices: outer1,
-                                    colors: c4bBorderColor,
-                                    texCoords: __t(n0)
-                                }, trianglesBuffer, locBuffer.length * triangleBytesLen));
-                                locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
-                                    vertices: inner0,
-                                    colors: c4bBorderColor,
-                                    texCoords: __t(cc.pNeg(n0))
-                                }, {
-                                    vertices: outer0,
-                                    colors: c4bBorderColor,
-                                    texCoords: __t(n0)
-                                }, {
-                                    vertices: outer1,
-                                    colors: c4bBorderColor,
-                                    texCoords: __t(n0)
-                                }, trianglesBuffer, locBuffer.length * triangleBytesLen));
-                            } else {
-                                locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
-                                    vertices: inner0,
-                                    colors: c4bFillColor,
-                                    texCoords: __t(cc.v2())
-                                }, {
-                                    vertices: inner1,
-                                    colors: c4bFillColor,
-                                    texCoords: __t(cc.v2())
-                                }, {
-                                    vertices: outer1,
-                                    colors: c4bFillColor,
-                                    texCoords: __t(n0)
-                                }, trianglesBuffer, locBuffer.length * triangleBytesLen));
-                                locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
-                                    vertices: inner0,
-                                    colors: c4bFillColor,
-                                    texCoords: __t(cc.v2())
-                                }, {
-                                    vertices: outer0,
-                                    colors: c4bFillColor,
-                                    texCoords: __t(n0)
-                                }, {
-                                    vertices: outer1,
-                                    colors: c4bFillColor,
-                                    texCoords: __t(n0)
-                                }, trianglesBuffer, locBuffer.length * triangleBytesLen));
-                            }
-                        }
-                        extrude = null;
-                        this._dirty = true;
-                    };
-                    proto._drawSegments = function(verts, borderWidth, borderColor, closePoly) {
-                        borderWidth = null == borderWidth ? this._lineWidth : borderWidth;
-                        borderColor = borderColor || this._drawColor;
-                        null == borderColor.a && (borderColor.a = 255);
-                        borderWidth *= .5;
-                        if (borderWidth <= 0) {
-                            return;
-                        }
-                        var c4bBorderColor = {
-                            r: 0 | borderColor.r,
-                            g: 0 | borderColor.g,
-                            b: 0 | borderColor.b,
-                            a: 0 | borderColor.a
-                        };
-                        var extrude = [], i, v0, v1, v2, count = verts.length;
-                        for (i = 0; i < count; i++) {
-                            v0 = cc.v2(verts[(i - 1 + count) % count]);
-                            v1 = cc.v2(verts[i]);
-                            v2 = cc.v2(verts[(i + 1) % count]);
-                            var n1 = cc.pNormalize(cc.pPerp(cc.pSub(v1, v0)));
-                            var n2 = cc.pNormalize(cc.pPerp(cc.pSub(v2, v1)));
-                            var offset = cc.pMult(cc.pAdd(n1, n2), 1 / (cc.pDot(n1, n2) + 1));
-                            extrude[i] = {
-                                offset: offset,
-                                n: n2
-                            };
-                        }
-                        var triangleCount = 3 * count - 2, vertexCount = 3 * triangleCount;
-                        this._ensureCapacity(vertexCount);
-                        var triangleBytesLen = cc.V2F_C4B_T2F_Triangle.BYTES_PER_ELEMENT, trianglesBuffer = this._trianglesArrayBuffer;
-                        var locBuffer = this._buffer;
-                        var len = closePoly ? count : count - 1;
-                        for (i = 0; i < len; i++) {
-                            var j = (i + 1) % count;
-                            v0 = cc.v2(verts[i]);
-                            v1 = cc.v2(verts[j]);
-                            var n0 = extrude[i].n;
-                            var offset0 = extrude[i].offset;
-                            var offset1 = extrude[j].offset;
-                            var inner0 = cc.pSub(v0, cc.pMult(offset0, borderWidth));
-                            var inner1 = cc.pSub(v1, cc.pMult(offset1, borderWidth));
-                            var outer0 = cc.pAdd(v0, cc.pMult(offset0, borderWidth));
-                            var outer1 = cc.pAdd(v1, cc.pMult(offset1, borderWidth));
+                            colors: c4bFillColor,
+                            texCoords: __t(cc.v2())
+                        }, trianglesBuffer, locBuffer.length * triangleBytesLen));
+                    }
+                    for (i = 0; i < count; i++) {
+                        var j = (i + 1) % count;
+                        v0 = cc.v2(verts[i]);
+                        v1 = cc.v2(verts[j]);
+                        var n0 = extrude[i].n;
+                        var offset0 = extrude[i].offset;
+                        var offset1 = extrude[j].offset;
+                        var inner0 = outline ? cc.pSub(v0, cc.pMult(offset0, borderWidth)) : cc.pSub(v0, cc.pMult(offset0, .5));
+                        var inner1 = outline ? cc.pSub(v1, cc.pMult(offset1, borderWidth)) : cc.pSub(v1, cc.pMult(offset1, .5));
+                        var outer0 = outline ? cc.pAdd(v0, cc.pMult(offset0, borderWidth)) : cc.pAdd(v0, cc.pMult(offset0, .5));
+                        var outer1 = outline ? cc.pAdd(v1, cc.pMult(offset1, borderWidth)) : cc.pAdd(v1, cc.pMult(offset1, .5));
+                        if (outline) {
                             locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
                                 vertices: inner0,
                                 colors: c4bBorderColor,
@@ -52265,22 +51379,122 @@
                                 colors: c4bBorderColor,
                                 texCoords: __t(n0)
                             }, trianglesBuffer, locBuffer.length * triangleBytesLen));
+                        } else {
+                            locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
+                                vertices: inner0,
+                                colors: c4bFillColor,
+                                texCoords: __t(cc.v2())
+                            }, {
+                                vertices: inner1,
+                                colors: c4bFillColor,
+                                texCoords: __t(cc.v2())
+                            }, {
+                                vertices: outer1,
+                                colors: c4bFillColor,
+                                texCoords: __t(n0)
+                            }, trianglesBuffer, locBuffer.length * triangleBytesLen));
+                            locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
+                                vertices: inner0,
+                                colors: c4bFillColor,
+                                texCoords: __t(cc.v2())
+                            }, {
+                                vertices: outer0,
+                                colors: c4bFillColor,
+                                texCoords: __t(n0)
+                            }, {
+                                vertices: outer1,
+                                colors: c4bFillColor,
+                                texCoords: __t(n0)
+                            }, trianglesBuffer, locBuffer.length * triangleBytesLen));
                         }
-                        extrude = null;
-                        this._dirty = true;
+                    }
+                    extrude = null;
+                    this._dirty = true;
+                };
+                proto._drawSegments = function(verts, borderWidth, borderColor, closePoly) {
+                    borderWidth = null == borderWidth ? this._lineWidth : borderWidth;
+                    borderColor = borderColor || this._drawColor;
+                    null == borderColor.a && (borderColor.a = 255);
+                    borderWidth *= .5;
+                    if (borderWidth <= 0) {
+                        return;
+                    }
+                    var c4bBorderColor = {
+                        r: 0 | borderColor.r,
+                        g: 0 | borderColor.g,
+                        b: 0 | borderColor.b,
+                        a: 0 | borderColor.a
                     };
-                    proto.clear = function() {
-                        this._buffer.length = 0;
-                        this._dirty = true;
-                    };
-                    proto._createRenderCmd = function() {
-                        return new cc.DrawNode.WebGLRenderCmd(this);
-                    };
-                }
+                    var extrude = [], i, v0, v1, v2, count = verts.length;
+                    for (i = 0; i < count; i++) {
+                        v0 = cc.v2(verts[(i - 1 + count) % count]);
+                        v1 = cc.v2(verts[i]);
+                        v2 = cc.v2(verts[(i + 1) % count]);
+                        var n1 = cc.pNormalize(cc.pPerp(cc.pSub(v1, v0)));
+                        var n2 = cc.pNormalize(cc.pPerp(cc.pSub(v2, v1)));
+                        var offset = cc.pMult(cc.pAdd(n1, n2), 1 / (cc.pDot(n1, n2) + 1));
+                        extrude[i] = {
+                            offset: offset,
+                            n: n2
+                        };
+                    }
+                    var triangleCount = 3 * count - 2, vertexCount = 3 * triangleCount;
+                    this._ensureCapacity(vertexCount);
+                    var triangleBytesLen = cc.V2F_C4B_T2F_Triangle.BYTES_PER_ELEMENT, trianglesBuffer = this._trianglesArrayBuffer;
+                    var locBuffer = this._buffer;
+                    var len = closePoly ? count : count - 1;
+                    for (i = 0; i < len; i++) {
+                        var j = (i + 1) % count;
+                        v0 = cc.v2(verts[i]);
+                        v1 = cc.v2(verts[j]);
+                        var n0 = extrude[i].n;
+                        var offset0 = extrude[i].offset;
+                        var offset1 = extrude[j].offset;
+                        var inner0 = cc.pSub(v0, cc.pMult(offset0, borderWidth));
+                        var inner1 = cc.pSub(v1, cc.pMult(offset1, borderWidth));
+                        var outer0 = cc.pAdd(v0, cc.pMult(offset0, borderWidth));
+                        var outer1 = cc.pAdd(v1, cc.pMult(offset1, borderWidth));
+                        locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
+                            vertices: inner0,
+                            colors: c4bBorderColor,
+                            texCoords: __t(cc.pNeg(n0))
+                        }, {
+                            vertices: inner1,
+                            colors: c4bBorderColor,
+                            texCoords: __t(cc.pNeg(n0))
+                        }, {
+                            vertices: outer1,
+                            colors: c4bBorderColor,
+                            texCoords: __t(n0)
+                        }, trianglesBuffer, locBuffer.length * triangleBytesLen));
+                        locBuffer.push(new cc.V2F_C4B_T2F_Triangle({
+                            vertices: inner0,
+                            colors: c4bBorderColor,
+                            texCoords: __t(cc.pNeg(n0))
+                        }, {
+                            vertices: outer0,
+                            colors: c4bBorderColor,
+                            texCoords: __t(n0)
+                        }, {
+                            vertices: outer1,
+                            colors: c4bBorderColor,
+                            texCoords: __t(n0)
+                        }, trianglesBuffer, locBuffer.length * triangleBytesLen));
+                    }
+                    extrude = null;
+                    this._dirty = true;
+                };
+                proto.clear = function() {
+                    this._buffer.length = 0;
+                    this._dirty = true;
+                };
+                proto._createRenderCmd = function() {
+                    return new cc.DrawNode.WebGLRenderCmd(this);
+                };
             }
         }));
     }), {} ],
-    275: [ (function(require, module, exports) {
+    276: [ (function(require, module, exports) {
         cc.DrawNode.CanvasRenderCmd = function(renderableObject) {
             this._rootCtor(renderableObject);
             this._needDraw = true;
@@ -52362,7 +51576,7 @@
             locIsStroke && ctx.stroke();
         };
     }), {} ],
-    276: [ (function(require, module, exports) {
+    277: [ (function(require, module, exports) {
         cc.DrawNode.WebGLRenderCmd = function(renderableObject) {
             this._rootCtor(renderableObject);
             this._needDraw = true;
@@ -52388,7 +51602,7 @@
             }
         };
     }), {} ],
-    277: [ (function(require, module, exports) {
+    278: [ (function(require, module, exports) {
         _ccsg.TMXLayer = _ccsg.Node.extend({
             tiles: null,
             tileset: null,
@@ -52550,6 +51764,7 @@
                 } else {
                     renderer.pushRenderCommand(cmd);
                 }
+                cc._renderType === cc.game.RENDER_TYPE_WEBGL && renderer.pushRenderCommand(this._renderCmd._disableDepthTestCmd);
                 cmd._dirtyFlag = 0;
             },
             getLayerSize: function() {
@@ -52712,22 +51927,20 @@
                     var gidAndFlags = (gid | flags) >>> 0;
                     if (0 === gid) {
                         this.removeTileAt(pos);
+                    } else if (0 === currentGID) {
+                        this._updateTileForGID(gidAndFlags, pos);
                     } else {
-                        if (0 === currentGID) {
-                            this._updateTileForGID(gidAndFlags, pos);
+                        var z = pos.x + pos.y * this._layerSize.width;
+                        var sprite = this.getChildByTag(z);
+                        if (sprite) {
+                            var rect = this._texGrids[gid];
+                            var tex = this._textures[rect.texId];
+                            sprite.setTexture(tex);
+                            sprite.setTextureRect(rect, false);
+                            null != flags && this._setupTileSprite(sprite, pos, gidAndFlags);
+                            this.tiles[z] = gidAndFlags;
                         } else {
-                            var z = pos.x + pos.y * this._layerSize.width;
-                            var sprite = this.getChildByTag(z);
-                            if (sprite) {
-                                var rect = this._texGrids[gid];
-                                var tex = this._textures[rect.texId];
-                                sprite.setTexture(tex);
-                                sprite.setTextureRect(rect, false);
-                                null != flags && this._setupTileSprite(sprite, pos, gidAndFlags);
-                                this.tiles[z] = gidAndFlags;
-                            } else {
-                                this._updateTileForGID(gidAndFlags, pos);
-                            }
+                            this._updateTileForGID(gidAndFlags, pos);
                         }
                     }
                 }
@@ -52837,11 +52050,9 @@
                     if (this._staggerAxis === cc.TiledMap.StaggerAxis.STAGGERAXIS_Y) {
                         var diffX = this._staggerIndex === cc.TiledMap.StaggerIndex.STAGGERINDEX_EVEN ? this._mapTileSize.width / 2 : 0;
                         ret = cc.p(pos.x * this._mapTileSize.width + diffX, -pos.y * (this._mapTileSize.height - (this._mapTileSize.width - this._hexSideLength) / 2));
-                    } else {
-                        if (this._staggerAxis === cc.TiledMap.StaggerAxis.STAGGERAXIS_X) {
-                            var diffY = this._staggerIndex === cc.TiledMap.StaggerIndex.STAGGERINDEX_ODD ? this._mapTileSize.height / 2 : 0;
-                            ret = cc.p(pos.x * (this._mapTileSize.width - (this._mapTileSize.width - this._hexSideLength) / 2), -pos.y * this._mapTileSize.height + diffY);
-                        }
+                    } else if (this._staggerAxis === cc.TiledMap.StaggerAxis.STAGGERAXIS_X) {
+                        var diffY = this._staggerIndex === cc.TiledMap.StaggerIndex.STAGGERINDEX_ODD ? this._mapTileSize.height / 2 : 0;
+                        ret = cc.p(pos.x * (this._mapTileSize.width - (this._mapTileSize.width - this._hexSideLength) / 2), -pos.y * this._mapTileSize.height + diffY);
                     }
                 }
                 return ret;
@@ -52886,18 +52097,14 @@
                     var flag = (gid & (cc.TiledMap.TileFlag.HORIZONTAL | cc.TiledMap.TileFlag.VERTICAL) >>> 0) >>> 0;
                     if (flag === cc.TiledMap.TileFlag.HORIZONTAL) {
                         sprite.setRotation(90);
+                    } else if (flag === cc.TiledMap.TileFlag.VERTICAL) {
+                        sprite.setRotation(270);
+                    } else if (flag === (cc.TiledMap.TileFlag.VERTICAL | cc.TiledMap.TileFlag.HORIZONTAL) >>> 0) {
+                        sprite.setRotation(90);
+                        sprite.setFlippedX(true);
                     } else {
-                        if (flag === cc.TiledMap.TileFlag.VERTICAL) {
-                            sprite.setRotation(270);
-                        } else {
-                            if (flag === (cc.TiledMap.TileFlag.VERTICAL | cc.TiledMap.TileFlag.HORIZONTAL) >>> 0) {
-                                sprite.setRotation(90);
-                                sprite.setFlippedX(true);
-                            } else {
-                                sprite.setRotation(270);
-                                sprite.setFlippedX(true);
-                            }
-                        }
+                        sprite.setRotation(270);
+                        sprite.setFlippedX(true);
                     }
                 } else {
                     (gid & cc.TiledMap.TileFlag.HORIZONTAL) >>> 0 && sprite.setFlippedX(true);
@@ -52936,7 +52143,7 @@
             }
         });
     }), {} ],
-    278: [ (function(require, module, exports) {
+    279: [ (function(require, module, exports) {
         _ccsg.TMXObject = cc.Class({
             properties: {
                 sgNode: null,
@@ -53238,7 +52445,7 @@
             }
         });
     }), {} ],
-    279: [ (function(require, module, exports) {
+    280: [ (function(require, module, exports) {
         _ccsg.TMXObjectGroup = _ccsg.Node.extend({
             properties: null,
             groupName: "",
@@ -53325,9 +52532,9 @@
             }
         });
     }), {} ],
-    280: [ (function(require, module, exports) {
-        require("./CCSGTMXObject.js");
-        require("./CCTMXXMLParser.js");
+    281: [ (function(require, module, exports) {
+        require("./CCSGTMXObject");
+        require("./CCTMXXMLParser");
         _ccsg.TMXTiledMap = _ccsg.Node.extend({
             properties: null,
             mapOrientation: null,
@@ -53539,10 +52746,10 @@
         _p.tileHeight;
         cc.defineGetterSetter(_p, "tileHeight", _p._getTileHeight, _p._setTileHeight);
     }), {
-        "./CCSGTMXObject.js": 278,
-        "./CCTMXXMLParser.js": 283
+        "./CCSGTMXObject": 279,
+        "./CCTMXXMLParser": 284
     } ],
-    281: [ (function(require, module, exports) {
+    282: [ (function(require, module, exports) {
         var Orientation = null;
         var TileFlag = null;
         var FLIPPED_MASK = null;
@@ -53585,10 +52792,8 @@
                 if (i < z && spTiles[i]) {
                     cmd = spTiles[i]._renderCmd;
                     0 === spTiles[i]._localZOrder && !!cmd.rendering && spTiles[i]._visible && cmd.rendering(ctx, scaleX, scaleY);
-                } else {
-                    if (i >= z) {
-                        break;
-                    }
+                } else if (i >= z) {
+                    break;
                 }
             }
             wrapper.setTransform(wt, scaleX, scaleY);
@@ -53643,7 +52848,7 @@
                     right = left + tilew;
                     top = bottom - tileh;
                     if (!hasRotation && layerOrientation === Orientation.ISO) {
-                        gb = -mapy + bottom * d;
+                        gb = bottom * d - mapy;
                         if (gb < -winh - h) {
                             col += Math.floor(2 * (-winh - gb) / h) - 1;
                             continue;
@@ -53654,7 +52859,7 @@
                             continue;
                         }
                         gl = mapx + left * a;
-                        gt = -mapy + top * d;
+                        gt = top * d - mapy;
                         if (gl > winw || gt > 0) {
                             col = maxCol;
                             continue;
@@ -53687,7 +52892,7 @@
             }
         };
     }), {} ],
-    282: [ (function(require, module, exports) {
+    283: [ (function(require, module, exports) {
         var Orientation = null;
         var TileFlag = null;
         var FLIPPED_MASK = null;
@@ -53724,15 +52929,20 @@
                 StaggerAxis = cc.TiledMap.StaggerAxis;
                 StaggerIndex = cc.TiledMap.StaggerIndex;
             }
+            this._disableDepthTestCmd = new cc.CustomRenderCmd(this, _disableDepthTest);
         };
+        function _disableDepthTest() {
+            cc.renderer.setDepthTest(false);
+        }
         var proto = _ccsg.TMXLayer.WebGLRenderCmd.prototype = Object.create(_ccsg.Node.WebGLRenderCmd.prototype);
         proto.constructor = _ccsg.TMXLayer.WebGLRenderCmd;
         proto.uploadData = function(f32buffer, ui32buffer, vertexDataOffset) {
+            cc.renderer.setDepthTest(true);
             var node = this._node, hasRotation = node._rotationX || node._rotationY, layerOrientation = node.layerOrientation, tiles = node.tiles;
             if (!tiles) {
                 return 0;
             }
-            var maptw = node._mapTileSize.width, mapth = node._mapTileSize.height, tilew = node.tileset._tileSize.width / cc.director._contentScaleFactor, tileh = node.tileset._tileSize.height / cc.director._contentScaleFactor, extw = tilew - maptw, exth = tileh - mapth, winw = cc.winSize.width, winh = cc.winSize.height, rows = node._layerSize.height, cols = node._layerSize.width, grids = node._texGrids, spTiles = node._spriteTiles, wt = this._worldTransform, a = wt.a, b = wt.b, c = wt.c, d = wt.d, tx = wt.tx, ty = wt.ty, ox = node._position.x, oy = node._position.y, mapx = ox * a + oy * c + tx, mapy = ox * b + oy * d + ty;
+            var maptw = node._mapTileSize.width, mapth = node._mapTileSize.height, tilew = node.tileset._tileSize.width / cc.director._contentScaleFactor, tileh = node.tileset._tileSize.height / cc.director._contentScaleFactor, extw = tilew - maptw, exth = tileh - mapth, winw = cc.winSize.width, winh = cc.winSize.height, rows = node._layerSize.height, cols = node._layerSize.width, grids = node._texGrids, spTiles = node._spriteTiles, wt = this._worldTransform, a = wt.a, b = wt.b, c = wt.c, d = wt.d, tx = wt.tx, ty = wt.ty, ox = node._position.x, oy = node._position.y, mapx = ox * a + oy * c + tx, mapy = ox * b + oy * d + ty, w = tilew * a, h = tileh * d;
             var opacity = node._opacity, cr = this._displayedColor.r, cg = this._displayedColor.g, cb = this._displayedColor.b;
             if (node._opacityModifyRGB) {
                 var ca = opacity / 255;
@@ -53742,17 +52952,30 @@
             }
             this._color[0] = opacity << 24 | cb << 16 | cg << 8 | cr;
             var startCol = 0, startRow = 0, maxCol = cols, maxRow = rows;
-            if (cc.macro.ENABLE_TILEDMAP_CULLING && !hasRotation && layerOrientation === Orientation.ORTHO) {
-                startCol = Math.floor(-(mapx - extw * a) / (maptw * a));
-                startRow = Math.floor((mapy - exth * d + mapth * rows * d - winh) / (mapth * d));
-                maxCol = Math.ceil((winw - mapx + extw * a) / (maptw * a));
-                maxRow = rows - Math.floor(-(mapy + exth * d) / (mapth * d));
-                startCol < 0 && (startCol = 0);
-                startRow < 0 && (startRow = 0);
-                maxCol > cols && (maxCol = cols);
-                maxRow > rows && (maxRow = rows);
+            var cullingA = a, cullingD = d, cullingMapx = mapx, cullingMapy = mapy, cullingW = w, cullingH = h;
+            var enabledCulling = cc.macro.ENABLE_TILEDMAP_CULLING;
+            if (enabledCulling) {
+                if (this._cameraFlag > 0) {
+                    var tmpt = cc.affineTransformConcat(cc.Camera.main.viewMatrix, wt);
+                    cullingA = tmpt.a;
+                    cullingD = tmpt.d;
+                    cullingMapx = ox * cullingA + oy * tmpt.c + tmpt.tx;
+                    cullingMapy = ox * tmpt.b + oy * cullingD + tmpt.ty;
+                    cullingW = tilew * cullingA;
+                    cullingH = tileh * cullingD;
+                }
+                if (!hasRotation && layerOrientation === Orientation.ORTHO) {
+                    startCol = Math.floor(-(cullingMapx - extw * cullingA) / (maptw * cullingA));
+                    startRow = Math.floor((cullingMapy - exth * cullingD + mapth * rows * cullingD - winh) / (mapth * cullingD));
+                    maxCol = Math.ceil((winw - cullingMapx + extw * cullingA) / (maptw * cullingA));
+                    maxRow = rows - Math.floor(-(cullingMapy + exth * cullingD) / (mapth * cullingD));
+                    startCol < 0 && (startCol = 0);
+                    startRow < 0 && (startRow = 0);
+                    maxCol > cols && (maxCol = cols);
+                    maxRow > rows && (maxRow = rows);
+                }
             }
-            var row, col, offset = vertexDataOffset, colOffset = startRow * cols, z, gid, grid, i, top, left, bottom, right, w = tilew * a, h = tileh * d, gt, gl, gb, gr, wa = a, wb = b, wc = c, wd = d, wtx = tx, wty = ty, flagged = false, flippedX = false, flippedY = false, vertices = this._vertices, axis, tileOffset, diffX1, diffY1, odd_even;
+            var row, col, offset = vertexDataOffset, colOffset = startRow * cols, z, gid, grid, i, top, left, bottom, right, gt, gl, gb, gr, wa = a, wb = b, wc = c, wd = d, wtx = tx, wty = ty, flagged = false, flippedX = false, flippedY = false, vertices = this._vertices, axis, tileOffset, diffX1, diffY1, odd_even;
             if (layerOrientation === Orientation.HEX) {
                 var index = node._staggerIndex, hexSideLength = node._hexSideLength;
                 axis = node._staggerAxis;
@@ -53771,6 +52994,7 @@
                     }
                     z = colOffset + col;
                     if (spTiles[z]) {
+                        spTiles[z]._vertexZ = node._vertexZ + cc.renderer.assignedZStep * z / tiles.length;
                         continue;
                     }
                     gid = node.tiles[z];
@@ -53800,19 +53024,19 @@
                     }
                     right = left + tilew;
                     top = bottom + tileh;
-                    if (!hasRotation && layerOrientation === Orientation.ISO) {
-                        gb = mapy + bottom * d;
-                        if (gb > winh + h) {
-                            col += Math.floor(2 * (gb - winh) / h) - 1;
+                    if (enabledCulling && !hasRotation && layerOrientation === Orientation.ISO) {
+                        gb = cullingMapy + bottom * cullingD;
+                        if (gb > winh + cullingH) {
+                            col += Math.floor(2 * (gb - winh) / cullingH) - 1;
                             continue;
                         }
-                        gr = mapx + right * a;
-                        if (gr < -w) {
-                            col += Math.floor(2 * -gr / w) - 1;
+                        gr = cullingMapx + right * cullingA;
+                        if (gr < -cullingW) {
+                            col += Math.floor(2 * -gr / cullingW) - 1;
                             continue;
                         }
-                        gl = mapx + left * a;
-                        gt = mapy + top * d;
+                        gl = cullingMapx + left * cullingA;
+                        gt = cullingMapy + top * cullingD;
                         if (gl > winw || gt < 0) {
                             col = maxCol;
                             continue;
@@ -53875,7 +53099,9 @@
             return (offset - vertexDataOffset) / 6;
         };
     }), {} ],
-    283: [ (function(require, module, exports) {
+    284: [ (function(require, module, exports) {
+        require("../compression/ZipUtils");
+        var Zlib = require("../compression/zlib.min");
         function uint8ArrayToUint32Array(uint8Arr) {
             if (uint8Arr.length % 4 !== 0) {
                 return null;
@@ -54156,7 +53382,7 @@
                     } else {
                         var tileset = new cc.TMXTilesetInfo();
                         tileset.name = selTileset.getAttribute("name") || "";
-                        tilesetFirstGid ? tileset.firstGid = tilesetFirstGid : tileset.firstGid = parseInt(selTileset.getAttribute("firstgid")) || 0;
+                        tileset.firstGid = tilesetFirstGid || (parseInt(selTileset.getAttribute("firstgid")) || 0);
                         tileset.spacing = parseInt(selTileset.getAttribute("spacing")) || 0;
                         tileset.margin = parseInt(selTileset.getAttribute("margin")) || 0;
                         var tilesetSize = cc.size(0, 0);
@@ -54167,7 +53393,7 @@
                         var imagename = image.getAttribute("source");
                         var num = -1;
                         this.tmxFileName && (num = this.tmxFileName.lastIndexOf("/"));
-                        if (num !== -1) {
+                        if (-1 !== num) {
                             var dir = this.tmxFileName.substr(0, num + 1);
                             tileset.sourceImage = dir + imagename;
                         } else {
@@ -54229,7 +53455,7 @@
                 var visible = selLayer.getAttribute("visible");
                 layer.visible = !("0" == visible);
                 var opacity = selLayer.getAttribute("opacity") || 1;
-                opacity ? layer._opacity = parseInt(255 * parseFloat(opacity)) : layer._opacity = 255;
+                layer._opacity = opacity ? parseInt(255 * parseFloat(opacity)) : 255;
                 layer.offset = cc.p(parseFloat(selLayer.getAttribute("x")) || 0, parseFloat(selLayer.getAttribute("y")) || 0);
                 var nodeValue = "";
                 for (var j = 0; j < data.childNodes.length; j++) {
@@ -54257,19 +53483,17 @@
                   case "":
                     if ("base64" === encoding) {
                         tiles = cc.Codec.Base64.decodeAsArray(nodeValue, 4);
+                    } else if ("csv" === encoding) {
+                        tiles = [];
+                        var csvTiles = nodeValue.split(",");
+                        for (var csvIdx = 0; csvIdx < csvTiles.length; csvIdx++) {
+                            tiles.push(parseInt(csvTiles[csvIdx]));
+                        }
                     } else {
-                        if ("csv" === encoding) {
-                            tiles = [];
-                            var csvTiles = nodeValue.split(",");
-                            for (var csvIdx = 0; csvIdx < csvTiles.length; csvIdx++) {
-                                tiles.push(parseInt(csvTiles[csvIdx]));
-                            }
-                        } else {
-                            var selDataTiles = data.getElementsByTagName("tile");
-                            tiles = [];
-                            for (var xmlIdx = 0; xmlIdx < selDataTiles.length; xmlIdx++) {
-                                tiles.push(parseInt(selDataTiles[xmlIdx].getAttribute("gid")));
-                            }
+                        var selDataTiles = data.getElementsByTagName("tile");
+                        tiles = [];
+                        for (var xmlIdx = 0; xmlIdx < selDataTiles.length; xmlIdx++) {
+                            tiles.push(parseInt(selDataTiles[xmlIdx].getAttribute("gid")));
                         }
                     }
                     break;
@@ -54293,7 +53517,7 @@
                 objectGroup.name = selGroup.getAttribute("name") || "";
                 objectGroup.offset = cc.p(parseFloat(selGroup.getAttribute("offsetx")), parseFloat(selGroup.getAttribute("offsety")));
                 var opacity = selGroup.getAttribute("opacity") || 1;
-                opacity ? objectGroup._opacity = parseInt(255 * parseFloat(opacity)) : objectGroup._opacity = 255;
+                objectGroup._opacity = opacity ? parseInt(255 * parseFloat(opacity)) : 255;
                 var visible = selGroup.getAttribute("visible");
                 visible && 0 === parseInt(visible) && (objectGroup.visible = false);
                 var color = selGroup.getAttribute("color");
@@ -54421,11 +53645,14 @@
         cc.TMXLayerInfo.ATTRIB_BASE64 = 2;
         cc.TMXLayerInfo.ATTRIB_GZIP = 4;
         cc.TMXLayerInfo.ATTRIB_ZLIB = 8;
-    }), {} ],
-    284: [ (function(require, module, exports) {
-        require("./CCSGTMXLayer.js");
-        require("./CCTMXLayerCanvasRenderCmd.js");
-        require("./CCTMXLayerWebGLRenderCmd.js");
+    }), {
+        "../compression/ZipUtils": 29,
+        "../compression/zlib.min": 32
+    } ],
+    285: [ (function(require, module, exports) {
+        require("./CCSGTMXLayer");
+        require("./CCTMXLayerCanvasRenderCmd");
+        require("./CCTMXLayerWebGLRenderCmd");
         var TiledLayer = cc.Class({
             name: "cc.TiledLayer",
             extends: cc._SGComponent,
@@ -54600,12 +53827,15 @@
         });
         cc.TiledLayer = module.exports = TiledLayer;
     }), {
-        "./CCSGTMXLayer.js": 277,
-        "./CCTMXLayerCanvasRenderCmd.js": 281,
-        "./CCTMXLayerWebGLRenderCmd.js": 282
+        "./CCSGTMXLayer": 278,
+        "./CCTMXLayerCanvasRenderCmd": 282,
+        "./CCTMXLayerWebGLRenderCmd": 283
     } ],
-    285: [ (function(require, module, exports) {
-        require("./CCSGTMXTiledMap.js");
+    286: [ (function(require, module, exports) {
+        require("./CCTiledMapAsset");
+        require("./CCTiledLayer");
+        require("./CCTiledObjectGroup");
+        require("./CCSGTMXTiledMap");
         var Orientation = cc.Enum({
             ORTHO: 0,
             HEX: 1,
@@ -54858,24 +54088,22 @@
                             tmxLayer._replaceSgNode(newSGLayer);
                             tmxLayer.enabled = true;
                         }
-                    } else {
-                        if (tmxGroup) {
-                            var groupName = tmxGroup.getGroupName();
-                            groupName || (groupName = child._name);
-                            if (groupNames.indexOf(groupName) < 0) {
-                                tmxGroup._tryRemoveNode();
-                            } else {
-                                existedGroups.push(child);
-                                var newSGGroup = this._sgNode.getObjectGroup(groupName);
-                                tmxGroup._replaceSgNode(newSGGroup);
-                                tmxGroup.enabled = newSGGroup.isVisible();
-                            }
+                    } else if (tmxGroup) {
+                        var groupName = tmxGroup.getGroupName();
+                        groupName || (groupName = child._name);
+                        if (groupNames.indexOf(groupName) < 0) {
+                            tmxGroup._tryRemoveNode();
                         } else {
-                            otherChildrenInfo.push({
-                                child: child,
-                                index: child.getSiblingIndex()
-                            });
+                            existedGroups.push(child);
+                            var newSGGroup = this._sgNode.getObjectGroup(groupName);
+                            tmxGroup._replaceSgNode(newSGGroup);
+                            tmxGroup.enabled = newSGGroup.isVisible();
                         }
+                    } else {
+                        otherChildrenInfo.push({
+                            child: child,
+                            index: child.getSiblingIndex()
+                        });
                     }
                 }
                 var existedNames = existedLayers.map((function(node) {
@@ -54943,11 +54171,9 @@
                     if (child instanceof _ccsg.TMXLayer) {
                         sgLayerNames.push(child.getLayerName());
                         sgLayers.push(child);
-                    } else {
-                        if (child instanceof _ccsg.TMXObjectGroup) {
-                            sgLayerNames.push(child.getGroupName());
-                            sgLayers.push(child);
-                        }
+                    } else if (child instanceof _ccsg.TMXObjectGroup) {
+                        sgLayerNames.push(child.getGroupName());
+                        sgLayers.push(child);
                     }
                 }
                 for (i = sgLayerNames.length - 1; i >= 0; i--) {
@@ -55003,7 +54229,7 @@
                 var self = this;
                 if (file) {
                     var resPath = cc.url._rawAssets + file.tmxFolderPath;
-                    resPath = cc.path._setEndWithSep(resPath, false);
+                    resPath = cc.path.stripSep(resPath);
                     var ret = sgNode.initWithXML(file.tmxXmlStr, resPath);
                     if (ret) {
                         self._detachedChildren.length = 0;
@@ -55030,9 +54256,12 @@
             return [];
         }), false);
     }), {
-        "./CCSGTMXTiledMap.js": 280
+        "./CCSGTMXTiledMap": 281,
+        "./CCTiledLayer": 285,
+        "./CCTiledMapAsset": 287,
+        "./CCTiledObjectGroup": 288
     } ],
-    286: [ (function(require, module, exports) {
+    287: [ (function(require, module, exports) {
         var TiledMapAsset = cc.Class({
             name: "cc.TiledMapAsset",
             extends: cc.Asset,
@@ -55060,8 +54289,8 @@
         cc.TiledMapAsset = TiledMapAsset;
         module.exports = TiledMapAsset;
     }), {} ],
-    287: [ (function(require, module, exports) {
-        require("./CCSGTMXObjectGroup.js");
+    288: [ (function(require, module, exports) {
+        require("./CCSGTMXObjectGroup");
         var TiledObjectGroup = cc.Class({
             name: "cc.TiledObjectGroup",
             extends: cc._SGComponent,
@@ -55147,48 +54376,40 @@
         });
         cc.TiledObjectGroup = module.exports = TiledObjectGroup;
     }), {
-        "./CCSGTMXObjectGroup.js": 279
+        "./CCSGTMXObjectGroup": 280
     } ],
-    288: [ (function(require, module, exports) {
+    289: [ (function(require, module, exports) {
         require("./cocos2d/core");
         require("./cocos2d/animation");
-        require("./cocos2d/particle/CCParticleAsset");
         require("./cocos2d/particle/CCParticleSystem");
+        require("./cocos2d/tilemap/CCTiledMap");
         require("./cocos2d/motion-streak/CCMotionStreak");
-        require("./cocos2d/tilemap/CCTiledMapAsset");
-        if (!cc.runtime) {
-            require("./cocos2d/tilemap/CCTiledMap");
-            require("./cocos2d/tilemap/CCTiledLayer");
-            require("./cocos2d/tilemap/CCTiledObjectGroup");
-        }
         require("./cocos2d/core/components/CCStudioComponent");
-        require("./extensions/spine");
-        cc.runtime || require("./extensions/dragonbones");
         require("./extensions/ccpool/CCNodePool");
         require("./extensions/ccpool/CCPool");
         require("./cocos2d/actions");
         require("./external/chipmunk/chipmunk");
+        require("./extensions/spine");
+        require("./extensions/dragonbones");
         require("./cocos2d/deprecated");
     }), {
         "./cocos2d/actions": 10,
         "./cocos2d/animation": 19,
-        "./cocos2d/core": 123,
-        "./cocos2d/core/components/CCStudioComponent": 95,
-        "./cocos2d/deprecated": 238,
-        "./cocos2d/motion-streak/CCMotionStreak": 253,
-        "./cocos2d/particle/CCParticleAsset": 257,
-        "./cocos2d/particle/CCParticleSystem": 261,
-        "./cocos2d/tilemap/CCTiledLayer": 284,
-        "./cocos2d/tilemap/CCTiledMap": 285,
-        "./cocos2d/tilemap/CCTiledMapAsset": 286,
-        "./cocos2d/tilemap/CCTiledObjectGroup": 287,
-        "./extensions/ccpool/CCNodePool": 289,
-        "./extensions/ccpool/CCPool": 290,
-        "./extensions/dragonbones": 298,
-        "./extensions/spine": 307,
-        "./external/chipmunk/chipmunk": 310
+        "./cocos2d/core": 122,
+        "./cocos2d/core/components/CCStudioComponent": 94,
+        "./cocos2d/deprecated": 239,
+        "./cocos2d/motion-streak/CCMotionStreak": 254,
+        "./cocos2d/particle/CCParticleAsset": 258,
+        "./cocos2d/particle/CCParticleSystem": 262,
+        "./cocos2d/tilemap/CCTiledMap": 286,
+        "./cocos2d/tilemap/CCTiledMapAsset": 287,
+        "./extensions/ccpool/CCNodePool": 290,
+        "./extensions/ccpool/CCPool": 291,
+        "./extensions/dragonbones": 299,
+        "./extensions/spine": 308,
+        "./external/chipmunk/chipmunk": 311
     } ],
-    289: [ (function(require, module, exports) {
+    290: [ (function(require, module, exports) {
         cc.NodePool = function(poolHandlerComp) {
             this.poolHandlerComp = poolHandlerComp;
             this._pool = [];
@@ -55206,7 +54427,7 @@
                 this._pool.length = 0;
             },
             put: function(obj) {
-                if (obj && this._pool.indexOf(obj) === -1) {
+                if (obj && -1 === this._pool.indexOf(obj)) {
                     obj.removeFromParent(false);
                     var handler = this.poolHandlerComp ? obj.getComponent(this.poolHandlerComp) : null;
                     handler && handler.unuse && handler.unuse();
@@ -55227,7 +54448,7 @@
         };
         module.exports = cc.NodePool;
     }), {} ],
-    290: [ (function(require, module, exports) {
+    291: [ (function(require, module, exports) {
         var _args = [];
         cc.pool = {
             _pool: {},
@@ -55293,7 +54514,7 @@
             }
         };
     }), {} ],
-    291: [ (function(require, module, exports) {
+    292: [ (function(require, module, exports) {
         var DefaultArmaturesEnum = cc.Enum({
             default: -1
         });
@@ -55328,7 +54549,7 @@
                         this._parseDragonAsset();
                         this._refresh();
                     },
-                    tooltip: "i18n:COMPONENT.dragon_bones.dragon_bones_asset"
+                    tooltip: false
                 },
                 dragonAtlasAsset: {
                     default: null,
@@ -55337,7 +54558,7 @@
                         this._parseDragonAtlasAsset();
                         this._refreshSgNode();
                     },
-                    tooltip: "i18n:COMPONENT.dragon_bones.dragon_bones_atlas_asset"
+                    tooltip: false
                 },
                 _armatureName: "",
                 armatureName: {
@@ -55380,7 +54601,7 @@
                     visible: true,
                     editorOnly: true,
                     displayName: "Armature",
-                    tooltip: "i18n:COMPONENT.dragon_bones.armature_name"
+                    tooltip: false
                 },
                 _animationIndex: {
                     default: 0,
@@ -55401,18 +54622,18 @@
                     visible: true,
                     editorOnly: true,
                     displayName: "Animation",
-                    tooltip: "i18n:COMPONENT.dragon_bones.animation_name"
+                    tooltip: false
                 },
                 timeScale: {
                     default: 1,
                     notify: function() {
                         this._sgNode && (this._sgNode.animation().timeScale = this.timeScale);
                     },
-                    tooltip: "i18n:COMPONENT.dragon_bones.time_scale"
+                    tooltip: false
                 },
                 playTimes: {
                     default: -1,
-                    tooltip: "i18n:COMPONENT.dragon_bones.play_times"
+                    tooltip: false
                 },
                 debugBones: {
                     default: false,
@@ -55420,7 +54641,7 @@
                         this._sgNode && this._sgNode.setDebugBones(this.debugBones);
                     },
                     editorOnly: true,
-                    tooltip: "i18n:COMPONENT.dragon_bones.debug_bones"
+                    tooltip: false
                 }
             },
             ctor: function() {
@@ -55542,7 +54763,7 @@
             }
         });
     }), {} ],
-    292: [ (function(require, module, exports) {
+    293: [ (function(require, module, exports) {
         var EventTarget = require("../../cocos2d/core/event/event-target");
         dragonBones.CCArmatureDisplay = cc.Class({
             name: "dragonBones.CCArmatureDisplay",
@@ -55612,9 +54833,9 @@
             }
         });
     }), {
-        "../../cocos2d/core/event/event-target": 112
+        "../../cocos2d/core/event/event-target": 111
     } ],
-    293: [ (function(require, module, exports) {
+    294: [ (function(require, module, exports) {
         var BaseObject = dragonBones.BaseObject;
         dragonBones.CCFactory = cc.Class({
             name: "dragonBones.CCFactory",
@@ -55721,7 +54942,7 @@
             return dragonBones.CCFactory._factory;
         };
     }), {} ],
-    294: [ (function(require, module, exports) {
+    295: [ (function(require, module, exports) {
         dragonBones.CCSlot = cc.Class({
             name: "dragonBones.CCSlot",
             extends: dragonBones.Slot,
@@ -55775,14 +54996,12 @@
                         var texture = this._renderDisplay._spriteFrame.getTexture();
                         texture && texture.hasPremultipliedAlpha() ? this._renderDisplay.setBlendFunc(cc.BlendFunc.BlendFactor.ONE, cc.BlendFunc.BlendFactor.ONE) : this._renderDisplay.setBlendFunc(cc.BlendFunc.BlendFactor.SRC_ALPHA, cc.BlendFunc.BlendFactor.ONE);
                     }
-                } else {
-                    if (this._childArmature) {
-                        var childSlots = this._childArmature.getSlots();
-                        for (var i = 0, l = childSlots.length; i < l; i++) {
-                            var slot = childSlots[i];
-                            slot._blendMode = this._blendMode;
-                            slot._updateBlendMode();
-                        }
+                } else if (this._childArmature) {
+                    var childSlots = this._childArmature.getSlots();
+                    for (var i = 0, l = childSlots.length; i < l; i++) {
+                        var slot = childSlots[i];
+                        slot._blendMode = this._blendMode;
+                        slot._updateBlendMode();
                     }
                 }
             },
@@ -55943,20 +55162,18 @@
                         boundsRect.y > -yG && (boundsRect.y = -yG);
                         boundsRect.height < -yG && (boundsRect.height = -yG);
                     }
-                } else {
-                    if (hasFFD) {
-                        var vertices = this._meshData.vertices;
-                        for (i = 0, l = this._meshData.vertices.length; i < l; i += 2) {
-                            iH = Math.floor(i / 2);
-                            xG = vertices[i] + this._ffdVertices[i];
-                            yG = vertices[i + 1] + this._ffdVertices[i + 1];
-                            displayVertices[iH].x = xG;
-                            displayVertices[iH].y = -yG;
-                            boundsRect.x > xG && (boundsRect.x = xG);
-                            boundsRect.width < xG && (boundsRect.width = xG);
-                            boundsRect.y > -yG && (boundsRect.y = -yG);
-                            boundsRect.height < -yG && (boundsRect.height = -yG);
-                        }
+                } else if (hasFFD) {
+                    var vertices = this._meshData.vertices;
+                    for (i = 0, l = this._meshData.vertices.length; i < l; i += 2) {
+                        iH = Math.floor(i / 2);
+                        xG = vertices[i] + this._ffdVertices[i];
+                        yG = vertices[i + 1] + this._ffdVertices[i + 1];
+                        displayVertices[iH].x = xG;
+                        displayVertices[iH].y = -yG;
+                        boundsRect.x > xG && (boundsRect.x = xG);
+                        boundsRect.width < xG && (boundsRect.width = xG);
+                        boundsRect.y > -yG && (boundsRect.y = -yG);
+                        boundsRect.height < -yG && (boundsRect.height = -yG);
                     }
                 }
                 boundsRect.width -= boundsRect.x;
@@ -55980,7 +55197,7 @@
             }
         });
     }), {} ],
-    295: [ (function(require, module, exports) {
+    296: [ (function(require, module, exports) {
         dragonBones.CCTextureAtlasData = cc.Class({
             name: "dragonBones.CCTextureAtlasData",
             extends: dragonBones.TextureAtlasData,
@@ -56016,7 +55233,7 @@
             }
         });
     }), {} ],
-    296: [ (function(require, module, exports) {
+    297: [ (function(require, module, exports) {
         var DragonBonesAsset = cc.Class({
             name: "dragonBones.DragonBonesAsset",
             extends: cc.Asset,
@@ -56043,7 +55260,7 @@
         });
         dragonBones.DragonBonesAsset = module.exports = DragonBonesAsset;
     }), {} ],
-    297: [ (function(require, module, exports) {
+    298: [ (function(require, module, exports) {
         var DragonBonesAtlasAsset = cc.Class({
             name: "dragonBones.DragonBonesAtlasAsset",
             extends: cc.Asset,
@@ -56069,7 +55286,7 @@
         });
         dragonBones.DragonBonesAtlasAsset = module.exports = DragonBonesAtlasAsset;
     }), {} ],
-    298: [ (function(require, module, exports) {
+    299: [ (function(require, module, exports) {
         dragonBones = require("./lib/dragonBones");
         dragonBones.DisplayType = {
             Image: 0,
@@ -56118,16 +55335,16 @@
         require("./DragonBonesAtlasAsset");
         require("./ArmatureDisplay");
     }), {
-        "./ArmatureDisplay": 291,
-        "./CCArmatureDisplay": 292,
-        "./CCFactory": 293,
-        "./CCSlot": 294,
-        "./CCTextureData": 295,
-        "./DragonBonesAsset": 296,
-        "./DragonBonesAtlasAsset": 297,
-        "./lib/dragonBones": 299
+        "./ArmatureDisplay": 292,
+        "./CCArmatureDisplay": 293,
+        "./CCFactory": 294,
+        "./CCSlot": 295,
+        "./CCTextureData": 296,
+        "./DragonBonesAsset": 297,
+        "./DragonBonesAtlasAsset": 298,
+        "./lib/dragonBones": 300
     } ],
-    299: [ (function(require, module, exports) {
+    300: [ (function(require, module, exports) {
         var __extends = this && this.__extends || function(d, b) {
             for (var p in b) {
                 b.hasOwnProperty(p) && (d[p] = b[p]);
@@ -56541,32 +55758,30 @@
                     if (1 == self._keyFrameCount && this != self._animationState._timeline) {
                         self._isCompleted = self._animationState._fadeState >= 0;
                         currentPlayTimes = 1;
-                    } else {
-                        if (self._hasAsynchronyTimeline) {
-                            var playTimes = self._animationState.playTimes;
-                            var totalTime = playTimes * self._duration;
-                            value *= self._timeScale;
-                            0 != self._timeOffset && (value += self._timeOffset * self._animationDutation);
-                            if (playTimes > 0 && (value >= totalTime || value <= -totalTime)) {
-                                self._isCompleted = true;
-                                currentPlayTimes = playTimes;
-                                value = value < 0 ? 0 : self._duration;
-                            } else {
-                                self._isCompleted = false;
-                                if (value < 0) {
-                                    currentPlayTimes = Math.floor(-value / self._duration);
-                                    value = self._duration - -value % self._duration;
-                                } else {
-                                    currentPlayTimes = Math.floor(value / self._duration);
-                                    value %= self._duration;
-                                }
-                                playTimes > 0 && currentPlayTimes > playTimes && (currentPlayTimes = playTimes);
-                            }
-                            value += self._position;
+                    } else if (self._hasAsynchronyTimeline) {
+                        var playTimes = self._animationState.playTimes;
+                        var totalTime = playTimes * self._duration;
+                        value *= self._timeScale;
+                        0 != self._timeOffset && (value += self._timeOffset * self._animationDutation);
+                        if (playTimes > 0 && (value >= totalTime || value <= -totalTime)) {
+                            self._isCompleted = true;
+                            currentPlayTimes = playTimes;
+                            value = value < 0 ? 0 : self._duration;
                         } else {
-                            self._isCompleted = self._animationState._timeline._isCompleted;
-                            currentPlayTimes = self._animationState._timeline._currentPlayTimes;
+                            self._isCompleted = false;
+                            if (value < 0) {
+                                currentPlayTimes = Math.floor(-value / self._duration);
+                                value = self._duration - -value % self._duration;
+                            } else {
+                                currentPlayTimes = Math.floor(value / self._duration);
+                                value %= self._duration;
+                            }
+                            playTimes > 0 && currentPlayTimes > playTimes && (currentPlayTimes = playTimes);
                         }
+                        value += self._position;
+                    } else {
+                        self._isCompleted = self._animationState._timeline._isCompleted;
+                        currentPlayTimes = self._animationState._timeline._currentPlayTimes;
                     }
                     if (self._currentTime == value) {
                         return false;
@@ -56627,22 +55842,18 @@
                     if (easing > 1) {
                         value = .5 * (1 - Math.cos(progress * Math.PI));
                         easing -= 1;
+                    } else if (easing > 0) {
+                        value = 1 - Math.pow(1 - progress, 2);
+                    } else if (easing >= -1) {
+                        easing *= -1;
+                        value = Math.pow(progress, 2);
                     } else {
-                        if (easing > 0) {
-                            value = 1 - Math.pow(1 - progress, 2);
-                        } else {
-                            if (easing >= -1) {
-                                easing *= -1;
-                                value = Math.pow(progress, 2);
-                            } else {
-                                if (!(easing >= -2)) {
-                                    return progress;
-                                }
-                                easing *= -1;
-                                value = Math.acos(1 - 2 * progress) / Math.PI;
-                                easing -= 1;
-                            }
+                        if (!(easing >= -2)) {
+                            return progress;
                         }
+                        easing *= -1;
+                        value = Math.acos(1 - 2 * progress) / Math.PI;
+                        easing -= 1;
                     }
                     return (value - progress) * easing + progress;
                 };
@@ -56679,13 +55890,11 @@
                     if (self._tweenEasing != dragonBones.DragonBones.NO_TWEEN) {
                         self._tweenProgress = (self._currentTime - self._currentFrame.position + self._position) / self._currentFrame.duration;
                         0 != self._tweenEasing && (self._tweenProgress = TweenTimelineState._getEasingValue(self._tweenProgress, self._tweenEasing));
+                    } else if (self._curve) {
+                        self._tweenProgress = (self._currentTime - self._currentFrame.position + self._position) / self._currentFrame.duration;
+                        self._tweenProgress = TweenTimelineState._getEasingCurveValue(self._tweenProgress, self._curve);
                     } else {
-                        if (self._curve) {
-                            self._tweenProgress = (self._currentTime - self._currentFrame.position + self._position) / self._currentFrame.duration;
-                            self._tweenProgress = TweenTimelineState._getEasingCurveValue(self._tweenProgress, self._curve);
-                        } else {
-                            self._tweenProgress = 0;
-                        }
+                        self._tweenProgress = 0;
                     }
                 };
                 TweenTimelineState.prototype._updateExtensionKeyFrame = function(current, next, result) {
@@ -56788,9 +55997,7 @@
                             animationState = this._animationStates[i];
                             animationState.layer == layer && animationState.group == group && animationState.fadeOut(fadeOutTime, pauseFadeOut);
                         }
-                        break;
-
-                      case 0:                    }
+                    }
                 };
                 Animation.prototype._updateFFDTimelineStates = function() {
                     for (var i = 0, l = this._animationStates.length; i < l; ++i) {
@@ -56814,34 +56021,32 @@
                         } else {
                             animationState._advanceTime(passedTime, 1, 0);
                         }
-                    } else {
-                        if (animationStateCount > 1) {
-                            var prevLayer = self._animationStates[0]._layer;
-                            var weightLeft = 1;
-                            var layerTotalWeight = 0;
-                            var animationIndex = 1;
-                            for (var i = 0, r = 0; i < animationStateCount; ++i) {
-                                var animationState = self._animationStates[i];
-                                if (animationState._fadeState > 0 && animationState._fadeProgress <= 0) {
-                                    r++;
-                                    animationState.returnToPool();
-                                    self._animationStateDirty = true;
-                                    self._lastAnimationState == animationState && (i - r >= 0 ? self._lastAnimationState = self._animationStates[i - r] : self._lastAnimationState = null);
-                                } else {
-                                    r > 0 && (self._animationStates[i - r] = animationState);
-                                    if (prevLayer != animationState._layer) {
-                                        prevLayer = animationState._layer;
-                                        layerTotalWeight >= weightLeft ? weightLeft = 0 : weightLeft -= layerTotalWeight;
-                                        layerTotalWeight = 0;
-                                    }
-                                    animationState._advanceTime(passedTime, weightLeft, animationIndex);
-                                    if (animationState._weightResult > 0) {
-                                        layerTotalWeight += animationState._weightResult;
-                                        animationIndex++;
-                                    }
+                    } else if (animationStateCount > 1) {
+                        var prevLayer = self._animationStates[0]._layer;
+                        var weightLeft = 1;
+                        var layerTotalWeight = 0;
+                        var animationIndex = 1;
+                        for (var i = 0, r = 0; i < animationStateCount; ++i) {
+                            var animationState = self._animationStates[i];
+                            if (animationState._fadeState > 0 && animationState._fadeProgress <= 0) {
+                                r++;
+                                animationState.returnToPool();
+                                self._animationStateDirty = true;
+                                self._lastAnimationState == animationState && (self._lastAnimationState = i - r >= 0 ? self._animationStates[i - r] : null);
+                            } else {
+                                r > 0 && (self._animationStates[i - r] = animationState);
+                                if (prevLayer != animationState._layer) {
+                                    prevLayer = animationState._layer;
+                                    layerTotalWeight >= weightLeft ? weightLeft = 0 : weightLeft -= layerTotalWeight;
+                                    layerTotalWeight = 0;
                                 }
-                                i == animationStateCount - 1 && r > 0 && (self._animationStates.length -= r);
+                                animationState._advanceTime(passedTime, weightLeft, animationIndex);
+                                if (animationState._weightResult > 0) {
+                                    layerTotalWeight += animationState._weightResult;
+                                    animationIndex++;
+                                }
                             }
+                            i == animationStateCount - 1 && r > 0 && (self._animationStates.length -= r);
                         }
                     }
                 };
@@ -56868,18 +56073,16 @@
                     var animationState = null;
                     if (animationName) {
                         animationState = this.fadeIn(animationName, 0, playTimes, 0, null, 4);
-                    } else {
-                        if (this._lastAnimationState) {
-                            if (this._isPlaying && (this._lastAnimationState.isPlaying || this._lastAnimationState.isCompleted)) {
-                                animationState = this.fadeIn(this._lastAnimationState.name, 0, playTimes, 0, null, 4);
-                            } else {
-                                this._isPlaying = true;
-                                this._lastAnimationState.play();
-                            }
+                    } else if (this._lastAnimationState) {
+                        if (this._isPlaying && (this._lastAnimationState.isPlaying || this._lastAnimationState.isCompleted)) {
+                            animationState = this.fadeIn(this._lastAnimationState.name, 0, playTimes, 0, null, 4);
                         } else {
-                            var defaultAnimation = this._armature.armatureData.defaultAnimation;
-                            defaultAnimation && (animationState = this.fadeIn(defaultAnimation.name, 0, playTimes, 0, null, 4));
+                            this._isPlaying = true;
+                            this._lastAnimationState.play();
                         }
+                    } else {
+                        var defaultAnimation = this._armature.armatureData.defaultAnimation;
+                        defaultAnimation && (animationState = this.fadeIn(defaultAnimation.name, 0, playTimes, 0, null, 4));
                     }
                     return animationState;
                 };
@@ -57243,12 +56446,10 @@
                                     event_1.animationState = this;
                                     self._armature._bufferEvent(event_1, dragonBones.EventObject.FADE_OUT);
                                 }
-                            } else {
-                                if (eventDispatcher.hasEvent(dragonBones.EventObject.FADE_IN)) {
-                                    var event_2 = dragonBones.BaseObject.borrowObject(dragonBones.EventObject);
-                                    event_2.animationState = this;
-                                    self._armature._bufferEvent(event_2, dragonBones.EventObject.FADE_IN);
-                                }
+                            } else if (eventDispatcher.hasEvent(dragonBones.EventObject.FADE_IN)) {
+                                var event_2 = dragonBones.BaseObject.borrowObject(dragonBones.EventObject);
+                                event_2.animationState = this;
+                                self._armature._bufferEvent(event_2, dragonBones.EventObject.FADE_IN);
                             }
                         }
                         if (self._fadeTime >= self.fadeTotalTime) {
@@ -57958,19 +57159,17 @@
                                 self._slotColor.greenOffset += (self._color.greenOffset - self._slotColor.greenOffset) * fadeProgress;
                                 self._slotColor.blueOffset += (self._color.blueOffset - self._slotColor.blueOffset) * fadeProgress;
                                 self.slot._colorDirty = true;
-                            } else {
-                                if (self._colorDirty) {
-                                    self._colorDirty = false;
-                                    self._slotColor.alphaMultiplier = self._color.alphaMultiplier;
-                                    self._slotColor.redMultiplier = self._color.redMultiplier;
-                                    self._slotColor.greenMultiplier = self._color.greenMultiplier;
-                                    self._slotColor.blueMultiplier = self._color.blueMultiplier;
-                                    self._slotColor.alphaOffset = self._color.alphaOffset;
-                                    self._slotColor.redOffset = self._color.redOffset;
-                                    self._slotColor.greenOffset = self._color.greenOffset;
-                                    self._slotColor.blueOffset = self._color.blueOffset;
-                                    self.slot._colorDirty = true;
-                                }
+                            } else if (self._colorDirty) {
+                                self._colorDirty = false;
+                                self._slotColor.alphaMultiplier = self._color.alphaMultiplier;
+                                self._slotColor.redMultiplier = self._color.redMultiplier;
+                                self._slotColor.greenMultiplier = self._color.greenMultiplier;
+                                self._slotColor.blueMultiplier = self._color.blueMultiplier;
+                                self._slotColor.alphaOffset = self._color.alphaOffset;
+                                self._slotColor.redOffset = self._color.redOffset;
+                                self._slotColor.greenOffset = self._color.greenOffset;
+                                self._slotColor.blueOffset = self._color.blueOffset;
+                                self.slot._colorDirty = true;
                             }
                         }
                     }
@@ -58281,9 +57480,7 @@
 
                       case 4:
                         this._animation.fadeIn(value.data[0], value.data[1], value.data[2]);
-                        break;
-
-                      case 5:                    }
+                    }
                 };
                 Armature.prototype._addBoneToBoneList = function(value) {
                     if (this._bones.indexOf(value) < 0) {
@@ -58375,15 +57572,13 @@
                                         var childArmature = slot._childArmature;
                                         childArmature && childArmature._doAction(action);
                                     }
-                                } else {
-                                    if (action.bone) {
-                                        for (var i_1 = 0, l_1 = self._slots.length; i_1 < l_1; ++i_1) {
-                                            var childArmature = self._slots[i_1]._childArmature;
-                                            childArmature && childArmature._doAction(action);
-                                        }
-                                    } else {
-                                        this._doAction(action);
+                                } else if (action.bone) {
+                                    for (var i_1 = 0, l_1 = self._slots.length; i_1 < l_1; ++i_1) {
+                                        var childArmature = self._slots[i_1]._childArmature;
+                                        childArmature && childArmature._doAction(action);
                                     }
+                                } else {
+                                    this._doAction(action);
                                 }
                             }
                             self._actions.length = 0;
@@ -58836,30 +58031,22 @@
                         var cacheFrame = self._cacheFrames[cacheFrameIndex];
                         if (self.globalTransformMatrix == cacheFrame) {
                             self._transformDirty = 0;
+                        } else if (cacheFrame) {
+                            self._transformDirty = 2;
+                            self.globalTransformMatrix = cacheFrame;
+                        } else if (2 == self._transformDirty || self._parent && 0 != self._parent._transformDirty || self._ik && self.ikWeight > 0 && 0 != self._ik._transformDirty) {
+                            self._transformDirty = 2;
+                            self.globalTransformMatrix = self._globalTransformMatrix;
+                        } else if (self.globalTransformMatrix != self._globalTransformMatrix) {
+                            self._transformDirty = 0;
+                            self._cacheFrames[cacheFrameIndex] = self.globalTransformMatrix;
                         } else {
-                            if (cacheFrame) {
-                                self._transformDirty = 2;
-                                self.globalTransformMatrix = cacheFrame;
-                            } else {
-                                if (2 == self._transformDirty || self._parent && 0 != self._parent._transformDirty || self._ik && self.ikWeight > 0 && 0 != self._ik._transformDirty) {
-                                    self._transformDirty = 2;
-                                    self.globalTransformMatrix = self._globalTransformMatrix;
-                                } else {
-                                    if (self.globalTransformMatrix != self._globalTransformMatrix) {
-                                        self._transformDirty = 0;
-                                        self._cacheFrames[cacheFrameIndex] = self.globalTransformMatrix;
-                                    } else {
-                                        self._transformDirty = 2;
-                                        self.globalTransformMatrix = self._globalTransformMatrix;
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        if (2 == self._transformDirty || self._parent && 0 != self._parent._transformDirty || self._ik && self.ikWeight > 0 && 0 != self._ik._transformDirty) {
                             self._transformDirty = 2;
                             self.globalTransformMatrix = self._globalTransformMatrix;
                         }
+                    } else if (2 == self._transformDirty || self._parent && 0 != self._parent._transformDirty || self._ik && self.ikWeight > 0 && 0 != self._ik._transformDirty) {
+                        self._transformDirty = 2;
+                        self.globalTransformMatrix = self._globalTransformMatrix;
                     }
                     if (0 != self._transformDirty) {
                         if (2 == self._transformDirty) {
@@ -59225,30 +58412,22 @@
                         var cacheFrame = self._cacheFrames[cacheFrameIndex];
                         if (self.globalTransformMatrix == cacheFrame) {
                             self._transformDirty = false;
+                        } else if (cacheFrame) {
+                            self._transformDirty = true;
+                            self.globalTransformMatrix = cacheFrame;
+                        } else if (self._transformDirty || 0 != self._parent._transformDirty) {
+                            self._transformDirty = true;
+                            self.globalTransformMatrix = self._globalTransformMatrix;
+                        } else if (self.globalTransformMatrix != self._globalTransformMatrix) {
+                            self._transformDirty = false;
+                            self._cacheFrames[cacheFrameIndex] = self.globalTransformMatrix;
                         } else {
-                            if (cacheFrame) {
-                                self._transformDirty = true;
-                                self.globalTransformMatrix = cacheFrame;
-                            } else {
-                                if (self._transformDirty || 0 != self._parent._transformDirty) {
-                                    self._transformDirty = true;
-                                    self.globalTransformMatrix = self._globalTransformMatrix;
-                                } else {
-                                    if (self.globalTransformMatrix != self._globalTransformMatrix) {
-                                        self._transformDirty = false;
-                                        self._cacheFrames[cacheFrameIndex] = self.globalTransformMatrix;
-                                    } else {
-                                        self._transformDirty = true;
-                                        self.globalTransformMatrix = self._globalTransformMatrix;
-                                    }
-                                }
-                            }
-                        }
-                    } else {
-                        if (self._transformDirty || 0 != self._parent._transformDirty) {
                             self._transformDirty = true;
                             self.globalTransformMatrix = self._globalTransformMatrix;
                         }
+                    } else if (self._transformDirty || 0 != self._parent._transformDirty) {
+                        self._transformDirty = true;
+                        self.globalTransformMatrix = self._globalTransformMatrix;
                     }
                     if (self._transformDirty) {
                         self._transformDirty = false;
@@ -60116,29 +59295,23 @@
                         var x = 0;
                         var y = 0;
                         var normalRadian = 0;
-                        var outcodeOut = outcode0 ? outcode0 : outcode1;
+                        var outcodeOut = outcode0 || outcode1;
                         if (4 & outcodeOut) {
                             x = xA + (xB - xA) * (yMin - yA) / (yB - yA);
                             y = yMin;
                             normalRadians && (normalRadian = .5 * -Math.PI);
-                        } else {
-                            if (8 & outcodeOut) {
-                                x = xA + (xB - xA) * (yMax - yA) / (yB - yA);
-                                y = yMax;
-                                normalRadians && (normalRadian = .5 * Math.PI);
-                            } else {
-                                if (2 & outcodeOut) {
-                                    y = yA + (yB - yA) * (xMax - xA) / (xB - xA);
-                                    x = xMax;
-                                    normalRadians && (normalRadian = 0);
-                                } else {
-                                    if (1 & outcodeOut) {
-                                        y = yA + (yB - yA) * (xMin - xA) / (xB - xA);
-                                        x = xMin;
-                                        normalRadians && (normalRadian = Math.PI);
-                                    }
-                                }
-                            }
+                        } else if (8 & outcodeOut) {
+                            x = xA + (xB - xA) * (yMax - yA) / (yB - yA);
+                            y = yMax;
+                            normalRadians && (normalRadian = .5 * Math.PI);
+                        } else if (2 & outcodeOut) {
+                            y = yA + (yB - yA) * (xMax - xA) / (xB - xA);
+                            x = xMax;
+                            normalRadians && (normalRadian = 0);
+                        } else if (1 & outcodeOut) {
+                            y = yA + (yB - yA) * (xMin - xA) / (xB - xA);
+                            x = xMin;
+                            normalRadians && (normalRadian = Math.PI);
                         }
                         if (outcodeOut == outcode0) {
                             xA = x;
@@ -60164,28 +59337,26 @@
                                 intersectionPointB.y = xB;
                             }
                             normalRadians && (normalRadians.x = normalRadians.y + Math.PI);
+                        } else if (inSideB) {
+                            intersectionCount = 1;
+                            if (intersectionPointA) {
+                                intersectionPointA.x = xA;
+                                intersectionPointA.y = yA;
+                            }
+                            if (intersectionPointB) {
+                                intersectionPointB.x = xA;
+                                intersectionPointB.y = yA;
+                            }
+                            normalRadians && (normalRadians.y = normalRadians.x + Math.PI);
                         } else {
-                            if (inSideB) {
-                                intersectionCount = 1;
-                                if (intersectionPointA) {
-                                    intersectionPointA.x = xA;
-                                    intersectionPointA.y = yA;
-                                }
-                                if (intersectionPointB) {
-                                    intersectionPointB.x = xA;
-                                    intersectionPointB.y = yA;
-                                }
-                                normalRadians && (normalRadians.y = normalRadians.x + Math.PI);
-                            } else {
-                                intersectionCount = 3;
-                                if (intersectionPointA) {
-                                    intersectionPointA.x = xA;
-                                    intersectionPointA.y = yA;
-                                }
-                                if (intersectionPointB) {
-                                    intersectionPointB.x = xB;
-                                    intersectionPointB.y = yB;
-                                }
+                            intersectionCount = 3;
+                            if (intersectionPointA) {
+                                intersectionPointA.x = xA;
+                                intersectionPointA.y = yA;
+                            }
+                            if (intersectionPointB) {
+                                intersectionPointB.x = xB;
+                                intersectionPointB.y = yB;
                             }
                         }
                     }
@@ -60221,7 +59392,7 @@
                             return -1;
                         }
                         if (0 == sideAB) {
-                            if (inSideA == -1) {
+                            if (-1 == inSideA) {
                                 intersectionCount = 2;
                                 xB = xA + sB * xD;
                                 yB = (yA + sB * yD) / d;
@@ -60237,35 +59408,33 @@
                                     normalRadians.x = Math.atan2(yB / rr * dd, xB / rr);
                                     normalRadians.y = normalRadians.x + Math.PI;
                                 }
+                            } else if (1 == inSideB) {
+                                intersectionCount = 1;
+                                xA += sA * xD;
+                                yA = (yA + sA * yD) / d;
+                                if (intersectionPointA) {
+                                    intersectionPointA.x = xA;
+                                    intersectionPointA.y = yA;
+                                }
+                                if (intersectionPointB) {
+                                    intersectionPointB.x = xA;
+                                    intersectionPointB.y = yA;
+                                }
+                                if (normalRadians) {
+                                    normalRadians.x = Math.atan2(yA / rr * dd, xA / rr);
+                                    normalRadians.y = normalRadians.x + Math.PI;
+                                }
                             } else {
-                                if (1 == inSideB) {
-                                    intersectionCount = 1;
-                                    xA += sA * xD;
-                                    yA = (yA + sA * yD) / d;
-                                    if (intersectionPointA) {
-                                        intersectionPointA.x = xA;
-                                        intersectionPointA.y = yA;
-                                    }
-                                    if (intersectionPointB) {
-                                        intersectionPointB.x = xA;
-                                        intersectionPointB.y = yA;
-                                    }
-                                    if (normalRadians) {
-                                        normalRadians.x = Math.atan2(yA / rr * dd, xA / rr);
-                                        normalRadians.y = normalRadians.x + Math.PI;
-                                    }
-                                } else {
-                                    intersectionCount = 3;
-                                    if (intersectionPointA) {
-                                        intersectionPointA.x = xA + sA * xD;
-                                        intersectionPointA.y = (yA + sA * yD) / d;
-                                        normalRadians && (normalRadians.x = Math.atan2(intersectionPointA.y / rr * dd, intersectionPointA.x / rr));
-                                    }
-                                    if (intersectionPointB) {
-                                        intersectionPointB.x = xA + sB * xD;
-                                        intersectionPointB.y = (yA + sB * yD) / d;
-                                        normalRadians && (normalRadians.y = Math.atan2(intersectionPointB.y / rr * dd, intersectionPointB.x / rr));
-                                    }
+                                intersectionCount = 3;
+                                if (intersectionPointA) {
+                                    intersectionPointA.x = xA + sA * xD;
+                                    intersectionPointA.y = (yA + sA * yD) / d;
+                                    normalRadians && (normalRadians.x = Math.atan2(intersectionPointA.y / rr * dd, intersectionPointA.x / rr));
+                                }
+                                if (intersectionPointB) {
+                                    intersectionPointB.x = xA + sB * xD;
+                                    intersectionPointB.y = (yA + sB * yD) / d;
+                                    normalRadians && (normalRadians.y = Math.atan2(intersectionPointB.y / rr * dd, intersectionPointB.x / rr));
                                 }
                             }
                         }
@@ -60359,17 +59528,15 @@
                             intersectionPointB.y = yMin;
                         }
                         normalRadians && (normalRadians.y = normalRadians.x + Math.PI);
-                    } else {
-                        if (intersectionCount > 1) {
-                            intersectionCount++;
-                            if (intersectionPointA) {
-                                intersectionPointA.x = xMin;
-                                intersectionPointA.y = yMin;
-                            }
-                            if (intersectionPointB) {
-                                intersectionPointB.x = xMax;
-                                intersectionPointB.y = yMax;
-                            }
+                    } else if (intersectionCount > 1) {
+                        intersectionCount++;
+                        if (intersectionPointA) {
+                            intersectionPointA.x = xMin;
+                            intersectionPointA.y = yMin;
+                        }
+                        if (intersectionPointB) {
+                            intersectionPointB.x = xMax;
+                            intersectionPointB.y = yMax;
                         }
                     }
                     return intersectionCount;
@@ -60840,11 +60007,9 @@
                         if (frame.tweenEasing != dragonBones.DragonBones.NO_TWEEN) {
                             tweenProgress = (position - frame.position) / frame.duration;
                             0 != frame.tweenEasing && (tweenProgress = dragonBones.TweenTimelineState._getEasingValue(tweenProgress, frame.tweenEasing));
-                        } else {
-                            if (frame.curve) {
-                                tweenProgress = (position - frame.position) / frame.duration;
-                                tweenProgress = dragonBones.TweenTimelineState._getEasingCurveValue(tweenProgress, frame.curve);
-                            }
+                        } else if (frame.curve) {
+                            tweenProgress = (position - frame.position) / frame.duration;
+                            tweenProgress = dragonBones.TweenTimelineState._getEasingCurveValue(tweenProgress, frame.curve);
                         }
                         var nextFrame = frame.next;
                         transform.x = nextFrame.transform.x - frame.transform.x;
@@ -61308,22 +60473,18 @@
                         var pivotObject = rawData[ObjectDataParser.PIVOT];
                         display.pivot.x = ObjectDataParser._getNumber(pivotObject, ObjectDataParser.X, 0);
                         display.pivot.y = ObjectDataParser._getNumber(pivotObject, ObjectDataParser.Y, 0);
+                    } else if (this._isOldData) {
+                        var transformObject = rawData[ObjectDataParser.TRANSFORM];
+                        display.isRelativePivot = false;
+                        display.pivot.x = ObjectDataParser._getNumber(transformObject, ObjectDataParser.PIVOT_X, 0) * this._armature.scale;
+                        display.pivot.y = ObjectDataParser._getNumber(transformObject, ObjectDataParser.PIVOT_Y, 0) * this._armature.scale;
                     } else {
-                        if (this._isOldData) {
-                            var transformObject = rawData[ObjectDataParser.TRANSFORM];
-                            display.isRelativePivot = false;
-                            display.pivot.x = ObjectDataParser._getNumber(transformObject, ObjectDataParser.PIVOT_X, 0) * this._armature.scale;
-                            display.pivot.y = ObjectDataParser._getNumber(transformObject, ObjectDataParser.PIVOT_Y, 0) * this._armature.scale;
-                        } else {
-                            display.pivot.x = .5;
-                            display.pivot.y = .5;
-                        }
+                        display.pivot.x = .5;
+                        display.pivot.y = .5;
                     }
                     ObjectDataParser.TRANSFORM in rawData && this._parseTransform(rawData[ObjectDataParser.TRANSFORM], display.transform);
                     switch (display.type) {
                       case 0:
-                        break;
-
                       case 1:
                         break;
 
@@ -61629,7 +60790,7 @@
                         }
                         var i = slotCount;
                         while (i--) {
-                            frame.zOrder[i] == -1 && (frame.zOrder[i] = unchanged[--unchangedIndex]);
+                            -1 == frame.zOrder[i] && (frame.zOrder[i] = unchanged[--unchangedIndex]);
                         }
                     }
                     return frame;
@@ -61674,13 +60835,11 @@
                     }
                     if (this._isOldData) {
                         ObjectDataParser._getBoolean(rawData, ObjectDataParser.HIDE, false) && (frame.displayIndex = -1);
-                    } else {
-                        if (ObjectDataParser.ACTION in rawData || ObjectDataParser.ACTIONS in rawData) {
-                            var slot = this._timeline.slot;
-                            var actions = new Array();
-                            this._parseActionData(rawData, actions, slot.parent, slot);
-                            this._mergeFrameToAnimationTimeline(frame.position, actions, null);
-                        }
+                    } else if (ObjectDataParser.ACTION in rawData || ObjectDataParser.ACTIONS in rawData) {
+                        var slot = this._timeline.slot;
+                        var actions = new Array();
+                        this._parseActionData(rawData, actions, slot.parent, slot);
+                        this._mergeFrameToAnimationTimeline(frame.position, actions, null);
                     }
                     return frame;
                 };
@@ -61745,34 +60904,32 @@
                         if (1 == rawFrames.length) {
                             timeline.frames.length = 1;
                             timeline.frames[0] = frameParser.call(this, rawFrames[0], 0, ObjectDataParser._getNumber(rawFrames[0], ObjectDataParser.DURATION, 1));
-                        } else {
-                            if (rawFrames.length > 1) {
-                                timeline.frames.length = this._animation.frameCount + 1;
-                                var frameStart = 0;
-                                var frameCount = 0;
-                                var frame = null;
-                                var prevFrame = null;
-                                for (var i = 0, iW = 0, l = timeline.frames.length; i < l; ++i) {
-                                    if (frameStart + frameCount <= i && iW < rawFrames.length) {
-                                        var frameObject = rawFrames[iW++];
-                                        frameStart = i;
-                                        frameCount = ObjectDataParser._getNumber(frameObject, ObjectDataParser.DURATION, 1);
-                                        frame = frameParser.call(this, frameObject, frameStart, frameCount);
-                                        if (prevFrame) {
-                                            prevFrame.next = frame;
-                                            frame.prev = prevFrame;
-                                            this._isOldData && prevFrame instanceof dragonBones.TweenFrameData && ObjectDataParser._getNumber(frameObject, ObjectDataParser.DISPLAY_INDEX, 0) == -1 && (prevFrame.tweenEasing = dragonBones.DragonBones.NO_TWEEN);
-                                        }
-                                        prevFrame = frame;
+                        } else if (rawFrames.length > 1) {
+                            timeline.frames.length = this._animation.frameCount + 1;
+                            var frameStart = 0;
+                            var frameCount = 0;
+                            var frame = null;
+                            var prevFrame = null;
+                            for (var i = 0, iW = 0, l = timeline.frames.length; i < l; ++i) {
+                                if (frameStart + frameCount <= i && iW < rawFrames.length) {
+                                    var frameObject = rawFrames[iW++];
+                                    frameStart = i;
+                                    frameCount = ObjectDataParser._getNumber(frameObject, ObjectDataParser.DURATION, 1);
+                                    frame = frameParser.call(this, frameObject, frameStart, frameCount);
+                                    if (prevFrame) {
+                                        prevFrame.next = frame;
+                                        frame.prev = prevFrame;
+                                        this._isOldData && prevFrame instanceof dragonBones.TweenFrameData && -1 == ObjectDataParser._getNumber(frameObject, ObjectDataParser.DISPLAY_INDEX, 0) && (prevFrame.tweenEasing = dragonBones.DragonBones.NO_TWEEN);
                                     }
-                                    timeline.frames[i] = frame;
+                                    prevFrame = frame;
                                 }
-                                frame.duration = this._animation.duration - frame.position;
-                                frame = timeline.frames[0];
-                                prevFrame.next = frame;
-                                frame.prev = prevFrame;
-                                this._isOldData && prevFrame instanceof dragonBones.TweenFrameData && ObjectDataParser._getNumber(rawFrames[0], ObjectDataParser.DISPLAY_INDEX, 0) == -1 && (prevFrame.tweenEasing = dragonBones.DragonBones.NO_TWEEN);
+                                timeline.frames[i] = frame;
                             }
+                            frame.duration = this._animation.duration - frame.position;
+                            frame = timeline.frames[0];
+                            prevFrame.next = frame;
+                            frame.prev = prevFrame;
+                            this._isOldData && prevFrame instanceof dragonBones.TweenFrameData && -1 == ObjectDataParser._getNumber(rawFrames[0], ObjectDataParser.DISPLAY_INDEX, 0) && (prevFrame.tweenEasing = dragonBones.DragonBones.NO_TWEEN);
                         }
                         this._timeline = null;
                     }
@@ -61788,54 +60945,52 @@
                         actionData.data[1] = -1;
                         actionData.data[2] = -1;
                         actions.push(actionData);
-                    } else {
-                        if (actionsObject instanceof Array) {
-                            for (var i = 0, l = actionsObject.length; i < l; ++i) {
-                                var actionObject = actionsObject[i];
-                                var isArray = actionObject instanceof Array;
-                                var actionData = dragonBones.BaseObject.borrowObject(dragonBones.ActionData);
-                                var animationName = isArray ? ObjectDataParser._getParameter(actionObject, 1, null) : ObjectDataParser._getString(actionObject, "gotoAndPlay", null);
-                                if (isArray) {
-                                    var actionType = actionObject[0];
-                                    "string" == typeof actionType ? actionData.type = ObjectDataParser._getActionType(actionType) : actionData.type = ObjectDataParser._getParameter(actionObject, 0, 4);
-                                } else {
-                                    actionData.type = 2;
-                                }
-                                switch (actionData.type) {
-                                  case 0:
-                                    actionData.data[0] = animationName;
-                                    actionData.data[1] = isArray ? ObjectDataParser._getParameter(actionObject, 2, -1) : -1;
-                                    break;
-
-                                  case 1:
-                                    actionData.data[0] = animationName;
-                                    break;
-
-                                  case 2:
-                                    actionData.data[0] = animationName;
-                                    actionData.data[1] = isArray ? ObjectDataParser._getParameter(actionObject, 2, 0) : 0;
-                                    actionData.data[2] = isArray ? ObjectDataParser._getParameter(actionObject, 3, -1) : -1;
-                                    break;
-
-                                  case 3:
-                                    actionData.data[0] = animationName;
-                                    actionData.data[1] = isArray ? ObjectDataParser._getParameter(actionObject, 2, 0) : 0;
-                                    break;
-
-                                  case 4:
-                                    actionData.data[0] = animationName;
-                                    actionData.data[1] = isArray ? ObjectDataParser._getParameter(actionObject, 2, -1) : -1;
-                                    actionData.data[2] = isArray ? ObjectDataParser._getParameter(actionObject, 3, -1) : -1;
-                                    break;
-
-                                  case 5:
-                                    actionData.data[0] = animationName;
-                                    actionData.data[1] = isArray ? ObjectDataParser._getParameter(actionObject, 2, 0) : 0;
-                                }
-                                actionData.bone = bone;
-                                actionData.slot = slot;
-                                actions.push(actionData);
+                    } else if (actionsObject instanceof Array) {
+                        for (var i = 0, l = actionsObject.length; i < l; ++i) {
+                            var actionObject = actionsObject[i];
+                            var isArray = actionObject instanceof Array;
+                            var actionData = dragonBones.BaseObject.borrowObject(dragonBones.ActionData);
+                            var animationName = isArray ? ObjectDataParser._getParameter(actionObject, 1, null) : ObjectDataParser._getString(actionObject, "gotoAndPlay", null);
+                            if (isArray) {
+                                var actionType = actionObject[0];
+                                actionData.type = "string" == typeof actionType ? ObjectDataParser._getActionType(actionType) : ObjectDataParser._getParameter(actionObject, 0, 4);
+                            } else {
+                                actionData.type = 2;
                             }
+                            switch (actionData.type) {
+                              case 0:
+                                actionData.data[0] = animationName;
+                                actionData.data[1] = isArray ? ObjectDataParser._getParameter(actionObject, 2, -1) : -1;
+                                break;
+
+                              case 1:
+                                actionData.data[0] = animationName;
+                                break;
+
+                              case 2:
+                                actionData.data[0] = animationName;
+                                actionData.data[1] = isArray ? ObjectDataParser._getParameter(actionObject, 2, 0) : 0;
+                                actionData.data[2] = isArray ? ObjectDataParser._getParameter(actionObject, 3, -1) : -1;
+                                break;
+
+                              case 3:
+                                actionData.data[0] = animationName;
+                                actionData.data[1] = isArray ? ObjectDataParser._getParameter(actionObject, 2, 0) : 0;
+                                break;
+
+                              case 4:
+                                actionData.data[0] = animationName;
+                                actionData.data[1] = isArray ? ObjectDataParser._getParameter(actionObject, 2, -1) : -1;
+                                actionData.data[2] = isArray ? ObjectDataParser._getParameter(actionObject, 3, -1) : -1;
+                                break;
+
+                              case 5:
+                                actionData.data[0] = animationName;
+                                actionData.data[1] = isArray ? ObjectDataParser._getParameter(actionObject, 2, 0) : 0;
+                            }
+                            actionData.bone = bone;
+                            actionData.slot = slot;
+                            actions.push(actionData);
                         }
                     }
                 };
@@ -62347,7 +61502,7 @@
         })(dragonBones || (dragonBones = {}));
         module.exports = dragonBones;
     }), {} ],
-    300: [ (function(require, module, exports) {
+    301: [ (function(require, module, exports) {
         var spine = sp.spine;
         sp._SGSkeleton = _ccsg.Node.extend({
             _skeleton: null,
@@ -62358,7 +61513,6 @@
             _premultipliedAlpha: false,
             _ownsSkeletonData: null,
             _atlas: null,
-            _blendFunc: null,
             ctor: function(skeletonDataFile, atlasFile, scale) {
                 _ccsg.Node.prototype.ctor.call(this);
                 0 === arguments.length ? this.init() : this.initWithArgs(skeletonDataFile, atlasFile, scale);
@@ -62369,10 +61523,6 @@
             init: function() {
                 _ccsg.Node.prototype.init.call(this);
                 this._premultipliedAlpha = cc._renderType === cc.game.RENDER_TYPE_WEBGL && cc.OPTIMIZE_BLEND_FUNC_FOR_PREMULTIPLIED_ALPHA;
-                this._blendFunc = {
-                    src: cc.BLEND_SRC,
-                    dst: cc.BLEND_DST
-                };
                 this.scheduleUpdate();
             },
             setDebugSlotsEnabled: function(enabled) {
@@ -62420,7 +61570,7 @@
             },
             getBoundingBox: function() {
                 var minX = cc.macro.FLT_MAX, minY = cc.macro.FLT_MAX, maxX = cc.macro.FLT_MIN, maxY = cc.macro.FLT_MIN;
-                var scaleX = this.getScaleX(), scaleY = this.getScaleY(), vertices = [], slots = this._skeleton.slots, VERTEX = spine.RegionAttachment;
+                var scaleX = this.getScaleX(), scaleY = this.getScaleY(), vertices, slots = this._skeleton.slots, VERTEX = spine.RegionAttachment;
                 for (var i = 0, slotCount = slots.length; i < slotCount; ++i) {
                     var slot = slots[i];
                     var attachment = slot.attachment;
@@ -62481,41 +61631,36 @@
                 return regionAttachment.region;
             },
             getBlendFunc: function() {
-                return this._blendFunc;
+                var slot = this._skeleton.drawOrder[0];
+                if (slot) {
+                    var blend = this._renderCmd._getBlendFunc(slot.data.blendMode, this._premultipliedAlpha);
+                    return blend;
+                }
+                return {};
             },
             setBlendFunc: function(src, dst) {
-                var locBlendFunc = this._blendFunc;
-                if (void 0 === dst) {
-                    locBlendFunc.src = src.src;
-                    locBlendFunc.dst = src.dst;
-                } else {
-                    locBlendFunc.src = src;
-                    locBlendFunc.dst = dst;
-                }
+                return;
             },
             update: function(dt) {
                 this._skeleton.update(dt);
             }
         });
-        Object.defineProperty(sp._SGSkeleton.prototype, "opacityModifyRGB", {
-            get: sp._SGSkeleton.prototype.isOpacityModifyRGB
+        var proto = sp._SGSkeleton.prototype;
+        Object.defineProperty(proto, "opacityModifyRGB", {
+            get: proto.isOpacityModifyRGB
+        });
+        Object.defineProperty(proto, "_blendFunc", {
+            get: proto.getBlendFunc
+        });
+        Object.defineProperty(proto, "_texture", {
+            get: function() {
+                return this._renderCmd._currTexture;
+            }
         });
     }), {} ],
-    301: [ (function(require, module, exports) {
+    302: [ (function(require, module, exports) {
         var spine = sp.spine;
         var animEventType = sp.AnimationEventType;
-        sp._atlasPage_createTexture_webGL = function(self, path) {
-            var texture = cc.textureCache.addImage(path);
-            self.rendererObject = new cc.TextureAtlas(texture, 128);
-            self.width = texture.getPixelWidth();
-            self.height = texture.getPixelHeight();
-        };
-        sp._atlasPage_createTexture_canvas = function(self, path) {
-            self._texture = cc.textureCache.addImage(path);
-        };
-        sp._atlasPage_disposeTexture = function(self) {
-            self.rendererObject.release();
-        };
         sp._atlasLoader = {
             spAtlasFile: null,
             setAtlasFile: function(spAtlasFile) {
@@ -62677,7 +61822,7 @@
             }
         });
     }), {} ],
-    302: [ (function(require, module, exports) {
+    303: [ (function(require, module, exports) {
         var spine = sp.spine;
         sp._SGSkeleton.CanvasRenderCmd = function(renderableObject) {
             this._rootCtor(renderableObject);
@@ -62851,17 +61996,15 @@
                     var r = 0 | color.r * slot.color.r, g = 0 | color.g * slot.color.g, b = 0 | color.b * slot.color.b;
                     selSprite.setColor(cc.color(r, g, b));
                     selSprite._renderCmd._updateColor();
-                } else {
-                    if (!(attachment instanceof spine.MeshAttachment)) {
-                        slotNode.setVisible(false);
-                        continue;
-                    }
+                } else if (!(attachment instanceof spine.MeshAttachment)) {
+                    slotNode.setVisible(false);
+                    continue;
                 }
                 slotNode.setVisible(true);
             }
         };
     }), {} ],
-    303: [ (function(require, module, exports) {
+    304: [ (function(require, module, exports) {
         sp.SkeletonTexture = cc.Class({
             name: "sp.SkeletonTexture",
             extends: sp.spine.Texture,
@@ -62894,37 +62037,25 @@
             }
         });
     }), {} ],
-    304: [ (function(require, module, exports) {
+    305: [ (function(require, module, exports) {
         var spine = sp.spine;
         sp._SGSkeleton.WebGLRenderCmd = function(renderableObject) {
             this._rootCtor(renderableObject);
             this._needDraw = true;
             this._matrix = new cc.math.Matrix4();
             this._matrix.identity();
+            this._currTexture = null;
+            this._currBlendFunc = {};
             this.vertexType = cc.renderer.VertexType.CUSTOM;
-            this.setShaderProgram(cc.shaderCache.programForKey(cc.macro.SHADER_POSITION_TEXTURECOLOR));
+            this.setShaderProgram(cc.shaderCache.programForKey(cc.macro.SHADER_SPRITE_POSITION_TEXTURECOLOR));
         };
         var proto = sp._SGSkeleton.WebGLRenderCmd.prototype = Object.create(_ccsg.Node.WebGLRenderCmd.prototype);
         proto.constructor = sp._SGSkeleton.WebGLRenderCmd;
         proto.uploadData = function(f32buffer, ui32buffer, vertexDataOffset) {
-            cc.renderer._batchRendering();
-            vertexDataOffset = 0;
             var node = this._node;
             var color = this._displayedColor, locSkeleton = node._skeleton;
-            var textureAtlas, attachment, slot, i, n;
+            var attachment, slot, i, n;
             var premultiAlpha = node._premultipliedAlpha;
-            var blendMode = -1;
-            var dataInited = false;
-            var cachedVertices = 0;
-            var wt = this._worldTransform, mat = this._matrix.mat;
-            mat[0] = wt.a;
-            mat[4] = wt.c;
-            mat[12] = wt.tx;
-            mat[1] = wt.b;
-            mat[5] = wt.d;
-            mat[13] = wt.ty;
-            this._shaderProgram.use();
-            this._shaderProgram._setUniformForMVPMatrixWithMat4(this._matrix);
             locSkeleton.r = color.r / 255;
             locSkeleton.g = color.g / 255;
             locSkeleton.b = color.b / 255;
@@ -62955,20 +62086,13 @@
                     continue;
                 }
                 var regionTextureAtlas = node.getTextureAtlas(attachment);
-                if (!dataInited) {
-                    textureAtlas = regionTextureAtlas;
-                    blendMode = slot.data.blendMode;
-                    cc.renderer._updateBatchedInfo(textureAtlas.texture.getRealTexture(), this._getBlendFunc(blendMode, premultiAlpha), this.getShaderProgram());
-                    dataInited = true;
-                }
-                if (6 * (cachedVertices + vertCount) > f32buffer.length || textureAtlas !== regionTextureAtlas || blendMode !== slot.data.blendMode) {
+                this._currTexture = regionTextureAtlas.texture.getRealTexture();
+                var batchBroken = cc.renderer._updateBatchedInfo(this._currTexture, this._getBlendFunc(slot.data.blendMode, premultiAlpha), this._shaderProgram);
+                if (!batchBroken && vertexDataOffset + 6 * vertCount > f32buffer.length) {
                     cc.renderer._batchRendering();
-                    vertexDataOffset = 0;
-                    cachedVertices = 0;
-                    textureAtlas = regionTextureAtlas;
-                    blendMode = slot.data.blendMode;
-                    cc.renderer._updateBatchedInfo(textureAtlas.texture.getRealTexture(), this._getBlendFunc(blendMode, premultiAlpha), this.getShaderProgram());
+                    batchBroken = true;
                 }
+                batchBroken && (vertexDataOffset = 0);
                 var slotDebugPoints = null;
                 if (attachment instanceof spine.RegionAttachment) {
                     slotDebugPoints = this._uploadRegionAttachmentData(attachment, slot, premultiAlpha, f32buffer, ui32buffer, vertexDataOffset);
@@ -62980,11 +62104,17 @@
                 }
                 this._node._debugSlots && (debugSlotsInfo[i] = slotDebugPoints);
                 attachment instanceof spine.RegionAttachment ? cc.renderer._increaseBatchingSize(vertCount, cc.renderer.VertexType.TRIANGLE) : cc.renderer._increaseBatchingSize(vertCount, cc.renderer.VertexType.CUSTOM, attachment.triangles);
-                cachedVertices += vertCount;
                 vertexDataOffset += 6 * vertCount;
             }
-            cachedVertices > 0 && cc.renderer._batchRendering();
             if (node._debugBones || node._debugSlots) {
+                cc.renderer._batchRendering();
+                var wt = this._worldTransform, mat = this._matrix.mat;
+                mat[0] = wt.a;
+                mat[4] = wt.c;
+                mat[12] = wt.tx;
+                mat[1] = wt.b;
+                mat[5] = wt.d;
+                mat[13] = wt.ty;
                 cc.math.glMatrixMode(cc.math.KM_GL_MODELVIEW);
                 cc.current_stack.stack.push(cc.current_stack.top);
                 cc.current_stack.top = this._matrix;
@@ -63020,7 +62150,7 @@
             return 0;
         };
         proto._getBlendFunc = function(blendMode, premultiAlpha) {
-            var ret = {};
+            var ret = this._currBlendFunc;
             switch (blendMode) {
               case spine.BlendMode.Normal:
                 ret.src = premultiAlpha ? cc.macro.ONE : cc.macro.SRC_ALPHA;
@@ -63053,14 +62183,17 @@
             var nodeColor = this._displayedColor;
             var nodeR = nodeColor.r, nodeG = nodeColor.g, nodeB = nodeColor.b, nodeA = this._displayedOpacity;
             var vertices = attachment.updateWorldVertices(slot, premultipliedAlpha);
+            var wt = this._worldTransform, wa = wt.a, wb = wt.b, wc = wt.c, wd = wt.d, wx = wt.tx, wy = wt.ty, z = this._node.vertexZ;
             var offset = vertexDataOffset;
             for (var i = 0; i < 6; i++) {
                 var srcIdx = i < 4 ? i % 3 : i - 2;
+                var vx = vertices[8 * srcIdx], vy = vertices[8 * srcIdx + 1];
+                var x = vx * wa + vy * wc + wx, y = vx * wb + vy * wd + wy;
                 var r = vertices[8 * srcIdx + 2] * nodeR, g = vertices[8 * srcIdx + 3] * nodeG, b = vertices[8 * srcIdx + 4] * nodeB, a = vertices[8 * srcIdx + 5] * nodeA;
                 var color = a << 24 | b << 16 | g << 8 | r;
-                f32buffer[offset] = vertices[8 * srcIdx];
-                f32buffer[offset + 1] = vertices[8 * srcIdx + 1];
-                f32buffer[offset + 2] = this._node.vertexZ;
+                f32buffer[offset] = x;
+                f32buffer[offset + 1] = y;
+                f32buffer[offset + 2] = z;
                 ui32buffer[offset + 3] = color;
                 f32buffer[offset + 4] = vertices[8 * srcIdx + 6];
                 f32buffer[offset + 5] = vertices[8 * srcIdx + 7];
@@ -63072,16 +62205,19 @@
             }
         };
         proto._uploadMeshAttachmentData = function(attachment, slot, premultipliedAlpha, f32buffer, ui32buffer, vertexDataOffset) {
+            var wt = this._worldTransform, wa = wt.a, wb = wt.b, wc = wt.c, wd = wt.d, wx = wt.tx, wy = wt.ty, z = this._node.vertexZ;
             var vertices = attachment.updateWorldVertices(slot, premultipliedAlpha);
             var offset = vertexDataOffset;
             var nodeColor = this._displayedColor;
             var nodeR = nodeColor.r, nodeG = nodeColor.g, nodeB = nodeColor.b, nodeA = this._displayedOpacity;
             for (var i = 0, n = vertices.length; i < n; i += 8) {
+                var vx = vertices[i], vy = vertices[i + 1];
+                var x = vx * wa + vy * wc + wx, y = vx * wb + vy * wd + wy;
                 var r = vertices[i + 2] * nodeR, g = vertices[i + 3] * nodeG, b = vertices[i + 4] * nodeB, a = vertices[i + 5] * nodeA;
                 var color = a << 24 | b << 16 | g << 8 | r;
-                f32buffer[offset] = vertices[i];
-                f32buffer[offset + 1] = vertices[i + 1];
-                f32buffer[offset + 2] = this._node.vertexZ;
+                f32buffer[offset] = x;
+                f32buffer[offset + 1] = y;
+                f32buffer[offset + 2] = z;
                 ui32buffer[offset + 3] = color;
                 f32buffer[offset + 4] = vertices[i + 6];
                 f32buffer[offset + 5] = vertices[i + 7];
@@ -63089,7 +62225,7 @@
             }
         };
     }), {} ],
-    305: [ (function(require, module, exports) {
+    306: [ (function(require, module, exports) {
         var DefaultSkinsEnum = cc.Enum({
             default: -1
         });
@@ -63153,7 +62289,7 @@
                         this.defaultAnimation = "";
                         this._refresh();
                     },
-                    tooltip: "i18n:COMPONENT.skeleton.skeleton_data"
+                    tooltip: false
                 },
                 defaultSkin: {
                     default: "",
@@ -63204,7 +62340,7 @@
                     type: DefaultSkinsEnum,
                     visible: true,
                     displayName: "Default Skin",
-                    tooltip: "i18n:COMPONENT.skeleton.default_skin"
+                    tooltip: false
                 },
                 _animationIndex: {
                     get: function() {
@@ -63236,11 +62372,11 @@
                     type: DefaultAnimsEnum,
                     visible: true,
                     displayName: "Animation",
-                    tooltip: "i18n:COMPONENT.skeleton.animation"
+                    tooltip: false
                 },
                 loop: {
                     default: true,
-                    tooltip: "i18n:COMPONENT.skeleton.loop"
+                    tooltip: false
                 },
                 _premultipliedAlpha: true,
                 premultipliedAlpha: {
@@ -63251,14 +62387,14 @@
                         this._premultipliedAlpha = value;
                         this._sgNode && this._sgNode.setPremultipliedAlpha(value);
                     },
-                    tooltip: "i18n:COMPONENT.skeleton.premultipliedAlpha"
+                    tooltip: false
                 },
                 timeScale: {
                     default: 1,
                     notify: function() {
                         this._sgNode && this._sgNode.setTimeScale(this.timeScale);
                     },
-                    tooltip: "i18n:COMPONENT.skeleton.time_scale"
+                    tooltip: false
                 },
                 debugSlots: {
                     default: false,
@@ -63266,7 +62402,7 @@
                         this._sgNode && this._sgNode.setDebugSlotsEnabled(this.debugSlots);
                     },
                     editorOnly: true,
-                    tooltip: "i18n:COMPONENT.skeleton.debug_slots"
+                    tooltip: false
                 },
                 debugBones: {
                     default: false,
@@ -63274,13 +62410,11 @@
                         this._sgNode && this._sgNode.setDebugBonesEnabled(this.debugBones);
                     },
                     editorOnly: true,
-                    tooltip: "i18n:COMPONENT.skeleton.debug_bones"
+                    tooltip: false
                 }
             },
             __preload: function() {
-                var Flags = cc.Object.Flags;
-                this._objFlags &= Flags.PersistentMask;
-                this._objFlags |= Flags.IsAnchorLocked | Flags.IsSizeLocked;
+                var Flags;
                 this.node.setContentSize(0, 0);
                 this._refresh();
             },
@@ -63390,7 +62524,7 @@
             },
             addAnimation: function(trackIndex, name, loop, delay) {
                 if (this._sgNode) {
-                    return this._sgNode.addAnimation(trackIndex, name, loop, delay);
+                    return this._sgNode.addAnimation(trackIndex, name, loop, delay || 0);
                 }
                 return null;
             },
@@ -63479,7 +62613,7 @@
             }
         });
     }), {} ],
-    306: [ (function(require, module, exports) {
+    307: [ (function(require, module, exports) {
         var TextureLoader = cc.Class({
             ctor: function() {
                 this.asset = arguments[0];
@@ -63591,7 +62725,7 @@
         });
         sp.SkeletonData = module.exports = SkeletonData;
     }), {} ],
-    307: [ (function(require, module, exports) {
+    308: [ (function(require, module, exports) {
         sp = {};
         sp.VERTEX_INDEX = {
             X1: 0,
@@ -63626,16 +62760,16 @@
         require("./SkeletonData");
         require("./Skeleton");
     }), {
-        "./SGSkeleton": 300,
-        "./SGSkeletonAnimation": 301,
-        "./SGSkeletonCanvasRenderCmd": 302,
-        "./SGSkeletonTexture": 303,
-        "./SGSkeletonWebGLRenderCmd": 304,
-        "./Skeleton": 305,
-        "./SkeletonData": 306,
-        "./lib/spine": 308
+        "./SGSkeleton": 301,
+        "./SGSkeletonAnimation": 302,
+        "./SGSkeletonCanvasRenderCmd": 303,
+        "./SGSkeletonTexture": 304,
+        "./SGSkeletonWebGLRenderCmd": 305,
+        "./Skeleton": 306,
+        "./SkeletonData": 307,
+        "./lib/spine": 309
     } ],
-    308: [ (function(require, module, exports) {
+    309: [ (function(require, module, exports) {
         var __extends = this && this.__extends || function(d, b) {
             for (var p in b) {
                 b.hasOwnProperty(p) && (d[p] = b[p]);
@@ -64148,24 +63282,22 @@
                         var lastVertices = frameVertices[frames.length - 1];
                         if (1 == alpha) {
                             spine.Utils.arrayCopy(lastVertices, 0, vertices, 0, vertexCount);
-                        } else {
-                            if (setupPose) {
-                                var vertexAttachment = slotAttachment;
-                                if (null == vertexAttachment.bones) {
-                                    var setupVertices = vertexAttachment.vertices;
-                                    for (var i = 0; i < vertexCount; i++) {
-                                        var setup = setupVertices[i];
-                                        vertices[i] = setup + (lastVertices[i] - setup) * alpha;
-                                    }
-                                } else {
-                                    for (var i = 0; i < vertexCount; i++) {
-                                        vertices[i] = lastVertices[i] * alpha;
-                                    }
+                        } else if (setupPose) {
+                            var vertexAttachment = slotAttachment;
+                            if (null == vertexAttachment.bones) {
+                                var setupVertices = vertexAttachment.vertices;
+                                for (var i = 0; i < vertexCount; i++) {
+                                    var setup = setupVertices[i];
+                                    vertices[i] = setup + (lastVertices[i] - setup) * alpha;
                                 }
                             } else {
                                 for (var i = 0; i < vertexCount; i++) {
-                                    vertices[i] += (lastVertices[i] - vertices[i]) * alpha;
+                                    vertices[i] = lastVertices[i] * alpha;
                                 }
+                            }
+                        } else {
+                            for (var i = 0; i < vertexCount; i++) {
+                                vertices[i] += (lastVertices[i] - vertices[i]) * alpha;
                             }
                         }
                         return;
@@ -64180,26 +63312,24 @@
                             var prev = prevVertices[i];
                             vertices[i] = prev + (nextVertices[i] - prev) * percent;
                         }
-                    } else {
-                        if (setupPose) {
-                            var vertexAttachment = slotAttachment;
-                            if (null == vertexAttachment.bones) {
-                                var setupVertices = vertexAttachment.vertices;
-                                for (var i = 0; i < vertexCount; i++) {
-                                    var prev = prevVertices[i], setup = setupVertices[i];
-                                    vertices[i] = setup + (prev + (nextVertices[i] - prev) * percent - setup) * alpha;
-                                }
-                            } else {
-                                for (var i = 0; i < vertexCount; i++) {
-                                    var prev = prevVertices[i];
-                                    vertices[i] = (prev + (nextVertices[i] - prev) * percent) * alpha;
-                                }
+                    } else if (setupPose) {
+                        var vertexAttachment = slotAttachment;
+                        if (null == vertexAttachment.bones) {
+                            var setupVertices = vertexAttachment.vertices;
+                            for (var i = 0; i < vertexCount; i++) {
+                                var prev = prevVertices[i], setup = setupVertices[i];
+                                vertices[i] = setup + (prev + (nextVertices[i] - prev) * percent - setup) * alpha;
                             }
                         } else {
                             for (var i = 0; i < vertexCount; i++) {
                                 var prev = prevVertices[i];
-                                vertices[i] += (prev + (nextVertices[i] - prev) * percent - vertices[i]) * alpha;
+                                vertices[i] = (prev + (nextVertices[i] - prev) * percent) * alpha;
                             }
+                        }
+                    } else {
+                        for (var i = 0; i < vertexCount; i++) {
+                            var prev = prevVertices[i];
+                            vertices[i] += (prev + (nextVertices[i] - prev) * percent - vertices[i]) * alpha;
                         }
                     }
                 };
@@ -64230,10 +63360,8 @@
                     if (lastTime > time) {
                         this.apply(skeleton, lastTime, Number.MAX_VALUE, firedEvents, alpha, setupPose, mixingOut);
                         lastTime = -1;
-                    } else {
-                        if (lastTime >= frames[frameCount - 1]) {
-                            return;
-                        }
+                    } else if (lastTime >= frames[frameCount - 1]) {
+                        return;
                     }
                     if (time < frames[0]) {
                         return;
@@ -64606,13 +63734,11 @@
                                 }
                                 continue;
                             }
-                        } else {
-                            if (current.trackLast >= current.trackEnd && null == current.mixingFrom) {
-                                tracks[i] = null;
-                                this.queue.end(current);
-                                this.disposeNext(current);
-                                continue;
-                            }
+                        } else if (current.trackLast >= current.trackEnd && null == current.mixingFrom) {
+                            tracks[i] = null;
+                            this.queue.end(current);
+                            this.disposeNext(current);
+                            continue;
                         }
                         this.updateMixingFrom(current, delta);
                         current.trackTime += currentDelta;
@@ -64852,7 +63978,7 @@
                     var interrupt = true;
                     var current = this.expandToIndex(trackIndex);
                     if (null != current) {
-                        if (current.nextTrackLast == -1) {
+                        if (-1 == current.nextTrackLast) {
                             this.tracks[trackIndex] = current.mixingFrom;
                             this.queue.interrupt(current);
                             this.queue.end(current);
@@ -65150,7 +64276,7 @@
                             break;
 
                           case EventType.event:
-                            var event_3 = objects[i++ + 2];
+                            var event_3 = objects[2 + i++];
                             null != entry.listener && entry.listener.event && entry.listener.event(entry, event_3);
                             for (var ii = 0; ii < listeners.length; ii++) {
                                 listeners[ii].event && listeners[ii].event(entry, event_3);
@@ -67419,7 +66545,7 @@
                         throw new Error("boundingBox cannot be null.");
                     }
                     var index = this.boundingBoxes.indexOf(boundingBox);
-                    return index == -1 ? null : this.polygons[index];
+                    return -1 == index ? null : this.polygons[index];
                 };
                 SkeletonBounds.prototype.getWidth = function() {
                     return this.maxX - this.minX;
@@ -67742,7 +66868,7 @@
                             var skin = new spine.Skin(skinName);
                             for (var slotName in skinMap) {
                                 var slotIndex = skeletonData.findSlotIndex(slotName);
-                                if (slotIndex == -1) {
+                                if (-1 == slotIndex) {
                                     throw new Error("Slot not found: " + slotName);
                                 }
                                 var slotMap = skinMap[slotName];
@@ -67901,7 +67027,7 @@
                         for (var slotName in map.slots) {
                             var slotMap = map.slots[slotName];
                             var slotIndex = skeletonData.findSlotIndex(slotName);
-                            if (slotIndex == -1) {
+                            if (-1 == slotIndex) {
                                 throw new Error("Slot not found: " + slotName);
                             }
                             for (var timelineName in slotMap) {
@@ -67941,7 +67067,7 @@
                         for (var boneName in map.bones) {
                             var boneMap = map.bones[boneName];
                             var boneIndex = skeletonData.findBoneIndex(boneName);
-                            if (boneIndex == -1) {
+                            if (-1 == boneIndex) {
                                 throw new Error("Bone not found: " + boneName);
                             }
                             for (var timelineName in boneMap) {
@@ -67966,13 +67092,11 @@
                                     var timelineScale = 1;
                                     if ("scale" === timelineName) {
                                         timeline = new spine.ScaleTimeline(timelineMap.length);
+                                    } else if ("shear" === timelineName) {
+                                        timeline = new spine.ShearTimeline(timelineMap.length);
                                     } else {
-                                        if ("shear" === timelineName) {
-                                            timeline = new spine.ShearTimeline(timelineMap.length);
-                                        } else {
-                                            timeline = new spine.TranslateTimeline(timelineMap.length);
-                                            timelineScale = scale;
-                                        }
+                                        timeline = new spine.TranslateTimeline(timelineMap.length);
+                                        timelineScale = scale;
                                     }
                                     timeline.boneIndex = boneIndex;
                                     var frameIndex = 0;
@@ -68027,7 +67151,7 @@
                         for (var constraintName in map.paths) {
                             var constraintMap = map.paths[constraintName];
                             var index = skeletonData.findPathConstraintIndex(constraintName);
-                            if (index == -1) {
+                            if (-1 == index) {
                                 throw new Error("Path constraint not found: " + constraintName);
                             }
                             var data = skeletonData.pathConstraints[index];
@@ -68053,20 +67177,18 @@
                                     }
                                     timelines.push(timeline);
                                     duration = Math.max(duration, timeline.frames[(timeline.getFrameCount() - 1) * spine.PathConstraintPositionTimeline.ENTRIES]);
-                                } else {
-                                    if ("mix" === timelineName) {
-                                        var timeline = new spine.PathConstraintMixTimeline(timelineMap.length);
-                                        timeline.pathConstraintIndex = index;
-                                        var frameIndex = 0;
-                                        for (var i = 0; i < timelineMap.length; i++) {
-                                            var valueMap = timelineMap[i];
-                                            timeline.setFrame(frameIndex, valueMap.time, this.getValue(valueMap, "rotateMix", 1), this.getValue(valueMap, "translateMix", 1));
-                                            this.readCurve(valueMap, timeline, frameIndex);
-                                            frameIndex++;
-                                        }
-                                        timelines.push(timeline);
-                                        duration = Math.max(duration, timeline.frames[(timeline.getFrameCount() - 1) * spine.PathConstraintMixTimeline.ENTRIES]);
+                                } else if ("mix" === timelineName) {
+                                    var timeline = new spine.PathConstraintMixTimeline(timelineMap.length);
+                                    timeline.pathConstraintIndex = index;
+                                    var frameIndex = 0;
+                                    for (var i = 0; i < timelineMap.length; i++) {
+                                        var valueMap = timelineMap[i];
+                                        timeline.setFrame(frameIndex, valueMap.time, this.getValue(valueMap, "rotateMix", 1), this.getValue(valueMap, "translateMix", 1));
+                                        this.readCurve(valueMap, timeline, frameIndex);
+                                        frameIndex++;
                                     }
+                                    timelines.push(timeline);
+                                    duration = Math.max(duration, timeline.frames[(timeline.getFrameCount() - 1) * spine.PathConstraintMixTimeline.ENTRIES]);
                                 }
                             }
                         }
@@ -68081,7 +67203,7 @@
                             for (var slotName in deformMap) {
                                 var slotMap = deformMap[slotName];
                                 var slotIndex = skeletonData.findSlotIndex(slotName);
-                                if (slotIndex == -1) {
+                                if (-1 == slotIndex) {
                                     throw new Error("Slot not found: " + slotMap.name);
                                 }
                                 for (var timelineName in slotMap) {
@@ -68145,7 +67267,7 @@
                                 for (var i = 0; i < offsets.length; i++) {
                                     var offsetMap = offsets[i];
                                     var slotIndex = skeletonData.findSlotIndex(offsetMap.slot);
-                                    if (slotIndex == -1) {
+                                    if (-1 == slotIndex) {
                                         throw new Error("Slot not found: " + offsetMap.slot);
                                     }
                                     while (originalIndex != slotIndex) {
@@ -68157,7 +67279,7 @@
                                     unchanged[unchangedIndex++] = originalIndex++;
                                 }
                                 for (var i = slotCount - 1; i >= 0; i--) {
-                                    drawOrder[i] == -1 && (drawOrder[i] = unchanged[--unchangedIndex]);
+                                    -1 == drawOrder[i] && (drawOrder[i] = unchanged[--unchangedIndex]);
                                 }
                             }
                             timeline.setFrame(frameIndex++, drawOrderMap.time, drawOrder);
@@ -68194,11 +67316,9 @@
                     }
                     if ("stepped" === map.curve) {
                         timeline.setStepped(frameIndex);
-                    } else {
-                        if ("[object Array]" === Object.prototype.toString.call(map.curve)) {
-                            var curve = map.curve;
-                            timeline.setCurve(frameIndex, curve[0], curve[1], curve[2], curve[3]);
-                        }
+                    } else if ("[object Array]" === Object.prototype.toString.call(map.curve)) {
+                        var curve = map.curve;
+                        timeline.setCurve(frameIndex, curve[0], curve[1], curve[2], curve[3]);
                     }
                 };
                 SkeletonJson.prototype.getValue = function(map, prop, defaultValue) {
@@ -68513,62 +67633,60 @@
                         line = line.trim();
                         if (0 == line.length) {
                             page = null;
-                        } else {
-                            if (page) {
-                                var region = new TextureAtlasRegion();
-                                region.name = line;
-                                region.page = page;
-                                region.rotate = "true" == reader.readValue();
-                                reader.readTuple(tuple);
-                                var x = parseInt(tuple[0]);
-                                var y = parseInt(tuple[1]);
-                                reader.readTuple(tuple);
-                                var width = parseInt(tuple[0]);
-                                var height = parseInt(tuple[1]);
-                                region.u = x / page.width;
-                                region.v = y / page.height;
-                                if (region.rotate) {
-                                    region.u2 = (x + height) / page.width;
-                                    region.v2 = (y + width) / page.height;
-                                } else {
-                                    region.u2 = (x + width) / page.width;
-                                    region.v2 = (y + height) / page.height;
-                                }
-                                region.x = x;
-                                region.y = y;
-                                region.width = Math.abs(width);
-                                region.height = Math.abs(height);
-                                4 == reader.readTuple(tuple) && 4 == reader.readTuple(tuple) && reader.readTuple(tuple);
-                                region.originalWidth = parseInt(tuple[0]);
-                                region.originalHeight = parseInt(tuple[1]);
-                                reader.readTuple(tuple);
-                                region.offsetX = parseInt(tuple[0]);
-                                region.offsetY = parseInt(tuple[1]);
-                                region.index = parseInt(reader.readValue());
-                                region.texture = page.texture;
-                                this.regions.push(region);
+                        } else if (page) {
+                            var region = new TextureAtlasRegion();
+                            region.name = line;
+                            region.page = page;
+                            region.rotate = "true" == reader.readValue();
+                            reader.readTuple(tuple);
+                            var x = parseInt(tuple[0]);
+                            var y = parseInt(tuple[1]);
+                            reader.readTuple(tuple);
+                            var width = parseInt(tuple[0]);
+                            var height = parseInt(tuple[1]);
+                            region.u = x / page.width;
+                            region.v = y / page.height;
+                            if (region.rotate) {
+                                region.u2 = (x + height) / page.width;
+                                region.v2 = (y + width) / page.height;
                             } else {
-                                page = new TextureAtlasPage();
-                                page.name = line;
-                                if (2 == reader.readTuple(tuple)) {
-                                    page.width = parseInt(tuple[0]);
-                                    page.height = parseInt(tuple[1]);
-                                    reader.readTuple(tuple);
-                                }
-                                reader.readTuple(tuple);
-                                page.minFilter = spine.Texture.filterFromString(tuple[0]);
-                                page.magFilter = spine.Texture.filterFromString(tuple[1]);
-                                var direction = reader.readValue();
-                                page.uWrap = spine.TextureWrap.ClampToEdge;
-                                page.vWrap = spine.TextureWrap.ClampToEdge;
-                                "x" == direction ? page.uWrap = spine.TextureWrap.Repeat : "y" == direction ? page.vWrap = spine.TextureWrap.Repeat : "xy" == direction && (page.uWrap = page.vWrap = spine.TextureWrap.Repeat);
-                                page.texture = textureLoader(line);
-                                page.texture.setFilters(page.minFilter, page.magFilter);
-                                page.texture.setWraps(page.uWrap, page.vWrap);
-                                page.width = page.texture.getImage().width;
-                                page.height = page.texture.getImage().height;
-                                this.pages.push(page);
+                                region.u2 = (x + width) / page.width;
+                                region.v2 = (y + height) / page.height;
                             }
+                            region.x = x;
+                            region.y = y;
+                            region.width = Math.abs(width);
+                            region.height = Math.abs(height);
+                            4 == reader.readTuple(tuple) && 4 == reader.readTuple(tuple) && reader.readTuple(tuple);
+                            region.originalWidth = parseInt(tuple[0]);
+                            region.originalHeight = parseInt(tuple[1]);
+                            reader.readTuple(tuple);
+                            region.offsetX = parseInt(tuple[0]);
+                            region.offsetY = parseInt(tuple[1]);
+                            region.index = parseInt(reader.readValue());
+                            region.texture = page.texture;
+                            this.regions.push(region);
+                        } else {
+                            page = new TextureAtlasPage();
+                            page.name = line;
+                            if (2 == reader.readTuple(tuple)) {
+                                page.width = parseInt(tuple[0]);
+                                page.height = parseInt(tuple[1]);
+                                reader.readTuple(tuple);
+                            }
+                            reader.readTuple(tuple);
+                            page.minFilter = spine.Texture.filterFromString(tuple[0]);
+                            page.magFilter = spine.Texture.filterFromString(tuple[1]);
+                            var direction = reader.readValue();
+                            page.uWrap = spine.TextureWrap.ClampToEdge;
+                            page.vWrap = spine.TextureWrap.ClampToEdge;
+                            "x" == direction ? page.uWrap = spine.TextureWrap.Repeat : "y" == direction ? page.vWrap = spine.TextureWrap.Repeat : "xy" == direction && (page.uWrap = page.vWrap = spine.TextureWrap.Repeat);
+                            page.texture = textureLoader(line);
+                            page.texture.setFilters(page.minFilter, page.magFilter);
+                            page.texture.setWraps(page.uWrap, page.vWrap);
+                            page.width = page.texture.getImage().width;
+                            page.height = page.texture.getImage().height;
+                            this.pages.push(page);
                         }
                     }
                 };
@@ -68602,7 +67720,7 @@
                 TextureAtlasReader.prototype.readValue = function() {
                     var line = this.readLine();
                     var colon = line.indexOf(":");
-                    if (colon == -1) {
+                    if (-1 == colon) {
                         throw new Error("Invalid line: " + line);
                     }
                     return line.substring(colon + 1).trim();
@@ -68610,13 +67728,13 @@
                 TextureAtlasReader.prototype.readTuple = function(tuple) {
                     var line = this.readLine();
                     var colon = line.indexOf(":");
-                    if (colon == -1) {
+                    if (-1 == colon) {
                         throw new Error("Invalid line: " + line);
                     }
                     var i = 0, lastMatch = colon + 1;
                     for (;i < 3; i++) {
                         var comma = line.indexOf(",", lastMatch);
-                        if (comma == -1) {
+                        if (-1 == comma) {
                             break;
                         }
                         tuple[i] = line.substr(lastMatch, comma - lastMatch).trim();
@@ -69020,7 +68138,7 @@
         })(spine || (spine = {}));
         module.exports = spine;
     }), {} ],
-    309: [ (function(require, module, exports) {
+    310: [ (function(require, module, exports) {
         (function() {
             "use strict";
             Function.prototype._extend = function(parent) {
@@ -69945,7 +69063,7 @@
                         return false;
                     }
                     output.fraction = t;
-                    numerator > 0 ? output.normal = b2Mul_r_v2(xf.q, normal).Negate() : output.normal = b2Mul_r_v2(xf.q, normal);
+                    output.normal = numerator > 0 ? b2Mul_r_v2(xf.q, normal).Negate() : b2Mul_r_v2(xf.q, normal);
                     return true;
                 },
                 ComputeAABB: function(aabb, xf, childIndex) {
@@ -70292,13 +69410,11 @@
                             if (numerator < 0) {
                                 return false;
                             }
+                        } else if (denominator < 0 && numerator < lower * denominator) {
+                            lower = numerator / denominator;
+                            index = i;
                         } else {
-                            if (denominator < 0 && numerator < lower * denominator) {
-                                lower = numerator / denominator;
-                                index = i;
-                            } else {
-                                denominator > 0 && numerator < upper * denominator && (upper = numerator / denominator);
-                            }
+                            denominator > 0 && numerator < upper * denominator && (upper = numerator / denominator);
                         }
                         if (upper < lower) {
                             return false;
@@ -71364,40 +70480,38 @@
                     manifold.points[0].localPoint.x = circleB.m_p.x;
                     manifold.points[0].localPoint.y = circleB.m_p.y;
                     manifold.points[0].id.Reset();
-                } else {
-                    if (u2 <= 0) {
-                        if (b2DistanceSquared(cLocal, v2) > radius * radius) {
-                            return;
-                        }
-                        manifold.pointCount = 1;
-                        manifold.type = b2Manifold.e_faceA;
-                        manifold.localNormal.x = cLocal.x - v2.x;
-                        manifold.localNormal.y = cLocal.y - v2.y;
-                        manifold.localNormal.Normalize();
-                        manifold.localPoint.x = v2.x;
-                        manifold.localPoint.y = v2.y;
-                        manifold.points[0] = new b2ManifoldPoint();
-                        manifold.points[0].localPoint.x = circleB.m_p.x;
-                        manifold.points[0].localPoint.y = circleB.m_p.y;
-                        manifold.points[0].id.Reset();
-                    } else {
-                        var faceCenterx = .5 * (v1.x + v2.x);
-                        var faceCentery = .5 * (v1.y + v2.y);
-                        var separation = (cLocal.x - faceCenterx) * normals[vertIndex1].x + (cLocal.y - faceCentery) * normals[vertIndex1].y;
-                        if (separation > radius) {
-                            return;
-                        }
-                        manifold.pointCount = 1;
-                        manifold.type = b2Manifold.e_faceA;
-                        manifold.localNormal.x = normals[vertIndex1].x;
-                        manifold.localNormal.y = normals[vertIndex1].y;
-                        manifold.localPoint.x = faceCenterx;
-                        manifold.localPoint.y = faceCentery;
-                        manifold.points[0] = new b2ManifoldPoint();
-                        manifold.points[0].localPoint.x = circleB.m_p.x;
-                        manifold.points[0].localPoint.y = circleB.m_p.y;
-                        manifold.points[0].id.Reset();
+                } else if (u2 <= 0) {
+                    if (b2DistanceSquared(cLocal, v2) > radius * radius) {
+                        return;
                     }
+                    manifold.pointCount = 1;
+                    manifold.type = b2Manifold.e_faceA;
+                    manifold.localNormal.x = cLocal.x - v2.x;
+                    manifold.localNormal.y = cLocal.y - v2.y;
+                    manifold.localNormal.Normalize();
+                    manifold.localPoint.x = v2.x;
+                    manifold.localPoint.y = v2.y;
+                    manifold.points[0] = new b2ManifoldPoint();
+                    manifold.points[0].localPoint.x = circleB.m_p.x;
+                    manifold.points[0].localPoint.y = circleB.m_p.y;
+                    manifold.points[0].id.Reset();
+                } else {
+                    var faceCenterx = .5 * (v1.x + v2.x);
+                    var faceCentery = .5 * (v1.y + v2.y);
+                    var separation = (cLocal.x - faceCenterx) * normals[vertIndex1].x + (cLocal.y - faceCentery) * normals[vertIndex1].y;
+                    if (separation > radius) {
+                        return;
+                    }
+                    manifold.pointCount = 1;
+                    manifold.type = b2Manifold.e_faceA;
+                    manifold.localNormal.x = normals[vertIndex1].x;
+                    manifold.localNormal.y = normals[vertIndex1].y;
+                    manifold.localPoint.x = faceCenterx;
+                    manifold.localPoint.y = faceCentery;
+                    manifold.points[0] = new b2ManifoldPoint();
+                    manifold.points[0].localPoint.x = circleB.m_p.x;
+                    manifold.points[0].localPoint.y = circleB.m_p.y;
+                    manifold.points[0].id.Reset();
                 }
             }
             function b2FindMaxSeparation(edgeIndex, poly1, xf1, poly2, xf2) {
@@ -71757,154 +70871,146 @@
                                 this.m_upperLimit.x = -this.m_normal1.x;
                                 this.m_upperLimit.y = -this.m_normal1.y;
                             }
-                        } else {
-                            if (convex1) {
-                                this.m_front = offset0 >= 0 || offset1 >= 0 && offset2 >= 0;
-                                if (this.m_front) {
-                                    this.m_normal.x = this.m_normal1.x;
-                                    this.m_normal.y = this.m_normal1.y;
-                                    this.m_lowerLimit.x = this.m_normal0.x;
-                                    this.m_lowerLimit.y = this.m_normal0.y;
-                                    this.m_upperLimit.x = this.m_normal1.x;
-                                    this.m_upperLimit.y = this.m_normal1.y;
-                                } else {
-                                    this.m_normal.x = -this.m_normal1.x;
-                                    this.m_normal.y = -this.m_normal1.y;
-                                    this.m_lowerLimit.x = -this.m_normal2.x;
-                                    this.m_lowerLimit.y = -this.m_normal2.y;
-                                    this.m_upperLimit.x = -this.m_normal1.x;
-                                    this.m_upperLimit.y = -this.m_normal1.y;
-                                }
+                        } else if (convex1) {
+                            this.m_front = offset0 >= 0 || offset1 >= 0 && offset2 >= 0;
+                            if (this.m_front) {
+                                this.m_normal.x = this.m_normal1.x;
+                                this.m_normal.y = this.m_normal1.y;
+                                this.m_lowerLimit.x = this.m_normal0.x;
+                                this.m_lowerLimit.y = this.m_normal0.y;
+                                this.m_upperLimit.x = this.m_normal1.x;
+                                this.m_upperLimit.y = this.m_normal1.y;
                             } else {
-                                if (convex2) {
-                                    this.m_front = offset2 >= 0 || offset0 >= 0 && offset1 >= 0;
-                                    if (this.m_front) {
-                                        this.m_normal.x = this.m_normal1.x;
-                                        this.m_normal.y = this.m_normal1.y;
-                                        this.m_lowerLimit.x = this.m_normal1.x;
-                                        this.m_lowerLimit.y = this.m_normal1.y;
-                                        this.m_upperLimit.x = this.m_normal2.x;
-                                        this.m_upperLimit.y = this.m_normal2.y;
-                                    } else {
-                                        this.m_normal.x = -this.m_normal1.x;
-                                        this.m_normal.y = -this.m_normal1.y;
-                                        this.m_lowerLimit.x = -this.m_normal1.x;
-                                        this.m_lowerLimit.y = -this.m_normal1.y;
-                                        this.m_upperLimit.x = -this.m_normal0.x;
-                                        this.m_upperLimit.y = -this.m_normal0.y;
-                                    }
-                                } else {
-                                    this.m_front = offset0 >= 0 && offset1 >= 0 && offset2 >= 0;
-                                    if (this.m_front) {
-                                        this.m_normal.x = this.m_normal1.x;
-                                        this.m_normal.y = this.m_normal1.y;
-                                        this.m_lowerLimit.x = this.m_normal1.x;
-                                        this.m_lowerLimit.y = this.m_normal1.y;
-                                        this.m_upperLimit.x = this.m_normal1.x;
-                                        this.m_upperLimit.y = this.m_normal1.y;
-                                    } else {
-                                        this.m_normal.x = -this.m_normal1.x;
-                                        this.m_normal.y = -this.m_normal1.y;
-                                        this.m_lowerLimit.x = -this.m_normal2.x;
-                                        this.m_lowerLimit.y = -this.m_normal2.y;
-                                        this.m_upperLimit.x = -this.m_normal0.x;
-                                        this.m_upperLimit.y = -this.m_normal0.y;
-                                    }
-                                }
+                                this.m_normal.x = -this.m_normal1.x;
+                                this.m_normal.y = -this.m_normal1.y;
+                                this.m_lowerLimit.x = -this.m_normal2.x;
+                                this.m_lowerLimit.y = -this.m_normal2.y;
+                                this.m_upperLimit.x = -this.m_normal1.x;
+                                this.m_upperLimit.y = -this.m_normal1.y;
+                            }
+                        } else if (convex2) {
+                            this.m_front = offset2 >= 0 || offset0 >= 0 && offset1 >= 0;
+                            if (this.m_front) {
+                                this.m_normal.x = this.m_normal1.x;
+                                this.m_normal.y = this.m_normal1.y;
+                                this.m_lowerLimit.x = this.m_normal1.x;
+                                this.m_lowerLimit.y = this.m_normal1.y;
+                                this.m_upperLimit.x = this.m_normal2.x;
+                                this.m_upperLimit.y = this.m_normal2.y;
+                            } else {
+                                this.m_normal.x = -this.m_normal1.x;
+                                this.m_normal.y = -this.m_normal1.y;
+                                this.m_lowerLimit.x = -this.m_normal1.x;
+                                this.m_lowerLimit.y = -this.m_normal1.y;
+                                this.m_upperLimit.x = -this.m_normal0.x;
+                                this.m_upperLimit.y = -this.m_normal0.y;
+                            }
+                        } else {
+                            this.m_front = offset0 >= 0 && offset1 >= 0 && offset2 >= 0;
+                            if (this.m_front) {
+                                this.m_normal.x = this.m_normal1.x;
+                                this.m_normal.y = this.m_normal1.y;
+                                this.m_lowerLimit.x = this.m_normal1.x;
+                                this.m_lowerLimit.y = this.m_normal1.y;
+                                this.m_upperLimit.x = this.m_normal1.x;
+                                this.m_upperLimit.y = this.m_normal1.y;
+                            } else {
+                                this.m_normal.x = -this.m_normal1.x;
+                                this.m_normal.y = -this.m_normal1.y;
+                                this.m_lowerLimit.x = -this.m_normal2.x;
+                                this.m_lowerLimit.y = -this.m_normal2.y;
+                                this.m_upperLimit.x = -this.m_normal0.x;
+                                this.m_upperLimit.y = -this.m_normal0.y;
+                            }
+                        }
+                    } else if (hasVertex0) {
+                        if (convex1) {
+                            this.m_front = offset0 >= 0 || offset1 >= 0;
+                            if (this.m_front) {
+                                this.m_normal.x = this.m_normal1.x;
+                                this.m_normal.y = this.m_normal1.y;
+                                this.m_lowerLimit.x = this.m_normal0.x;
+                                this.m_lowerLimit.y = this.m_normal0.y;
+                                this.m_upperLimit.x = -this.m_normal1.x;
+                                this.m_upperLimit.y = -this.m_normal1.y;
+                            } else {
+                                this.m_normal.x = -this.m_normal1.x;
+                                this.m_normal.y = -this.m_normal1.y;
+                                this.m_lowerLimit.x = this.m_normal1.x;
+                                this.m_lowerLimit.y = this.m_normal1.y;
+                                this.m_upperLimit.x = -this.m_normal1.x;
+                                this.m_upperLimit.y = -this.m_normal1.y;
+                            }
+                        } else {
+                            this.m_front = offset0 >= 0 && offset1 >= 0;
+                            if (this.m_front) {
+                                this.m_normal.x = this.m_normal1.x;
+                                this.m_normal.y = this.m_normal1.y;
+                                this.m_lowerLimit.x = this.m_normal1.x;
+                                this.m_lowerLimit.y = this.m_normal1.y;
+                                this.m_upperLimit.x = -this.m_normal1.x;
+                                this.m_upperLimit.y = -this.m_normal1.y;
+                            } else {
+                                this.m_normal.x = -this.m_normal1.x;
+                                this.m_normal.y = -this.m_normal1.y;
+                                this.m_lowerLimit.x = this.m_normal1.x;
+                                this.m_lowerLimit.y = this.m_normal1.y;
+                                this.m_upperLimit.x = -this.m_normal0.x;
+                                this.m_upperLimit.y = -this.m_normal0.y;
+                            }
+                        }
+                    } else if (hasVertex3) {
+                        if (convex2) {
+                            this.m_front = offset1 >= 0 || offset2 >= 0;
+                            if (this.m_front) {
+                                this.m_normal.x = this.m_normal1.x;
+                                this.m_normal.y = this.m_normal1.y;
+                                this.m_lowerLimit.x = -this.m_normal1.x;
+                                this.m_lowerLimit.y = -this.m_normal1.y;
+                                this.m_upperLimit.x = this.m_normal2.x;
+                                this.m_upperLimit.y = this.m_normal2.y;
+                            } else {
+                                this.m_normal.x = -this.m_normal1.x;
+                                this.m_normal.y = -this.m_normal1.y;
+                                this.m_lowerLimit.x = -this.m_normal1.x;
+                                this.m_lowerLimit.y = -this.m_normal1.y;
+                                this.m_upperLimit.x = this.m_normal1.x;
+                                this.m_upperLimit.y = this.m_normal1.y;
+                            }
+                        } else {
+                            this.m_front = offset1 >= 0 && offset2 >= 0;
+                            if (this.m_front) {
+                                this.m_normal.x = this.m_normal1.x;
+                                this.m_normal.y = this.m_normal1.y;
+                                this.m_lowerLimit.x = -this.m_normal1.x;
+                                this.m_lowerLimit.y = -this.m_normal1.y;
+                                this.m_upperLimit.x = this.m_normal1.x;
+                                this.m_upperLimit.y = this.m_normal1.y;
+                            } else {
+                                this.m_normal.x = -this.m_normal1.x;
+                                this.m_normal.y = -this.m_normal1.y;
+                                this.m_lowerLimit.x = -this.m_normal2.x;
+                                this.m_lowerLimit.y = -this.m_normal2.y;
+                                this.m_upperLimit.x = this.m_normal1.x;
+                                this.m_upperLimit.y = this.m_normal1.y;
                             }
                         }
                     } else {
-                        if (hasVertex0) {
-                            if (convex1) {
-                                this.m_front = offset0 >= 0 || offset1 >= 0;
-                                if (this.m_front) {
-                                    this.m_normal.x = this.m_normal1.x;
-                                    this.m_normal.y = this.m_normal1.y;
-                                    this.m_lowerLimit.x = this.m_normal0.x;
-                                    this.m_lowerLimit.y = this.m_normal0.y;
-                                    this.m_upperLimit.x = -this.m_normal1.x;
-                                    this.m_upperLimit.y = -this.m_normal1.y;
-                                } else {
-                                    this.m_normal.x = -this.m_normal1.x;
-                                    this.m_normal.y = -this.m_normal1.y;
-                                    this.m_lowerLimit.x = this.m_normal1.x;
-                                    this.m_lowerLimit.y = this.m_normal1.y;
-                                    this.m_upperLimit.x = -this.m_normal1.x;
-                                    this.m_upperLimit.y = -this.m_normal1.y;
-                                }
-                            } else {
-                                this.m_front = offset0 >= 0 && offset1 >= 0;
-                                if (this.m_front) {
-                                    this.m_normal.x = this.m_normal1.x;
-                                    this.m_normal.y = this.m_normal1.y;
-                                    this.m_lowerLimit.x = this.m_normal1.x;
-                                    this.m_lowerLimit.y = this.m_normal1.y;
-                                    this.m_upperLimit.x = -this.m_normal1.x;
-                                    this.m_upperLimit.y = -this.m_normal1.y;
-                                } else {
-                                    this.m_normal.x = -this.m_normal1.x;
-                                    this.m_normal.y = -this.m_normal1.y;
-                                    this.m_lowerLimit.x = this.m_normal1.x;
-                                    this.m_lowerLimit.y = this.m_normal1.y;
-                                    this.m_upperLimit.x = -this.m_normal0.x;
-                                    this.m_upperLimit.y = -this.m_normal0.y;
-                                }
-                            }
+                        this.m_front = offset1 >= 0;
+                        if (this.m_front) {
+                            this.m_normal.x = this.m_normal1.x;
+                            this.m_normal.y = this.m_normal1.y;
+                            this.m_lowerLimit.x = -this.m_normal1.x;
+                            this.m_lowerLimit.y = -this.m_normal1.y;
+                            this.m_upperLimit.x = -this.m_normal1.x;
+                            this.m_upperLimit.y = -this.m_normal1.y;
                         } else {
-                            if (hasVertex3) {
-                                if (convex2) {
-                                    this.m_front = offset1 >= 0 || offset2 >= 0;
-                                    if (this.m_front) {
-                                        this.m_normal.x = this.m_normal1.x;
-                                        this.m_normal.y = this.m_normal1.y;
-                                        this.m_lowerLimit.x = -this.m_normal1.x;
-                                        this.m_lowerLimit.y = -this.m_normal1.y;
-                                        this.m_upperLimit.x = this.m_normal2.x;
-                                        this.m_upperLimit.y = this.m_normal2.y;
-                                    } else {
-                                        this.m_normal.x = -this.m_normal1.x;
-                                        this.m_normal.y = -this.m_normal1.y;
-                                        this.m_lowerLimit.x = -this.m_normal1.x;
-                                        this.m_lowerLimit.y = -this.m_normal1.y;
-                                        this.m_upperLimit.x = this.m_normal1.x;
-                                        this.m_upperLimit.y = this.m_normal1.y;
-                                    }
-                                } else {
-                                    this.m_front = offset1 >= 0 && offset2 >= 0;
-                                    if (this.m_front) {
-                                        this.m_normal.x = this.m_normal1.x;
-                                        this.m_normal.y = this.m_normal1.y;
-                                        this.m_lowerLimit.x = -this.m_normal1.x;
-                                        this.m_lowerLimit.y = -this.m_normal1.y;
-                                        this.m_upperLimit.x = this.m_normal1.x;
-                                        this.m_upperLimit.y = this.m_normal1.y;
-                                    } else {
-                                        this.m_normal.x = -this.m_normal1.x;
-                                        this.m_normal.y = -this.m_normal1.y;
-                                        this.m_lowerLimit.x = -this.m_normal2.x;
-                                        this.m_lowerLimit.y = -this.m_normal2.y;
-                                        this.m_upperLimit.x = this.m_normal1.x;
-                                        this.m_upperLimit.y = this.m_normal1.y;
-                                    }
-                                }
-                            } else {
-                                this.m_front = offset1 >= 0;
-                                if (this.m_front) {
-                                    this.m_normal.x = this.m_normal1.x;
-                                    this.m_normal.y = this.m_normal1.y;
-                                    this.m_lowerLimit.x = -this.m_normal1.x;
-                                    this.m_lowerLimit.y = -this.m_normal1.y;
-                                    this.m_upperLimit.x = -this.m_normal1.x;
-                                    this.m_upperLimit.y = -this.m_normal1.y;
-                                } else {
-                                    this.m_normal.x = -this.m_normal1.x;
-                                    this.m_normal.y = -this.m_normal1.y;
-                                    this.m_lowerLimit.x = this.m_normal1.x;
-                                    this.m_lowerLimit.y = this.m_normal1.y;
-                                    this.m_upperLimit.x = this.m_normal1.x;
-                                    this.m_upperLimit.y = this.m_normal1.y;
-                                }
-                            }
+                            this.m_normal.x = -this.m_normal1.x;
+                            this.m_normal.y = -this.m_normal1.y;
+                            this.m_lowerLimit.x = this.m_normal1.x;
+                            this.m_lowerLimit.y = this.m_normal1.y;
+                            this.m_upperLimit.x = this.m_normal1.x;
+                            this.m_upperLimit.y = this.m_normal1.y;
                         }
                     }
                     this.m_polygonB.count = polygonB.m_count;
@@ -72083,10 +71189,8 @@
                             if ((nx - this.m_upperLimit.x) * this.m_normal.x + (ny - this.m_upperLimit.y) * this.m_normal.y < -b2_angularSlop) {
                                 continue;
                             }
-                        } else {
-                            if ((nx - this.m_lowerLimit.x) * this.m_normal.x + (ny - this.m_lowerLimit.y) * this.m_normal.y < -b2_angularSlop) {
-                                continue;
-                            }
+                        } else if ((nx - this.m_lowerLimit.x) * this.m_normal.x + (ny - this.m_lowerLimit.y) * this.m_normal.y < -b2_angularSlop) {
+                            continue;
                         }
                         if (s > axis.separation) {
                             axis.type = b2EPAxis.e_edgeB;
@@ -74059,7 +73163,7 @@
                     this.p_step.dt = dt;
                     this.p_step.velocityIterations = velocityIterations;
                     this.p_step.positionIterations = positionIterations;
-                    dt > 0 ? this.p_step.inv_dt = 1 / dt : this.p_step.inv_dt = 0;
+                    this.p_step.inv_dt = dt > 0 ? 1 / dt : 0;
                     this.p_step.dtRatio = this.m_inv_dt0 * dt;
                     this.p_step.warmStarting = this.m_warmStarting;
                     profile_world_collide.start();
@@ -74410,11 +73514,9 @@
                                 if (bA.m_sweep.alpha0 < bB.m_sweep.alpha0) {
                                     alpha0 = bB.m_sweep.alpha0;
                                     bA.m_sweep.Advance(alpha0);
-                                } else {
-                                    if (bB.m_sweep.alpha0 < bA.m_sweep.alpha0) {
-                                        alpha0 = bA.m_sweep.alpha0;
-                                        bB.m_sweep.Advance(alpha0);
-                                    }
+                                } else if (bB.m_sweep.alpha0 < bA.m_sweep.alpha0) {
+                                    alpha0 = bA.m_sweep.alpha0;
+                                    bB.m_sweep.Advance(alpha0);
                                 }
                                 b2Assert(alpha0 < 1);
                                 var indexA = c.GetChildIndexA();
@@ -76288,19 +75390,15 @@
                         var jointAngle = aB - aA - this.m_referenceAngle;
                         if (b2Abs(this.m_upperAngle - this.m_lowerAngle) < 2 * b2_angularSlop) {
                             this.m_limitState = b2Joint.e_equalLimits;
+                        } else if (jointAngle <= this.m_lowerAngle) {
+                            this.m_limitState != b2Joint.e_atLowerLimit && (this.m_impulse.z = 0);
+                            this.m_limitState = b2Joint.e_atLowerLimit;
+                        } else if (jointAngle >= this.m_upperAngle) {
+                            this.m_limitState != b2Joint.e_atUpperLimit && (this.m_impulse.z = 0);
+                            this.m_limitState = b2Joint.e_atUpperLimit;
                         } else {
-                            if (jointAngle <= this.m_lowerAngle) {
-                                this.m_limitState != b2Joint.e_atLowerLimit && (this.m_impulse.z = 0);
-                                this.m_limitState = b2Joint.e_atLowerLimit;
-                            } else {
-                                if (jointAngle >= this.m_upperAngle) {
-                                    this.m_limitState != b2Joint.e_atUpperLimit && (this.m_impulse.z = 0);
-                                    this.m_limitState = b2Joint.e_atUpperLimit;
-                                } else {
-                                    this.m_limitState = b2Joint.e_inactiveLimit;
-                                    this.m_impulse.z = 0;
-                                }
-                            }
+                            this.m_limitState = b2Joint.e_inactiveLimit;
+                            this.m_impulse.z = 0;
                         }
                     } else {
                         this.m_limitState = b2Joint.e_inactiveLimit;
@@ -76347,37 +75445,33 @@
                         var impulse = this.m_mass.Solve33(Cdot).Negate();
                         if (this.m_limitState == b2Joint.e_equalLimits) {
                             this.m_impulse.Add(impulse);
-                        } else {
-                            if (this.m_limitState == b2Joint.e_atLowerLimit) {
-                                var newImpulse = this.m_impulse.z + impulse.z;
-                                if (newImpulse < 0) {
-                                    var rhs = b2Vec2.Add(Cdot1.Negate(), b2Vec2.Multiply(this.m_impulse.z, new b2Vec2(this.m_mass.ez.x, this.m_mass.ez.y)));
-                                    var reduced = this.m_mass.Solve22(rhs);
-                                    impulse.x = reduced.x;
-                                    impulse.y = reduced.y;
-                                    impulse.z = -this.m_impulse.z;
-                                    this.m_impulse.x += reduced.x;
-                                    this.m_impulse.y += reduced.y;
-                                    this.m_impulse.z = 0;
-                                } else {
-                                    this.m_impulse.Add(impulse);
-                                }
+                        } else if (this.m_limitState == b2Joint.e_atLowerLimit) {
+                            var newImpulse = this.m_impulse.z + impulse.z;
+                            if (newImpulse < 0) {
+                                var rhs = b2Vec2.Add(Cdot1.Negate(), b2Vec2.Multiply(this.m_impulse.z, new b2Vec2(this.m_mass.ez.x, this.m_mass.ez.y)));
+                                var reduced = this.m_mass.Solve22(rhs);
+                                impulse.x = reduced.x;
+                                impulse.y = reduced.y;
+                                impulse.z = -this.m_impulse.z;
+                                this.m_impulse.x += reduced.x;
+                                this.m_impulse.y += reduced.y;
+                                this.m_impulse.z = 0;
                             } else {
-                                if (this.m_limitState == b2Joint.e_atUpperLimit) {
-                                    var newImpulse = this.m_impulse.z + impulse.z;
-                                    if (newImpulse > 0) {
-                                        var rhs = b2Vec2.Add(Cdot1.Negate(), b2Vec2.Multiply(this.m_impulse.z, new b2Vec2(this.m_mass.ez.x, this.m_mass.ez.y)));
-                                        var reduced = this.m_mass.Solve22(rhs);
-                                        impulse.x = reduced.x;
-                                        impulse.y = reduced.y;
-                                        impulse.z = -this.m_impulse.z;
-                                        this.m_impulse.x += reduced.x;
-                                        this.m_impulse.y += reduced.y;
-                                        this.m_impulse.z = 0;
-                                    } else {
-                                        this.m_impulse.Add(impulse);
-                                    }
-                                }
+                                this.m_impulse.Add(impulse);
+                            }
+                        } else if (this.m_limitState == b2Joint.e_atUpperLimit) {
+                            var newImpulse = this.m_impulse.z + impulse.z;
+                            if (newImpulse > 0) {
+                                var rhs = b2Vec2.Add(Cdot1.Negate(), b2Vec2.Multiply(this.m_impulse.z, new b2Vec2(this.m_mass.ez.x, this.m_mass.ez.y)));
+                                var reduced = this.m_mass.Solve22(rhs);
+                                impulse.x = reduced.x;
+                                impulse.y = reduced.y;
+                                impulse.z = -this.m_impulse.z;
+                                this.m_impulse.x += reduced.x;
+                                this.m_impulse.y += reduced.y;
+                                this.m_impulse.z = 0;
+                            } else {
+                                this.m_impulse.Add(impulse);
                             }
                         }
                         var P = new b2Vec2(impulse.x, impulse.y);
@@ -76416,20 +75510,16 @@
                             var C = b2Clamp(angle - this.m_lowerAngle, -b2_maxAngularCorrection, b2_maxAngularCorrection);
                             limitImpulse = -this.m_motorMass * C;
                             angularError = b2Abs(C);
-                        } else {
-                            if (this.m_limitState == b2Joint.e_atLowerLimit) {
-                                var C = angle - this.m_lowerAngle;
-                                angularError = -C;
-                                C = b2Clamp(C + b2_angularSlop, -b2_maxAngularCorrection, 0);
-                                limitImpulse = -this.m_motorMass * C;
-                            } else {
-                                if (this.m_limitState == b2Joint.e_atUpperLimit) {
-                                    var C = angle - this.m_upperAngle;
-                                    angularError = C;
-                                    C = b2Clamp(C - b2_angularSlop, 0, b2_maxAngularCorrection);
-                                    limitImpulse = -this.m_motorMass * C;
-                                }
-                            }
+                        } else if (this.m_limitState == b2Joint.e_atLowerLimit) {
+                            var C = angle - this.m_lowerAngle;
+                            angularError = -C;
+                            C = b2Clamp(C + b2_angularSlop, -b2_maxAngularCorrection, 0);
+                            limitImpulse = -this.m_motorMass * C;
+                        } else if (this.m_limitState == b2Joint.e_atUpperLimit) {
+                            var C = angle - this.m_upperAngle;
+                            angularError = C;
+                            C = b2Clamp(C - b2_angularSlop, 0, b2_maxAngularCorrection);
+                            limitImpulse = -this.m_motorMass * C;
                         }
                         aA -= this.m_invIA * limitImpulse;
                         aB += this.m_invIB * limitImpulse;
@@ -77033,23 +76123,19 @@
                         var jointTranslation = b2Dot_v2_v2(this.m_axis, d);
                         if (b2Abs(this.m_upperTranslation - this.m_lowerTranslation) < 2 * b2_linearSlop) {
                             this.m_limitState = b2Joint.e_equalLimits;
-                        } else {
-                            if (jointTranslation <= this.m_lowerTranslation) {
-                                if (this.m_limitState != b2Joint.e_atLowerLimit) {
-                                    this.m_limitState = b2Joint.e_atLowerLimit;
-                                    this.m_impulse.z = 0;
-                                }
-                            } else {
-                                if (jointTranslation >= this.m_upperTranslation) {
-                                    if (this.m_limitState != b2Joint.e_atUpperLimit) {
-                                        this.m_limitState = b2Joint.e_atUpperLimit;
-                                        this.m_impulse.z = 0;
-                                    }
-                                } else {
-                                    this.m_limitState = b2Joint.e_inactiveLimit;
-                                    this.m_impulse.z = 0;
-                                }
+                        } else if (jointTranslation <= this.m_lowerTranslation) {
+                            if (this.m_limitState != b2Joint.e_atLowerLimit) {
+                                this.m_limitState = b2Joint.e_atLowerLimit;
+                                this.m_impulse.z = 0;
                             }
+                        } else if (jointTranslation >= this.m_upperTranslation) {
+                            if (this.m_limitState != b2Joint.e_atUpperLimit) {
+                                this.m_limitState = b2Joint.e_atUpperLimit;
+                                this.m_impulse.z = 0;
+                            }
+                        } else {
+                            this.m_limitState = b2Joint.e_inactiveLimit;
+                            this.m_impulse.z = 0;
                         }
                     } else {
                         this.m_limitState = b2Joint.e_inactiveLimit;
@@ -77168,18 +76254,14 @@
                             C2 = b2Clamp(translation, -b2_maxLinearCorrection, b2_maxLinearCorrection);
                             linearError = b2Max(linearError, b2Abs(translation));
                             active = true;
-                        } else {
-                            if (translation <= this.m_lowerTranslation) {
-                                C2 = b2Clamp(translation - this.m_lowerTranslation + b2_linearSlop, -b2_maxLinearCorrection, 0);
-                                linearError = b2Max(linearError, this.m_lowerTranslation - translation);
-                                active = true;
-                            } else {
-                                if (translation >= this.m_upperTranslation) {
-                                    C2 = b2Clamp(translation - this.m_upperTranslation - b2_linearSlop, 0, b2_maxLinearCorrection);
-                                    linearError = b2Max(linearError, translation - this.m_upperTranslation);
-                                    active = true;
-                                }
-                            }
+                        } else if (translation <= this.m_lowerTranslation) {
+                            C2 = b2Clamp(translation - this.m_lowerTranslation + b2_linearSlop, -b2_maxLinearCorrection, 0);
+                            linearError = b2Max(linearError, this.m_lowerTranslation - translation);
+                            active = true;
+                        } else if (translation >= this.m_upperTranslation) {
+                            C2 = b2Clamp(translation - this.m_upperTranslation - b2_linearSlop, 0, b2_maxLinearCorrection);
+                            linearError = b2Max(linearError, translation - this.m_upperTranslation);
+                            active = true;
                         }
                     }
                     if (active) {
@@ -77544,16 +76626,14 @@
                         this.m_bias = C * h * k * this.m_gamma;
                         invM += this.m_gamma;
                         this.m_mass.ez.z = 0 != invM ? 1 / invM : 0;
+                    } else if (0 == K.ez.z) {
+                        K.GetInverse22(this.m_mass);
+                        this.m_gamma = 0;
+                        this.m_bias = 0;
                     } else {
-                        if (0 == K.ez.z) {
-                            K.GetInverse22(this.m_mass);
-                            this.m_gamma = 0;
-                            this.m_bias = 0;
-                        } else {
-                            K.GetSymInverse33(this.m_mass);
-                            this.m_gamma = 0;
-                            this.m_bias = 0;
-                        }
+                        K.GetSymInverse33(this.m_mass);
+                        this.m_gamma = 0;
+                        this.m_bias = 0;
                     }
                     if (data.step.warmStarting) {
                         this.m_impulse.Multiply(data.step.dtRatio);
@@ -78824,7 +77904,7 @@
                     this.m_u.Assign(b2Vec2.Subtract(b2Vec2.Subtract(b2Vec2.Add(cB, this.m_rB), cA), this.m_rA));
                     this.m_length = this.m_u.Length();
                     var C = this.m_length - this.m_maxLength;
-                    C > 0 ? this.m_state = b2Joint.e_atUpperLimit : this.m_state = b2Joint.e_inactiveLimit;
+                    this.m_state = C > 0 ? b2Joint.e_atUpperLimit : b2Joint.e_inactiveLimit;
                     if (!(this.m_length > b2_linearSlop)) {
                         this.m_u.SetZero();
                         this.m_mass = 0;
@@ -78945,7 +78025,7 @@
                         this.m_p0s[i] = def.vertices[i].Clone();
                         this.m_vs[i] = new b2Vec2();
                         var m = def.masses[i];
-                        m > 0 ? this.m_ims[i] = 1 / m : this.m_ims[i] = 0;
+                        this.m_ims[i] = m > 0 ? 1 / m : 0;
                     }
                     var count2 = this.m_count - 1;
                     var count3 = this.m_count - 2;
@@ -79275,23 +78355,17 @@
                     var val;
                     if ("undefined" !== typeof obj["int"]) {
                         val = obj["int"];
+                    } else if ("undefined" !== typeof obj["float"]) {
+                        val = obj["float"];
+                    } else if ("undefined" !== typeof obj["string"]) {
+                        val = obj["string"];
+                    } else if ("undefined" !== typeof obj["bool"]) {
+                        val = obj["bool"];
                     } else {
-                        if ("undefined" !== typeof obj["float"]) {
-                            val = obj["float"];
-                        } else {
-                            if ("undefined" !== typeof obj["string"]) {
-                                val = obj["string"];
-                            } else {
-                                if ("undefined" !== typeof obj["bool"]) {
-                                    val = obj["bool"];
-                                } else {
-                                    if ("undefined" === typeof obj.vec2) {
-                                        throw new Error("unknown property type");
-                                    }
-                                    val = parseVector(obj.vec2);
-                                }
-                            }
+                        if ("undefined" === typeof obj.vec2) {
+                            throw new Error("unknown property type");
                         }
+                        val = parseVector(obj.vec2);
                     }
                     if (instance.hasOwnProperty(name)) {
                         throw new Error("custom property possibly overwriting an existing one");
@@ -79312,22 +78386,20 @@
                         shape = new b2CircleShape();
                         shape.m_p = parseVector(obj.circle.center);
                         shape.m_radius = obj.circle.radius || 0;
+                    } else if ("undefined" !== typeof obj.polygon) {
+                        var vertices = parseVectorArray(obj.polygon.vertices);
+                        shape = new b2PolygonShape();
+                        shape.Set(vertices, vertices.length);
                     } else {
-                        if ("undefined" !== typeof obj.polygon) {
-                            var vertices = parseVectorArray(obj.polygon.vertices);
-                            shape = new b2PolygonShape();
-                            shape.Set(vertices, vertices.length);
-                        } else {
-                            if ("undefined" === typeof obj.chain) {
-                                throw new Error("unknown shape type");
-                            }
-                            var vertices = parseVectorArray(obj.chain.vertices);
-                            shape = new b2ChainShape();
-                            shape.m_count = vertices.length;
-                            shape.m_vertices = vertices;
-                            (shape.m_hasNextVertex = obj.chain.hasNextVertex) && (shape.m_nextVertex = parseVector(obj.chain.nextVertex));
-                            (shape.m_hasPrevVertex = obj.chain.hasPrevVertex) && (shape.m_prevVertex = parseVector(obj.chain.prevVertex));
+                        if ("undefined" === typeof obj.chain) {
+                            throw new Error("unknown shape type");
                         }
+                        var vertices = parseVectorArray(obj.chain.vertices);
+                        shape = new b2ChainShape();
+                        shape.m_count = vertices.length;
+                        shape.m_vertices = vertices;
+                        (shape.m_hasNextVertex = obj.chain.hasNextVertex) && (shape.m_nextVertex = parseVector(obj.chain.nextVertex));
+                        (shape.m_hasPrevVertex = obj.chain.hasPrevVertex) && (shape.m_prevVertex = parseVector(obj.chain.prevVertex));
                     }
                     def.shape = shape;
                     var fixture = body.CreateFixture(def);
@@ -80248,7 +79320,7 @@
             }
         })();
     }), {} ],
-    310: [ (function(require, module, exports) {
+    311: [ (function(require, module, exports) {
         Object.create = Object.create || function(o) {
             function F() {}
             F.prototype = o;
@@ -80379,12 +79451,10 @@
                     minx = x;
                     miny = y;
                     start = i;
-                } else {
-                    if (x > maxx || x == maxx && y > maxy) {
-                        maxx = x;
-                        maxy = y;
-                        end = i;
-                    }
+                } else if (x > maxx || x == maxx && y > maxy) {
+                    maxx = x;
+                    maxy = y;
+                    end = i;
                 }
             }
             return [ start, end ];
@@ -80718,7 +79788,7 @@
             return this.body;
         };
         Shape.prototype.active = function() {
-            return this.body && this.body.shapeList.indexOf(this) !== -1;
+            return this.body && -1 !== this.body.shapeList.indexOf(this);
         };
         Shape.prototype.setBody = function(body) {
             assert(!this.active(), "You cannot change the body on an active shape. You must remove the shape from the space before changing the body.");
@@ -80864,12 +79934,10 @@
                 if (ad * bd < 0) {
                     return new SegmentQueryInfo(this, ad / (ad - bd), flipped_n);
                 }
-            } else {
-                if (0 !== r) {
-                    var info1 = circleSegmentQuery(this, this.ta, this.r, a, b);
-                    var info2 = circleSegmentQuery(this, this.tb, this.r, a, b);
-                    return info1 ? info2 && info2.t < info1.t ? info2 : info1 : info2;
-                }
+            } else if (0 !== r) {
+                var info1 = circleSegmentQuery(this, this.ta, this.r, a, b);
+                var info2 = circleSegmentQuery(this, this.tb, this.r, a, b);
+                return info1 ? info2 && info2.t < info1.t ? info2 : info1 : info2;
             }
         };
         SegmentShape.prototype.setNeighbors = function(prev, next) {
@@ -80943,8 +80011,8 @@
         PolyShape.prototype.transformVerts = function(p, rot) {
             var src = this.verts;
             var dst = this.tVerts;
-            var l = 1 / 0, r = -(1 / 0);
-            var b = 1 / 0, t = -(1 / 0);
+            var l = 1 / 0, r = -1 / 0;
+            var b = 1 / 0, t = -1 / 0;
             for (var i = 0; i < src.length; i += 2) {
                 var x = src[i];
                 var y = src[i + 1];
@@ -81483,12 +80551,12 @@
         };
         var nodeSegmentQuery = function(node, a, b) {
             var idx = 1 / (b.x - a.x);
-            var tx1 = node.bb_l == a.x ? -(1 / 0) : (node.bb_l - a.x) * idx;
+            var tx1 = node.bb_l == a.x ? -1 / 0 : (node.bb_l - a.x) * idx;
             var tx2 = node.bb_r == a.x ? 1 / 0 : (node.bb_r - a.x) * idx;
             var txmin = min(tx1, tx2);
             var txmax = max(tx1, tx2);
             var idy = 1 / (b.y - a.y);
-            var ty1 = node.bb_b == a.y ? -(1 / 0) : (node.bb_b - a.y) * idy;
+            var ty1 = node.bb_b == a.y ? -1 / 0 : (node.bb_b - a.y) * idy;
             var ty2 = node.bb_t == a.y ? 1 / 0 : (node.bb_t - a.y) * idy;
             var tymin = min(ty1, ty2);
             var tymax = max(ty1, ty2);
@@ -81976,7 +81044,7 @@
                 return;
             }
             var dist = Math.sqrt(distsq);
-            return new Contact(vadd(p1, vmult(delta, .5 + (r1 - .5 * mindist) / (dist ? dist : 1 / 0))), dist ? vmult(delta, 1 / dist) : new Vect(1, 0), dist - mindist, 0);
+            return new Contact(vadd(p1, vmult(delta, .5 + (r1 - .5 * mindist) / (dist || 1 / 0))), dist ? vmult(delta, 1 / dist) : new Vect(1, 0), dist - mindist, 0);
         };
         var circle2circle = function(circ1, circ2) {
             var contact = circle2circleQuery(circ1.tc, circ2.tc, circ1.r, circ2.r);
@@ -82050,12 +81118,12 @@
         };
         var poly2poly = function(poly1, poly2) {
             var mini1 = findMSA(poly2, poly1.tPlanes);
-            if (mini1 == -1) {
+            if (-1 == mini1) {
                 return NONE;
             }
             var min1 = last_MSA_min;
             var mini2 = findMSA(poly1, poly2.tPlanes);
-            if (mini2 == -1) {
+            if (-1 == mini2) {
                 return NONE;
             }
             var min2 = last_MSA_min;
@@ -82421,7 +81489,7 @@
         Space.prototype.activateBody = function(body) {
             assert(!body.isRogue(), "Internal error: Attempting to activate a rogue body.");
             if (this.locked) {
-                this.rousedBodies.indexOf(body) === -1 && this.rousedBodies.push(body);
+                -1 === this.rousedBodies.indexOf(body) && this.rousedBodies.push(body);
             } else {
                 this.bodies.push(body);
                 for (var i = 0; i < body.shapeList.length; i++) {
@@ -83005,7 +82073,7 @@
             this.r2 = vrotate(this.anchr2, b.rot);
             var delta = vsub(vadd(b.p, this.r2), vadd(a.p, this.r1));
             var dist = vlength(delta);
-            this.n = vmult(delta, 1 / (dist ? dist : 1 / 0));
+            this.n = vmult(delta, 1 / (dist || 1 / 0));
             this.nMass = 1 / k_scalar(a, b, this.r1, this.r2, this.n);
             var maxBias = this.maxBias;
             this.bias = clamp(-bias_coef(this.errorBias, dt) * (dist - this.dist) / dt, -maxBias, maxBias);
@@ -83052,14 +82120,12 @@
             if (dist > this.max) {
                 pdist = dist - this.max;
                 this.n = vnormalize_safe(delta);
+            } else if (dist < this.min) {
+                pdist = this.min - dist;
+                this.n = vneg(vnormalize_safe(delta));
             } else {
-                if (dist < this.min) {
-                    pdist = this.min - dist;
-                    this.n = vneg(vnormalize_safe(delta));
-                } else {
-                    this.n = vzero;
-                    this.jnAcc = 0;
-                }
+                this.n = vzero;
+                this.jnAcc = 0;
             }
             this.nMass = 1 / k_scalar(a, b, this.r1, this.r2, this.n);
             var maxBias = this.maxBias;
@@ -83163,14 +82229,12 @@
             if (td <= vcross(ta, n)) {
                 this.clamp = 1;
                 this.r1 = vsub(ta, a.p);
+            } else if (td >= vcross(tb, n)) {
+                this.clamp = -1;
+                this.r1 = vsub(tb, a.p);
             } else {
-                if (td >= vcross(tb, n)) {
-                    this.clamp = -1;
-                    this.r1 = vsub(tb, a.p);
-                } else {
-                    this.clamp = 0;
-                    this.r1 = vsub(vadd(vmult(vperp(n), -td), vmult(n, d)), a.p);
-                }
+                this.clamp = 0;
+                this.r1 = vsub(vadd(vmult(vperp(n), -td), vmult(n, d)), a.p);
             }
             k_tensor(a, b, this.r1, this.r2, this.k1, this.k2);
             this.jMaxLen = this.maxForce * dt;
@@ -83233,7 +82297,7 @@
             this.r2 = vrotate(this.anchr2, b.rot);
             var delta = vsub(vadd(b.p, this.r2), vadd(a.p, this.r1));
             var dist = vlength(delta);
-            this.n = vmult(delta, 1 / (dist ? dist : 1 / 0));
+            this.n = vmult(delta, 1 / (dist || 1 / 0));
             var k = k_scalar(a, b, this.r1, this.r2, this.n);
             assertSoft(0 !== k, "Unsolvable this.");
             this.nMass = 1 / k;
@@ -83464,7 +82528,7 @@
             return Math.abs(this.jAcc);
         };
     }), {} ],
-    311: [ (function(require, module, exports) {
+    312: [ (function(require, module, exports) {
         module.exports = (function() {
             "use strict";
             function t() {
@@ -83999,26 +83063,54 @@
             return M;
         })();
     }), {} ],
-    312: [ (function(require, module, exports) {
-        Function('if(typeof CC_TEST=="undefined")CC_TEST=typeof tap=="object"||typeof QUnit=="object";if(typeof CC_EDITOR=="undefined")CC_EDITOR=typeof Editor=="object"&&typeof process=="object"&&"electron" in process.versions;if(typeof CC_DEV=="undefined")CC_DEV=CC_EDITOR||CC_TEST;if(typeof CC_JSB=="undefined")CC_JSB=false;')();
-        require("./predefine");
-        var isMainProcess = false;
-        isMainProcess ? cc._initDebugSetting(1) : require("./cocos2d/index.js");
+    313: [ (function(require, module, exports) {
+        function defineMacro(name, defaultValue) {
+            return "if(typeof " + name + '=="undefined")' + name + "=" + defaultValue + ";";
+        }
+        function defined(name) {
+            return "typeof " + name + '=="object"';
+        }
+        Function(defineMacro("CC_TEST", defined("tap") + "||" + defined("QUnit")) + defineMacro("CC_EDITOR", defined("Editor") + "&&" + defined("process") + '&&"electron" in process.versions') + defineMacro("CC_PREVIEW", "!CC_EDITOR") + defineMacro("CC_DEV", true) + defineMacro("CC_DEBUG", true) + defineMacro("CC_JSB", defined("jsb")) + defineMacro("CC_BUILD", false))();
+        cc = {};
+        _ccsg = {};
+        require("./CCDebugger");
+        cc._initDebugSetting(cc.DebugMode.INFO);
+        require("./DebugInfos");
+        require("./polyfill/string");
+        require("./polyfill/misc");
+        require("./polyfill/array");
+        require("./polyfill/typescript");
+        require("./cocos2d/kazmath");
+        require("./cocos2d/core/predefine");
+        ccui = {};
+        ccs = {};
+        cp = {};
+        require("./cocos2d/shaders");
+        require("./CCBoot");
+        require("./cocos2d");
         require("./extends");
-        isMainProcess && (Editor.versions["cocos2d"] = require("./package.json").version);
         module.exports = cc;
     }), {
-        "./cocos2d/index.js": 239,
-        "./extends": 288,
+        "./CCBoot": 1,
+        "./CCDebugger": 2,
+        "./DebugInfos": 3,
+        "./cocos2d": 240,
+        "./cocos2d/core/predefine": 198,
+        "./cocos2d/kazmath": 244,
+        "./cocos2d/shaders": 274,
+        "./extends": 289,
         "./package.json": void 0,
-        "./predefine": 317
+        "./polyfill/array": 314,
+        "./polyfill/misc": 315,
+        "./polyfill/string": 316,
+        "./polyfill/typescript": 317
     } ],
-    313: [ (function(require, module, exports) {
+    314: [ (function(require, module, exports) {
         Array.isArray || (Array.isArray = function(arg) {
             return "[object Array]" === Object.prototype.toString.call(arg);
         });
     }), {} ],
-    314: [ (function(require, module, exports) {
+    315: [ (function(require, module, exports) {
         Math.sign || (Math.sign = function(x) {
             x = +x;
             if (0 === x || isNaN(x)) {
@@ -84029,8 +83121,20 @@
         Number.isInteger || (Number.isInteger = function(value) {
             return "number" === typeof value && (0 | value) === value;
         });
+        if (!console.time) {
+            var Timer = window.performance || Date;
+            var _timerTable = Object.create(null);
+            console.time = function(label) {
+                _timerTable[label] = Timer.now();
+            };
+            console.timeEnd = function(label) {
+                var startTime = _timerTable[label];
+                var duration = Timer.now() - startTime;
+                console.log(label + ": " + duration + "ms");
+            };
+        }
     }), {} ],
-    315: [ (function(require, module, exports) {
+    316: [ (function(require, module, exports) {
         String.prototype.startsWith || (String.prototype.startsWith = function(searchString, position) {
             position = position || 0;
             return this.lastIndexOf(searchString, position) === position;
@@ -84039,10 +83143,10 @@
             ("undefined" === typeof position || position > this.length) && (position = this.length);
             position -= searchString.length;
             var lastIndex = this.indexOf(searchString, position);
-            return lastIndex !== -1 && lastIndex === position;
+            return -1 !== lastIndex && lastIndex === position;
         });
     }), {} ],
-    316: [ (function(require, module, exports) {
+    317: [ (function(require, module, exports) {
         var extendStatics = Object.setPrototypeOf || {
             __proto__: []
         } instanceof Array && function(d, b) {
@@ -84335,78 +83439,6 @@
             var m = o[Symbol.asyncIterator];
             return m ? m.call(o) : "function" === typeof __values ? __values(o) : o[Symbol.iterator]();
         };
-    }), {} ],
-    317: [ (function(require, module, exports) {
-        cc = {};
-        _ccsg = {};
-        cc._Test = {};
-        require("./CCDebugger");
-        cc._initDebugSetting(cc.DebugMode.INFO);
-        require("./DebugInfos");
-        require("./polyfill/string");
-        require("./polyfill/misc");
-        require("./polyfill/array");
-        require("./polyfill/typescript");
-        require("./cocos2d/core/platform/js");
-        require("./cocos2d/core/value-types");
-        require("./cocos2d/core/utils");
-        require("./cocos2d/core/platform/CCInputManager");
-        require("./cocos2d/core/platform/CCInputExtension");
-        require("./cocos2d/core/event");
-        require("./cocos2d/core/platform/CCSys");
-        require("./cocos2d/core/platform/CCMacro");
-        require("./cocos2d/core/load-pipeline");
-        require("./cocos2d/core/textures");
-        require("./cocos2d/kazmath");
-        require("./cocos2d/core/CCDirector");
-        require("./cocos2d/core/CCDirectorWebGL");
-        require("./cocos2d/core/CCDirectorCanvas");
-        require("./cocos2d/core/platform/CCSAXParser");
-        require("./cocos2d/core/platform/CCView");
-        require("./cocos2d/core/platform/CCScreen");
-        require("./cocos2d/core/CCScheduler");
-        require("./cocos2d/core/event-manager");
-        require("./cocos2d/core/renderer");
-        require("./cocos2d/shaders");
-        require("./cocos2d/compression");
-        require("./CCBoot");
-        require("./cocos2d/core/CCGame");
-        require("./cocos2d/actions");
-        ccui = {};
-        ccs = {};
-        cp = {};
-    }), {
-        "./CCBoot": 1,
-        "./CCDebugger": 2,
-        "./DebugInfos": 3,
-        "./cocos2d/actions": 10,
-        "./cocos2d/compression": 32,
-        "./cocos2d/core/CCDirector": 35,
-        "./cocos2d/core/CCDirectorCanvas": 36,
-        "./cocos2d/core/CCDirectorWebGL": 37,
-        "./cocos2d/core/CCGame": 40,
-        "./cocos2d/core/CCScheduler": 43,
-        "./cocos2d/core/event": 114,
-        "./cocos2d/core/event-manager": 110,
-        "./cocos2d/core/load-pipeline": 135,
-        "./cocos2d/core/platform/CCInputExtension": 175,
-        "./cocos2d/core/platform/CCInputManager": 176,
-        "./cocos2d/core/platform/CCMacro": 177,
-        "./cocos2d/core/platform/CCSAXParser": 179,
-        "./cocos2d/core/platform/CCScreen": 180,
-        "./cocos2d/core/platform/CCSys": 181,
-        "./cocos2d/core/platform/CCView": 182,
-        "./cocos2d/core/platform/js": 192,
-        "./cocos2d/core/renderer": 201,
-        "./cocos2d/core/textures": 215,
-        "./cocos2d/core/utils": 221,
-        "./cocos2d/core/value-types": 235,
-        "./cocos2d/kazmath": 243,
-        "./cocos2d/shaders": 273,
-        "./polyfill/array": 313,
-        "./polyfill/misc": 314,
-        "./polyfill/string": 315,
-        "./polyfill/typescript": 316
-    } ]
-}, {}, [ 312 ]);
+    }), {} ]
+}, {}, [ 313 ]);
 //# sourceMappingURL=cocos2d-js.js.map

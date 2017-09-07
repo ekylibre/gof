@@ -183,4 +183,26 @@ ApiClient.prototype.setGameData = function(data, callback) {
     req.send(p);
 }
 
+/**
+ * @method setScore
+ * @param {Number} score
+ * @param {Object} details
+ * @param {Callback} callback - callback(error, response, client) triggered with the response or error 
+ */
+ApiClient.prototype.setScore = function(score, details, callback) {
+    if (!this.channelId) {
+        cc.error('Missing channel id');
+        return;
+    }
+
+    var req = null;
+    req = post(this, '/channel/setscore', callback);
+    var p = params({
+        chanId : this.channelId,
+        score: score,
+        details: details
+    });
+    req.send(p);
+}
+
 module.exports = ApiClient;
