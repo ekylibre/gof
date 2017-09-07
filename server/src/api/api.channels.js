@@ -18,20 +18,22 @@ function ApiChannels(server) {
     
     server.route({
         method: 'GET',
-        path: '/api/channel/getGameData',
+        path: '/api/channel/getgamedata/{chanId}',
         handler: function(request, reply) { self.getGameData(request, reply); },
         config: {
-            auth : 'token', //'bearer',
+            //auth : 'token',
+            auth : 'bearer',
             cors : CORS
         }
     });
 
     server.route({
-        method: 'GET',
-        path: '/api/channel/setGameData',
+        method: 'POST',
+        path: '/api/channel/setgamedata',
         handler: function(request, reply) { self.setGameData(request, reply); },
         config: {
-            auth : 'token', //'bearer',
+            //auth : 'token',
+            auth : 'bearer',
             cors : CORS
         }
     });    
@@ -50,7 +52,10 @@ ApiChannels.prototype._getChannelUser = function (request, cb) {
     if (!chanId) {
         chanId = request.query.chanId;
         if (!chanId) {
-            return cb(Boom.badRequest());           
+            chanId = request.payload.chanId;
+            if (!chanId) {
+                return cb(Boom.badRequest());           
+            }
         }
     }
 
@@ -119,7 +124,7 @@ ApiChannels.prototype.getGameData = function(request, reply) {
             return reply(channel);
         }
     
-        return reply({statusCode: 200, payload: {gameData: chanUser.gameData}});
+        return reply({statusCode: 200, payload: {phase: chanUser.phaseActive, gameData: chanUser.gameData}});
     });
 }
 
@@ -129,8 +134,6 @@ ApiChannels.prototype.getGameData = function(request, reply) {
  * @param {Object} gameData game data to be stored
  */
 ApiChannels.prototype.setGameData = function(request, reply) {
-    request.payload = request.query;
-
     if (!request.payload.gameData) {
         return reply(Boom.badRequest());
     }

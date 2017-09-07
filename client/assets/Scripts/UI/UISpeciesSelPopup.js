@@ -3,6 +3,8 @@ const CGame = require('../Game');
 const UISpeciesSelItem = require('./UISpeciesSelItem');
 const UIEnv = require('./UIEnv');
 
+var game = new CGame();    
+
 /**
  * UI controller for UISpeciesSelPopup popup
  * @class
@@ -92,8 +94,6 @@ var UISpeciesSelPopup = cc.Class({
     // called by UIPopupBase
     onShow: function()
     {
-        var game = new CGame();
-
         // get current selection (if any)
         var current = null;
         if (this._previsionYear>=0 && this._previsionYear<this._parcel.rotationPrevision.length)
@@ -163,6 +163,8 @@ var UISpeciesSelPopup = cc.Class({
         {
             self._parcel.rotationPrevision.push(_Data);
         }
+
+        game.saveChannel();
 
         UIEnv.parcel.updateRotationPrevisions();           
         self.hide();

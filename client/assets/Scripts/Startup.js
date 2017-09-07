@@ -29,9 +29,9 @@ cc.Class({
         var endpoint = '/api';
         var isPreview = location.hostname == 'localhost' && location.port != 3000;
         if(isPreview) {
-            endpoint = 'http://gof.shinypix.dev:3000/api'; 
+            //endpoint = 'http://gof.shinypix.dev:3000/api'; 
             //endpoint = 'http://gof.julien.dev:3000/api';
-            //endpoint = 'http://localhost:3000/api';
+            endpoint = 'http://localhost:3000/api';
         }
 
         UIDebug.log('API endpoint: '+endpoint);
@@ -102,7 +102,8 @@ cc.Class({
     {
         //cc.log('Logged-in!')
         game.api = client;
-        game.pullDatabase();
+        //game.api.channelId = "59afc87321b905095cc086ff";
+        game.pullDatabase();       
 
         // client.getPlants({cultureMode: 'normal', __v:0}, 
         //     (error, response, client) => {

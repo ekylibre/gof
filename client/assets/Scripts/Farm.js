@@ -152,7 +152,7 @@ export default class CFarm
         for (var i=0; i<_JSon.parcels.length; i++)
         {
             var parcelJson = _JSon.parcels[i];
-            var parcel = this.findParcelUID(_JSon.uid);
+            var parcel = this.findParcelUID(parcelJson.uid);
             if (parcel != null)
             {
                 parcel.deserialize(parcelJson);
