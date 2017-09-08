@@ -11,7 +11,7 @@
             {{/if}}
             <div style="margin: 2%;">
                 <div class="row">
-                    <form method="POST" action="/auth/login" class="form-horizontal">
+                    <form id="login-form" method="POST" action="/auth/login" class="form-horizontal">
                         <div class="input-group">
                             <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
                             <input type="email" name="email" required="required" class="form-control" id="inputEmail" value="{{error.form.email}}" placeholder="{{i18n 'placeholder_email'}}"/>
@@ -36,3 +36,36 @@
 </div>
 
 
+<script type="text/javascript">
+var getUrlParameter = function getUrlParameter(sParam) {
+    var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+        sURLVariables = sPageURL.split('&'),
+        sParameterName,
+        i;
+
+    for (i = 0; i < sURLVariables.length; i++) {
+        sParameterName = sURLVariables[i].split('=');
+
+        if (sParameterName[0] === sParam) {
+            return sParameterName[1] === undefined ? true : sParameterName[1];
+        }
+    }
+};
+
+$(document).ready(function(){
+    var email = getUrlParameter('email');
+    if(email) {
+        $('#inputEmail').attr('value', email);
+    }
+
+    var target = getUrlParameter('target');
+    if(target) {
+        $('<input>').attr({
+            type: 'hidden',
+            name: 'target',
+            value: target,
+        }).appendTo('#login-form');
+    }
+}); 
+
+</script>
