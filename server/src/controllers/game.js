@@ -19,15 +19,19 @@ function GameController(server) {
 
     server.route({
         method: 'GET',
-        path : '/game/start/{file*}',
-        handler: {
-            directory: {
-                path: __dirname + '/../public/web-desktop',
-                listing: false,
-                index: false,
+        path : '/game/start/{channelId}/{file*}',
+        handler: function (request, reply) {
+            // check if {channelId} is really a channelId or just a subfolder
+            var path = __dirname + '/../public/web-desktop/';
+            if (request.params.channelId && request.params.channelId.length<23) {
+                path += request.params.channelId+'/'+request.params.file;
             }
+            else {
+                path += request.params.file;
+            }
+            return reply.file(path);
         }
-    });
+    });    
 
     server.route({
         method: 'GET',
@@ -51,6 +55,12 @@ GameController.startGame = function(request, reply) {
         }
 
         var channelId = request.params.channelId;
+
+        // check if {channelId} is really a channelId or a filename
+        if (channelId.length<23) {
+            var path = __dirname + '/../public/web-desktop/'+request.params.channelId;
+            return reply.file(path);            
+        }
 
         reply.view('views/game', {
             accessToken: user.apiaccesstoken,

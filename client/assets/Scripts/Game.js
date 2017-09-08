@@ -425,10 +425,10 @@ export default class CGame
             else
             {
                 //// DEBUG
-                if (self.isDebug && phaseId != 'croprotation')
-                {
-                    phaseId = 'croprotation';
-                }
+                // if (self.isDebug && phaseId != 'croprotation')
+                // {
+                //     phaseId = 'croprotation';
+                // }
                 //////
                     
                 // Starts from the beginning
