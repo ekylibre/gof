@@ -28,8 +28,8 @@ function ChannelsController(server){
     });
 
     server.route({
-        method: 'GET',
-        path: '/channels/create/{scenario}',
+        method: 'POST',
+        path: '/channels/create',
         handler: ChannelsController.create,
         config: {
             auth: 'token'
@@ -62,7 +62,6 @@ function ChannelsController(server){
         config: {
             auth: 'token'
         }
-
     });
 
     server.route({
@@ -127,7 +126,7 @@ ChannelsController.create = function(request, reply) {
             return reply(Boom.unauthorized());
         }
 
-        var scenario = request.params.scenario;
+        var scenario = request.payload.scenario;
 
         var chan = new Channel();
         chan.phase = scenario;
@@ -149,14 +148,12 @@ ChannelsController.create = function(request, reply) {
                 }
 
                 if(user.role != Constants.UserRoleEnum.MASTER) {
-                    return reply.redirect('/game/start/' + chan._id);
+                    return reply({target:'/game/start/' + chan._id});
                 } else {
-                    return reply.redirect('/channels/' + chan._id + '/invite' );
+                    return reply({target:'/channels/' + chan._id + '/invite'});
                 }
         });
-
     });
-
 }
 
 ChannelsController.scores = function(request, reply) {

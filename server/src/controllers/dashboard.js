@@ -50,7 +50,7 @@ DashboardController.prototype.dashboardMaster = function(request, reply) {
 }
 
 DashboardController.prototype.dashboardPlayer = function(request, reply) {
-    return reply.redirect('/channels/create/scenarioselection');
+    return reply.redirect('/channels/scenarioselection');
 }
 
 

@@ -1,5 +1,3 @@
-
-
 <div class="row">
     {{#each scenarios}}
     <div class="col-md-4">
@@ -28,6 +26,13 @@
     });
 
     $('#validate-scenario').click(function(event){
-        window.location.replace('/channels/create/'+ selectedScenario);
+        $.ajax({
+            type: 'POST',
+            url: '/channels/create',
+            data: {scenario:selectedScenario},
+            success: function(data) {
+                window.location.replace(data.target);
+            }
+        });
     });
 </script>
