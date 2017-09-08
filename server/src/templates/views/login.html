@@ -58,7 +58,7 @@ $(document).ready(function(){
         $('#inputEmail').attr('value', email);
     }
 
-    var target = getUrlParameter('target');
+    var target = getUrlParameter('target') || '{{error.form.target}}';
     if(target) {
         $('<input>').attr({
             type: 'hidden',
