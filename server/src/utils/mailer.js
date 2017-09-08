@@ -4,7 +4,6 @@ const nodemailer = require('nodemailer');
 const config = require('config');
 
 function Mailer() {
-
     this.transport = nodemailer.createTransport(config.get('Nodemailer.transport'));
 }
 

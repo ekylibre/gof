@@ -139,7 +139,12 @@ AuthController.loginpost = function (request, reply) {
                 if(err) {
                     return reply(Boom.internal());
                 }
-                reply().state('access_token', token, cookie_options).redirect('/dashboard');
+
+                var target = '/dashboard';
+                if(request.payload.target) {
+                    target = request.payload.target;
+                }
+                reply().state('access_token', token, cookie_options).redirect(target);
             });
         });
     });

@@ -4,6 +4,8 @@ const Constants = require('../../../common/constants');
 const User = require('../models/user');
 const Channel = require('../models/channel');
 const Boom = require('boom');
+const Joi = require('joi');
+const InviteTools = require('../utils/invitetools');
 var moment = require('moment');
 
 function ChannelsController(server){
@@ -52,6 +54,35 @@ function ChannelsController(server){
         }
 
     });
+
+    server.route({
+        method: 'GET',
+        path: '/channels/{chanId}/invite',
+        handler: ChannelsController.inviteToChannelGet,
+        config: {
+            auth: 'token'
+        }
+
+    });
+
+    server.route({
+        method: 'POST',
+        path: '/channels/{chanId}/invite',
+        handler: ChannelsController.inviteToChannelPost,
+        config: {
+            auth: 'token'
+        }
+    });
+
+    server.route({
+        method: 'GET',
+        path: '/channels/{chanId}/accept/{email}',
+        handler: ChannelsController.acceptChannelInvite,
+        /*config: {
+            auth: 'token'
+        }*/
+    });
+
 }
 
 ChannelsController.getAll = function(request, reply) {
@@ -120,7 +151,7 @@ ChannelsController.create = function(request, reply) {
                 if(user.role != Constants.UserRoleEnum.MASTER) {
                     return reply.redirect('/game/start/' + chan._id);
                 } else {
-                    return reply.redirect('/channels/' + chan._id + 'invite' );
+                    return reply.redirect('/channels/' + chan._id + '/invite' );
                 }
         });
 
@@ -178,6 +209,117 @@ ChannelsController.scenarioSelection = function(request, reply) {
     ctx.userRole = user.role;
 
     return reply.view('views/scenarioselection', ctx, {layoutPath:'./templates/layout/dashboard'});
+}
+
+ChannelsController.inviteToChannelGet = function(request, reply) {
+    var chanId = request.params.chanId;
+    Channel.findById(chanId).populate('users.user').exec((error, channel) => {
+        if(error) {
+            return reply(Boom.badRequest());
+        }
+
+        //TODO : find recent emails already invited in other channels of same owner
+        var ctx = {channel: channel};
+        return reply.view('views/invite', ctx, {layoutPath:'./templates/layout/dashboard'});
+    });
+}
+
+ChannelsController.inviteToChannelPost = function(request, reply) {
+
+    //Filter emails
+    var emails = request.payload.emails.split(/[\s,]+/);
+    var errors = [];
+    var filtered = emails.filter(s => {
+        var vResult = Joi.validate(s, Joi.string().email());
+        if(vResult.error != null) {
+            errors.push(s);
+            return false;
+        }
+        return true;
+    });
+
+    //Retrieve channel
+    var chanId = request.params.chanId;
+    Channel.findById(chanId).populate('users.user').exec((error, channel) => {
+        if(error) {
+            return reply(Boom.badRequest());
+        }
+
+        //map all invitations to promises
+        var promises = filtered.map(function(email) {
+            return new Promise(function(resolve, reject) {
+                //send email to invited
+                InviteTools.send(request, email, chanId, function(error) {
+                    if(error) {
+                        return reject(error);
+                    }
+
+                    //we need to retrieve the user by email to register its id to the channel users
+                    User.findOne({email:email}, function(error, user) {
+                        if(error) {
+                            return reject(error);
+                        }
+                        
+                        if(!user) {
+                            return resolve();
+                        }
+
+                        //maybe this user was already added to the channel
+                        var already = channel.users.find(function(e){
+                            return e.user.email == email;
+                        });
+
+                        //so avoid pushing him multiple times
+                        if(!already) {
+                            channel.users.push({
+                                user: user.id,
+                                phaseResult: null 
+                            });
+                        }
+                        resolve();
+                    });
+                });
+            });
+        });
+
+        //exec promises
+        Promise.all(promises).then(function(){
+            channel.save(
+                function(error, result) {
+                    if(error) {
+                        //something goes wrong
+                        var ctx = {channel: channel, error: {global: error}};
+                        return reply.view('views/invite', ctx, {layoutPath:'./templates/layout/dashboard'});
+                    }
+
+                    channel.populate('users.user', function(popError, popResult){
+                        if(popError) {
+                            var ctx = {channel: channel, error: {global: popError}};
+                            return reply.view('views/invite', ctx, {layoutPath:'./templates/layout/dashboard'});
+                        }
+                        var ctx = {channel: popResult, success: filtered};
+                        return reply.view('views/invite', ctx, {layoutPath:'./templates/layout/dashboard'});
+                    });
+                    
+                }
+            );
+        }).catch(function(error){
+            //something goes wrong
+            var ctx = {channel: channel, error: {global: error}};
+            return reply.view('views/invite', ctx, {layoutPath:'./templates/layout/dashboard'});
+        });
+    });
+}
+
+ChannelsController.acceptChannelInvite = function(request, reply) {
+    var chanId = request.params.chanId;
+    var target = '/game/start/' + chanId;
+    if(!request.auth.isAuthenticated) {
+        //redirect to login
+        return reply.redirect('/auth/login?email='+encodeURIComponent(request.params.email)+'&target='+encodeURIComponent(target));
+    }
+
+    return reply.redirect(target);
 }
 
 module.exports = ChannelsController;

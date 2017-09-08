@@ -1,0 +1,41 @@
+<div class="row" style="padding: 0 20% 0 20%;">
+    <div class="panel panel-info">
+        <div class="panel-heading">{{i18n "invite_panel_title"}}</div>
+        <div class="panel-body" style="padding: 5%;">
+            {{#if error}}
+                {{#if error.global}}
+                <div class="alert alert-danger" role="alert">
+                    {{{error.global}}}
+                </div>
+                {{/if}}
+            {{/if}}
+
+            {{#if success}}
+                <div class="alert alert-success" role="alert">
+                    {{#each success}}
+                        {{this}}
+                    {{/each}}
+                </div>
+            {{/if}}
+            <div style="margin: 2%;">
+                <div class="row">
+                    <form method="POST" action="/channels/{{channel._id}}/invite" class="form-horizontal">
+                        <div class="input-group">
+                            <label for="inviteEmails">{{i18n "invite_email_area_label"}}</label>
+                            <textarea class="form-control" id="inviteEmails" name="emails" rows="10"></textarea>
+                        </div>
+                        <input type="submit" class="btn btn-primary pull-right" style="margin-top: 10px;" value='{{i18n "send_invites"}}'/>
+                    </form>
+                </div>
+            </div>
+
+            <div class="row" style="width: 50%; margin:auto;">
+                <div><ul>
+                {{#each channel.users}}
+                <li>{{user.firstName}} {{user.lastName}}</li>
+                {{/each}}
+                </ul></div>
+            </div>    
+        </div>
+    </div>
+</div>
