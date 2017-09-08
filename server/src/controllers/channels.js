@@ -57,8 +57,8 @@ function ChannelsController(server){
 
     server.route({
         method: 'GET',
-        path: '/channels/{chanId}/invite',
-        handler: ChannelsController.inviteToChannelGet,
+        path: '/channels/{chanId}/monitor',
+        handler: ChannelsController.monitorGet,
         config: {
             auth: 'token'
         }
@@ -66,8 +66,8 @@ function ChannelsController(server){
 
     server.route({
         method: 'POST',
-        path: '/channels/{chanId}/invite',
-        handler: ChannelsController.inviteToChannelPost,
+        path: '/channels/{chanId}/monitor',
+        handler: ChannelsController.monitorPost,
         config: {
             auth: 'token'
         }
@@ -149,10 +149,17 @@ ChannelsController.create = function(request, reply) {
                     return reply(Boom.badRequest());
                 }
 
+                user.channels.push(chan);
+                user.save((userSaveError, userSaveResult) => {
+                    if(userSaveError) {
+                        return reply(Boom.badRequest());
+                    }
+                });
+
                 if(user.role != Constants.UserRoleEnum.MASTER) {
                     return reply({target:'/game/start/' + chan._id});
                 } else {
-                    return reply({target:'/channels/' + chan._id + '/invite'});
+                    return reply({target:'/channels/' + chan._id + '/monitor'});
                 }
         });
     });
@@ -210,7 +217,7 @@ ChannelsController.scenarioSelection = function(request, reply) {
     return reply.view('views/scenarioselection', ctx, {layoutPath:'./templates/layout/dashboard'});
 }
 
-ChannelsController.inviteToChannelGet = function(request, reply) {
+ChannelsController.monitorGet = function(request, reply) {
     var chanId = request.params.chanId;
     Channel.findById(chanId).populate('users.user').exec((error, channel) => {
         if(error) {
@@ -219,11 +226,23 @@ ChannelsController.inviteToChannelGet = function(request, reply) {
 
         //TODO : find recent emails already invited in other channels of same owner
         var ctx = {channel: channel};
-        return reply.view('views/invite', ctx, {layoutPath:'./templates/layout/dashboard'});
+
+        ctx.pendings = [];
+        ctx.accepteds = [];
+
+        for(var i=0;i<channel.users.length;++i) {
+            var userRef = channel.users[i];
+            if(userRef.linked) {
+                ctx.accepteds.push(userRef.user);
+            } else {
+                ctx.pendings.push(userRef.user);
+            }
+        }
+        return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
     });
 }
 
-ChannelsController.inviteToChannelPost = function(request, reply) {
+ChannelsController.monitorPost = function(request, reply) {
 
     //Filter emails
     var emails = request.payload.emails.split(/[\s,]+/);
@@ -288,16 +307,16 @@ ChannelsController.inviteToChannelPost = function(request, reply) {
                     if(error) {
                         //something goes wrong
                         var ctx = {channel: channel, error: {global: error}};
-                        return reply.view('views/invite', ctx, {layoutPath:'./templates/layout/dashboard'});
+                        return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
                     }
 
                     channel.populate('users.user', function(popError, popResult){
                         if(popError) {
                             var ctx = {channel: channel, error: {global: popError}};
-                            return reply.view('views/invite', ctx, {layoutPath:'./templates/layout/dashboard'});
+                            return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
                         }
                         var ctx = {channel: popResult, success: filtered};
-                        return reply.view('views/invite', ctx, {layoutPath:'./templates/layout/dashboard'});
+                        return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
                     });
                     
                 }
@@ -305,7 +324,7 @@ ChannelsController.inviteToChannelPost = function(request, reply) {
         }).catch(function(error){
             //something goes wrong
             var ctx = {channel: channel, error: {global: error}};
-            return reply.view('views/invite', ctx, {layoutPath:'./templates/layout/dashboard'});
+            return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
         });
     });
 }

@@ -1,7 +1,7 @@
 <div class="row" style="width: 50%; margin:auto;">
     <div><ul>
     {{#each channels}}
-    <li>{{created}}, {{phase}}, {{#if closed}} Terminée {{else}} En cours <a class="btn btn-primary" href='/channels/{{_id}}/monitor'>{{i18n "monitor_channel"}}</a> {{/if}} <a class="btn btn-primary" href='/channels/scores/{{_id}}'>{{i18n "show_scores"}}</a></li>
+    <li>{{created}}, {{phase}}, {{#if closed}} Terminée, SCORE: {{score}} {{else}} En cours <a class="btn btn-primary" href='/game/start/{{_id}}'>{{i18n "resume_game"}}</a> {{/if}}</li>
     {{/each}}
     </ul></div>
 </div>    

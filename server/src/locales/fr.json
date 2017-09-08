@@ -56,5 +56,10 @@
 	"show_scores": "show_scores",
 	"invite_panel_title": "invite_panel_title",
 	"invite_email_area_label": "invite_email_area_label",
-	"send_invites": "send_invites"
+	"send_invites": "send_invites",
+	"resume_game": "resume_game",
+	"monitor_channel": "monitor_channel",
+	"monitor_panel_title": "monitor_panel_title",
+	"monitor_panel_pendings_title": "monitor_panel_pendings_title",
+	"monitor_panel_accepted_title": "monitor_panel_accepted_title"
 }

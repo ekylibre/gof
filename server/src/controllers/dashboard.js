@@ -33,15 +33,14 @@ DashboardController.prototype.dashboardGet = function(request, reply) {
 
 DashboardController.prototype.dashboardMaster = function(request, reply) {
     var email = request.auth.credentials.user.email;
-    User.findOne({email: email}).populate('channels').exec((error, result) => {
+    User.findOne({email: email}).populate('channels').exec((error, user) => {
         if(error) {
             return reply(Boom.internal());
         }
-        var user = result;
 
         for(var i=0;i<user.channels.length;++i) {
             var chan = user.channels[i];
-            chan.closed = chan.state == 'CLOSED';
+            chan.closed = chan.state == Constants.ChannelStateEnum.CLOSED;
         }
 
         var ctx = { channels: user.channels };
@@ -50,7 +49,22 @@ DashboardController.prototype.dashboardMaster = function(request, reply) {
 }
 
 DashboardController.prototype.dashboardPlayer = function(request, reply) {
-    return reply.redirect('/channels/scenarioselection');
+    var email = request.auth.credentials.user.email;
+    User.findOne({email: email}).populate('channels').exec((error, user) => {
+        if(error) {
+            return reply(Boom.internal());
+        }
+        for(var i=0;i<user.channels.length;++i) {
+            var chan = user.channels[i];
+            chan.closed = chan.state == Constants.ChannelStateEnum.CLOSED;
+            if(chan.closed) {
+                chan.score = chan.users[0].phaseResult.score;
+            }
+        }
+
+        var ctx = { channels: user.channels };
+        return reply.view('views/dashboardplayer', ctx, {layoutPath:'./templates/layout/dashboard'});
+    });
 }
 
 
