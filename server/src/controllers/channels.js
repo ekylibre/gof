@@ -77,9 +77,12 @@ function ChannelsController(server){
         method: 'GET',
         path: '/channels/{chanId}/accept/{email}',
         handler: ChannelsController.acceptChannelInvite,
-        /*config: {
-            auth: 'token'
-        }*/
+        config: {
+            auth: {
+                strategy: 'token',
+                mode: 'optional'
+            }
+        }
     });
 
 }
@@ -132,13 +135,12 @@ ChannelsController.create = function(request, reply) {
         chan.phase = scenario;
         chan.created = new Date();
 
+        //non master player auto-register to its own channel
         if(user.role != Constants.UserRoleEnum.MASTER) {
             chan.users.push({
                 user: user.id,
                 phaseResult:null 
             });
-        } else {
-
         }
 
         chan.save(
@@ -315,7 +317,6 @@ ChannelsController.acceptChannelInvite = function(request, reply) {
         //redirect to login
         return reply.redirect('/auth/login?email='+encodeURIComponent(request.params.email)+'&target='+encodeURIComponent(target));
     }
-
     return reply.redirect(target);
 }
 
