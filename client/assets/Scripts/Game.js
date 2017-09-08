@@ -99,7 +99,8 @@ export default class CGame
         PHASE_LOAD:     11,
         PHASE_READY:    12,
         PHASE_RUN:      13,
-        PHASE_SCORE:    14
+        PHASE_SCORE:    14,
+        PHASE_DONE:     15
     };
 
     /**
@@ -379,7 +380,7 @@ export default class CGame
 
             var phaseId = res.payload.phase;
 
-            if (res.payload.gameData)
+            if (res.payload.gameData && Object.keys(res.payload.gameData).length != 0)
             {
                 // Restore existing game
                 UIDebug.log('Restoring existing game from channel');
@@ -460,12 +461,17 @@ export default class CGame
      */
     phaseFinish(_Score, _Results)
     {
-        if (this.state != CGame.State.PHASE_SCORE)
+        if (this.state <= CGame.State.PHASE_SCORE)
         {
+            var self = this;
             this.state = CGame.State.PHASE_SCORE;
+            var resultString = JSON.stringify(_Results);
             this.saveChannel(() =>
             {
-                
+                this.api.setScore(_Score, resultString, (err, res, c)=>
+                {
+                    this.state = CGame.State.PHASE_DONE;
+                });
             });
         }
     }

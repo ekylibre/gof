@@ -186,7 +186,7 @@ ApiClient.prototype.setGameData = function(data, callback) {
 /**
  * @method setScore
  * @param {Number} score
- * @param {Object} details
+ * @param {String} details
  * @param {Callback} callback - callback(error, response, client) triggered with the response or error 
  */
 ApiClient.prototype.setScore = function(score, details, callback) {

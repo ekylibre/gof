@@ -87,8 +87,8 @@ ApiChannels.prototype._getChannelUser = function (request, cb) {
                 // Find user in channel and mark as linked if needed
                 var chanUser = null;
                 for (var i=0; i<channel.users.length; i++) {
-                    var uid = channel.users[i].userId;
-                    if (uid.equals(user._id)) {
+                    var u = channel.users[i].user;
+                    if (u.equals(user._id)) {
                         chanUser = channel.users[i];
                         break;
                     }
@@ -177,13 +177,14 @@ ApiChannels.prototype.setScore = function(request, reply) {
     
         chanUser.phaseResult = {score: request.payload.score, details: request.payload.details};
 
-        var closed = channel.state != Constants.ChannelStateEnum.CLOSED;
+        var closed = channel.state == Constants.ChannelStateEnum.CLOSED;
         if (!closed) {
             // channel is not closed yet
             // check if all users have a result
+            closed = true;
             for (var i=0; i<channel.users.length; i++) {
                 var u = channel.users[i];
-                if (u.phaseResult == null) {
+                if (!u.phaseResult) {
                     closed = false;
                     break;
                 }

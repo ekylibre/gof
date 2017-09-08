@@ -481,7 +481,7 @@ require = function e(t, n, r) {
                             return criticalError(new Error("invalid getgamedata result", res.payload));
                         }
                         var phaseId = res.payload.phase;
-                        if (res.payload.gameData) {
+                        if (res.payload.gameData && 0 != Object.keys(res.payload.gameData).length) {
                             UIDebug.log("Restoring existing game from channel");
                             var save = res.payload.gameData;
                             try {
@@ -517,9 +517,16 @@ require = function e(t, n, r) {
             }, {
                 key: "phaseFinish",
                 value: function phaseFinish(_Score, _Results) {
-                    if (this.state != CGame.State.PHASE_SCORE) {
+                    var _this = this;
+                    if (this.state <= CGame.State.PHASE_SCORE) {
+                        var self = this;
                         this.state = CGame.State.PHASE_SCORE;
-                        this.saveChannel(function() {});
+                        var resultString = JSON.stringify(_Results);
+                        this.saveChannel(function() {
+                            _this.api.setScore(_Score, resultString, function(err, res, c) {
+                                _this.state = CGame.State.PHASE_DONE;
+                            });
+                        });
                     }
                 }
             }, {
@@ -545,14 +552,14 @@ require = function e(t, n, r) {
             }, {
                 key: "loadPhase",
                 value: function loadPhase(uid, callback) {
-                    var _this = this;
+                    var _this2 = this;
                     this.state = CGame.State.PHASE_LOAD;
                     this.api.getScenarios(uid, function(error, json) {
                         if (error) {
                             callback(new Error("Error: Failed to get scenario with uid:" + uid + "\n" + error.message));
                             return;
                         }
-                        if (json.scenario.start.farm.parcels.length > _this.farm.parcels.length) {
+                        if (json.scenario.start.farm.parcels.length > _this2.farm.parcels.length) {
                             callback(new Error("Error: the scenario " + uid + " contains more parcels than the current gfx farm"));
                             return;
                         }
@@ -581,7 +588,7 @@ require = function e(t, n, r) {
                             }
                             phase.parcels.push(parcel);
                         }
-                        _this.phase = phase;
+                        _this2.phase = phase;
                         callback(null);
                     });
                 }
@@ -651,7 +658,8 @@ require = function e(t, n, r) {
             PHASE_LOAD: 11,
             PHASE_READY: 12,
             PHASE_RUN: 13,
-            PHASE_SCORE: 14
+            PHASE_SCORE: 14,
+            PHASE_DONE: 15
         }, _temp);
         exports.default = CGame;
         module.exports = exports["default"];
