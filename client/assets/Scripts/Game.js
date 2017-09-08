@@ -6,7 +6,6 @@
 // the singleton also initializes i18n
 // TODO: check language provided by the environment
 
-const CGameChannel = require('./GameChannel');
 const CGamePhase = require('./GamePhase');
 const CParcelSetup = require('./ParcelSetup');
 const CFarm = require('./Farm');
@@ -37,12 +36,49 @@ var ConfigMaster=
 
 let instance = null;
 
+var criticalError = function(error, details)
+{
+    if (!error)
+    {
+        return;
+    }
+
+    if (DEBUG)
+    {
+        var message = error.message;
+        if (details)
+        {
+            message += '\n'+details;
+        }
+        UIEnv.message.show(
+            message,
+            i18n.t('error'),
+            {
+                buttons: 'none'
+            }
+        );
+        // if (details)
+        // {
+        //     UIDebug.log('Error: '+error.message+' '+details);
+        // }    
+    }
+    else
+    {
+        UIEnv.message.show(
+            error.message,
+            i18n.t('error'),
+            {
+                buttons: 'none'
+            }
+        );
+    }
+}
+
 /**
  * The Game singleton
  * @class
  * @property {Boolean}      isDebug: true if the game is in 'debug' mode
  * @property {Dictionary}   config: current game config
- * @property {CGameChannel}       canal: active game 'canal'
  * @property {CFarm}        farm: the farm
  * @property {CGamePhase}   phase: active game 'phase'
  * @property {Array:CPlant}        plants: list of known plants
@@ -58,7 +94,8 @@ export default class CGame
     {
         INVALID:        -1,
         READY:          0,
-        PHASE_SELECT:   10,
+        
+        CHANNEL_OPEN:   10,
         PHASE_LOAD:     11,
         PHASE_READY:    12,
         PHASE_RUN:      13,
@@ -81,6 +118,12 @@ export default class CGame
      * @type {Number}
      */
     _startYear = 0;
+
+    /**
+     * @private
+     * @type {Boolean}
+     */
+    _saving = false;
 
     constructor()
     {
@@ -105,7 +148,6 @@ export default class CGame
 
         i18n.init(this.config.LANGUAGE_DEFAULT);
 
-        this.canal = new CGameChannel();
         this.farm = new CFarm();
 
         var now = new Date(Date.now());
@@ -216,15 +258,7 @@ export default class CGame
             {
                 if (error)
                 {
-                    UIEnv.message.show(
-                        i18n.t('error_connection_failed') + '\n\n('+error+')',
-                        i18n.t('error'),
-                        {
-                            buttons: 'none'
-                        }
-                    );                    
-                    UIDebug.log('Error: Failed to get plants:'+error);
-                    return;
+                    return criticalError(error);
                 }
 
                 if (json && Array.isArray(json))
@@ -269,6 +303,144 @@ export default class CGame
     }
 
     /**
+     * @method saveChannel Save game state in channel
+     */
+    saveChannel(callback)
+    {
+        if (!this.api || !this.api.channelId)
+        {
+            return;
+        }
+
+        if (this._saving)
+        {
+            if (callback)
+            {
+                callback();
+            }
+            return;
+        }
+
+        if (this.state >= CGame.State.PHASE_READY && this.state <= CGame.State.PHASE_SCORE)
+        {
+            this._saving = true;
+
+            var save = {};
+            save.date = Date.now();
+            //save.phaseId = this.phase.uid;
+            save.phaseState = this.state;
+            save.farm = this.farm.serialize();
+
+            var self = this;
+            this.api.setGameData(
+                JSON.stringify(save),
+                (err, res, c)=>
+            {
+                self._saving = false;
+                if (callback)
+                {
+                    callback();
+                }
+                if (err)
+                {
+                    UIEnv.message.show(
+                        err.message,
+                        i18n.t('error')
+                    );
+                }                       
+            });
+        }
+    }
+
+    /**
+     * @method openChannel Starts (or restores) game from channel
+     */
+    openChannel()
+    {
+        if (!this.api)
+        {
+            cc.error('Please setup CGame.api');
+            return;
+        }
+        
+        this.state = CGame.State.CHANNEL_OPEN;
+        var self = this;
+        this.api.getGameData((err, res, c) =>
+        {
+            if (err)
+            {
+                return criticalError(err);
+            }
+                
+            if (!res.payload.phase)
+            {
+                return criticalError(new Error('invalid getgamedata result', res.payload));
+            }
+
+            var phaseId = res.payload.phase;
+
+            if (res.payload.gameData)
+            {
+                // Restore existing game
+                UIDebug.log('Restoring existing game from channel');
+
+                var save = res.payload.gameData;
+                try
+                {
+                    if (typeof save == 'string')
+                    {
+                        save = JSON.parse(res.payload.gameData);
+                    }
+                    if (!save || !save.farm || !save.phaseState)
+                    {
+                        return criticalError(new Error('Invalid gameData'), res.payload.gameData);
+                    }
+    
+                    self.farm.deserialize(save.farm);
+                }
+                catch (_e)
+                {
+                    return criticalError(new Error('Exception restoring gameData'), _e);
+                }
+
+                self.loadPhase(phaseId, (err) =>
+                {
+                    if (!err)
+                    {
+                        self.state = save.phaseState;
+                        UIDebug.log('Restoration succeeded - going to state '+self.state);
+
+                        if (self.state == CGame.State.PHASE_SCORE) {
+                            UIEnv.questInfo.onBtValidate();
+                        }
+                    }
+                    else
+                    {
+                        criticalError(err);
+                    }
+                });
+
+            }
+            else
+            {
+                //// DEBUG
+                if (self.isDebug && phaseId != 'croprotation')
+                {
+                    phaseId = 'croprotation';
+                }
+                //////
+                    
+                // Starts from the beginning
+                UIDebug.log('Starting phase from channel: '+phaseId);
+                
+                self.loadPhase(phaseId, criticalError);
+            }
+
+        });
+        
+    }
+
+    /**
      * Starts current phase
      */
     phaseStart()
@@ -288,11 +460,14 @@ export default class CGame
      */
     phaseFinish(_Score, _Results)
     {
-        //TODO
-        this.canal.openPhase = "";
-        this.canal.phasesResults.push({uid: this.phase.uid, score: _Score, results: _Results});
-
-        cc.log(JSON.stringify(this.canal));
+        if (this.state != CGame.State.PHASE_SCORE)
+        {
+            this.state = CGame.State.PHASE_SCORE;
+            this.saveChannel(() =>
+            {
+                
+            });
+        }
     }
 
     /**
@@ -346,7 +521,7 @@ export default class CGame
             {
                 if(error)
                 {
-                    callback(new Error('Error: Failed to get scenario with uid:'+uid+' '+ error));
+                    callback(new Error('Error: Failed to get scenario with uid:'+uid+'\n'+ error.message));
                     return;
                 }
 

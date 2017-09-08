@@ -14,6 +14,8 @@ const Equipment = require('../models/equipment');
 const Rotation = require('../models/rotation');
 const Tool = require('../models/tool');
 
+const ApiChannels = require('./api.channels');
+
 var CORS = false;
 if(process.env.NODE_ENV !== 'production') {
     //accept Cross Origin Resource Sharing when in dev
@@ -25,8 +27,6 @@ if(process.env.NODE_ENV !== 'production') {
 var Auth = function(server) {
 
     var self = this;
-
-    
 
     server.route({
         method: 'GET',
@@ -99,7 +99,7 @@ var Auth = function(server) {
 }
 
 Auth.prototype.check = function(request, reply) {
-    var email = request.auth.credentials.email;
+    var email = request.auth.credentials.user.email;
     User.findOne( {email: email}).select('-password -resetpasswordtoken').exec(
         (error, user) => {
             if(error) {
@@ -141,8 +141,7 @@ Auth.prototype.login = function(request, reply) {
                 return reply(Boom.unauthorized());
             }
             const token = jwt.sign({
-                    email: user.email,
-                    firstname: user.firstName
+                    user: user
                 }, 
                 config.get('Jwt.key'),
                 {
@@ -275,6 +274,7 @@ Scenario.prototype.getScenarios = function(request, reply) {
 function Api(server) {
     this.Auth = new Auth(server);
     this.Scenario = new Scenario(server);
+    this.Channels = new ApiChannels(server);
 }
 
 module.exports = Api;

@@ -1,0 +1,33 @@
+
+
+<div class="row">
+    {{#each scenarios}}
+    <div class="col-md-4">
+        <div class="row">
+            <div class="gof-scenario-item" style="background-image: url(/images/{{id}}.jpg);" gof-scenario-id="{{id}}">
+                <span>{{name}}</span>
+            </div>
+        </div>
+        
+    </div>
+    {{/each}}
+    <a href='#' id="validate-scenario" class='btn btn-primary disabled'>{{okButton}}</a>
+</div>    
+
+<script>
+    var selectedScenario = null;
+    $('.gof-scenario-item').click(function(event){
+        $('.gof-scenario-item').removeClass('active');
+        $(this).addClass('active');
+        selectedScenario = $(this).attr('gof-scenario-id');
+        if(selectedScenario == 'croprotation') {
+            $('#validate-scenario').removeClass('disabled');
+        } else {
+            $('#validate-scenario').addClass('disabled');
+        }
+    });
+
+    $('#validate-scenario').click(function(event){
+        window.location.replace('/channels/create/'+ selectedScenario);
+    });
+</script>

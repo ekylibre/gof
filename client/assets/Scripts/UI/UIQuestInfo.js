@@ -121,7 +121,7 @@ var UIQuestInfo = cc.Class({
             UIEnv.score_croprotation.setScoreText(Math.round(normalizedScore * 20) + " / 20");
             UIEnv.score_croprotation.show();
 
-            game.phaseFinish(normalizedScore);
+            game.phaseFinish(normalizedScore, results);
         }
     },
 

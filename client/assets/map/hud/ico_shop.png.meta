@@ -1,0 +1,30 @@
+{
+  "ver": "1.0.0",
+  "uuid": "6407a6dc-0c90-4b81-ae59-fa037d49d245",
+  "type": "sprite",
+  "wrapMode": "clamp",
+  "filterMode": "bilinear",
+  "subMetas": {
+    "ico_shop": {
+      "ver": "1.0.3",
+      "uuid": "4eb62714-98c2-4ad3-84cf-a4ec4524446a",
+      "rawTextureUuid": "6407a6dc-0c90-4b81-ae59-fa037d49d245",
+      "trimType": "auto",
+      "trimThreshold": 1,
+      "rotated": false,
+      "offsetX": -2.5,
+      "offsetY": -0.5,
+      "trimX": 8,
+      "trimY": 10,
+      "width": 43,
+      "height": 45,
+      "rawWidth": 64,
+      "rawHeight": 64,
+      "borderTop": 0,
+      "borderBottom": 0,
+      "borderLeft": 0,
+      "borderRight": 0,
+      "subMetas": {}
+    }
+  }
+}

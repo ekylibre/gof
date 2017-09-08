@@ -126,8 +126,7 @@ AuthController.loginpost = function (request, reply) {
             //here the user had successfully entered credentials
             //let create a token
             const token = jwt.sign({
-                    email: user.email,
-                    firstname: user.firstName
+                    user: user
                 }, 
                 config.get('Jwt.key'),
                 {
@@ -140,14 +139,14 @@ AuthController.loginpost = function (request, reply) {
                 if(err) {
                     return reply(Boom.internal());
                 }
-                reply().state('access_token', token, cookie_options).redirect('/game/start');
+                reply().state('access_token', token, cookie_options).redirect('/dashboard');
             });
         });
     });
 }
 
 AuthController.logout = function(request, reply) {
-    var email = request.auth.credentials.email;
+    var email = request.auth.credentials.user.email;
     User.findOne( {email: email}, (error, user) => {
         if(error) {
             reply(Boom.unauthorized());
@@ -169,37 +168,23 @@ AuthController.logout = function(request, reply) {
     });
 }
 
-/*
-AuthController.check = function (request, reply) {
-
-    var email = request.auth.credentials.email;
-
-    User.findOne( {email: email},
-        (error, user) => {
-            if(error) {
-                reply(Boom.unauthorized());
-                return;
-            }
-            
-            if(!user) {
-                reply(Boom.notFound());
-                return;
-            }
-
-            reply({user:user});
-        }
-    );
-}
-*/
-
 AuthController.registerget = function(request, reply) {
-    var ctx = {
-        roles:
-        [
-            {id: "truffe", name:"étudiant"},
-            {id: "master", name:"enseignant"}
-        ]
+
+    var predefinedRole = request.params.role;
+    var ctx = {roles: []};
+
+    var roleKeys = Object.keys(Constants.UserRoleEnum);
+    for(var i=0; i<roleKeys.length; ++i) {
+        var role = Constants.UserRoleEnum[roleKeys[i]];
+        ctx.roles.push(
+            {id: role, name: request.i18n.__(role)}
+        );
     };
+
+    for(var i=0; i<ctx.roles.length;++i) {
+        ctx.roles[i].selected = ctx.roles[i].id == predefinedRole;
+    }
+
     reply.view('views/register', ctx);
 }
 
@@ -213,13 +198,17 @@ AuthController.registerpost = function(request, reply) {
         });
     }
 
-    var first = request.payload.firstName;
-    var last = request.payload.lastName;
+    var first = request.payload.firstname;
+    var last = request.payload.lastname;
     
     var email = request.payload.email;
     var p1 = request.payload.password1;
     var p2 = request.payload.password2;
+
+    var role = request.payload.role;
  
+    var establishment = request.payload.establishment;
+
     User.findOne({email: email}, 
         (error, result) => {
             if(result && result.email == email) {
@@ -236,6 +225,8 @@ AuthController.registerpost = function(request, reply) {
                     u.lastName = last;
                     u.email = email;
                     u.password = encrypted;
+                    u.establishment = establishment;
+                    u.role = role;
                     u.save(
                         (error, user) => {
                             if(error) {
