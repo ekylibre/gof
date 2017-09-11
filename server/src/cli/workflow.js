@@ -13,9 +13,11 @@ var Additive = require('../models/additive');
 var Equipment = require('../models/equipment');
 var Rotation = require('../models/rotation');
 
+var workflowitk = require('./workflowitk');
+
 // If modifying these scopes, delete your previously saved credentials
 // at ~/.credentials/sheets.googleapis.com-nodejs.json
-var SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
+var SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly', 'https://www.googleapis.com/auth/drive.readonly' ];
 var TOKEN_DIR = './cli/.credentials/';
 var TOKEN_PATH = TOKEN_DIR + 'sheets.googleapis.com-nodejs.json';
 
@@ -342,6 +344,7 @@ function main() {
     .option('-c, --connection <connection>', 'The mongoDB connection string https://docs.mongodb.com/manual/reference/connection-string/')
     .option('-p, --populate', 'Populate the database with initial data')
     .option('-l, --localisation', 'Build the client localisation file')
+    .option('-x, --xml', 'Exports itk xml files')
     .parse(process.argv);
 
     if(program.populate) {
@@ -383,6 +386,22 @@ function main() {
             });
         });
     }
+
+    if(program.xml) {
+        fs.readFile('./cli/client_secret_drive.json', function processClientSecrets(err, content) {
+            if (err) {
+                console.error(err);
+                return;
+            }
+            // Authorize a client with the loaded credentials, then call the
+            // Google Drive API.
+            authorize(JSON.parse(content), function onAuthorized(auth) {
+                workflowitk.exportFiles(auth, function() {});
+                });
+        });
+    
+    }
+   
 }
 
 main();
