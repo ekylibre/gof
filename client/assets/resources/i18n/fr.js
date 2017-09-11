@@ -32,6 +32,7 @@ window.i18n.languages.fr={
 	"culture_normal":"Conventionnel",
 	"culture_bio":"Bio",
 	"culture_permaculture":"Permaculture",
+	"culture_reasoned":"Raisonné",
 	"surface_hectare":"%{val} Ha",
 	"new":"Nouveau",
 	"cost_title":"Coût",

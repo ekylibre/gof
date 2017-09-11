@@ -139,7 +139,12 @@ AuthController.loginpost = function (request, reply) {
                 if(err) {
                     return reply(Boom.internal());
                 }
-                reply().state('access_token', token, cookie_options).redirect('/dashboard');
+
+                var target = '/dashboard';
+                if(request.payload.target) {
+                    target = request.payload.target;
+                }
+                reply().state('access_token', token, cookie_options).redirect(target);
             });
         });
     });
@@ -198,8 +203,8 @@ AuthController.registerpost = function(request, reply) {
         });
     }
 
-    var first = request.payload.firstName;
-    var last = request.payload.lastName;
+    var first = request.payload.firstname;
+    var last = request.payload.lastname;
     
     var email = request.payload.email;
     var p1 = request.payload.password1;

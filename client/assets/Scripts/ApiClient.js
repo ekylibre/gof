@@ -9,9 +9,14 @@ function ApiClient(_EndPoint) {
 
     var elem = document.getElementById('GameCanvas');
     var at = elem.getAttribute('gof-access-token') || localStorage.getItem('gof-access-token');
-
+    var channel = elem.getAttribute('gof-channel-id') || localStorage.getItem('gof-channel-id');
+    
     if(at) {
         this.accessToken = at;
+    }
+
+    if (channel) {
+        this.channelId = channel;
     }
 }
 
@@ -76,7 +81,7 @@ function buildRequest(client, method, path, query, callback) {
 /**
  * Check if user is logged in
  * @method checkAuth
- * @param callback: the callback which will be fired when we got a response
+ * @param {Callback} callback - callback(error, response, client) triggered with the response or error 
   */
 ApiClient.prototype.checkAuth = function(callback) {
     var req = get(this, '/auth/check', null, callback);
@@ -86,9 +91,9 @@ ApiClient.prototype.checkAuth = function(callback) {
 /**
  * Login
  * @method login
- * @param email: the email of the user
- * @param password: the password in clear 
- * @param callback: the callback which will be fired when we got a response
+ * @param email - the email of the user
+ * @param password - the password in clear 
+ * @param {Callback} callback - callback(error, response, client) triggered with the response or error 
   */
 ApiClient.prototype.login = function(email, password, callback) {
 
@@ -108,9 +113,9 @@ ApiClient.prototype.login = function(email, password, callback) {
 }
 
 /**
- * @method: getPlant
- * @param id: the mongoId of the plant
- * @callback: the callback triggered with the response or error
+ * @method getPlant
+ * @param id - the mongoId of the plant
+ * @param {Callback} callback - callback(error, response, client) triggered with the response or error 
  */
 ApiClient.prototype.getPlant = function(id, callback) {
     var req = get(this, '/plants/'+encodeURIComponent(id), null, callback);
@@ -119,8 +124,8 @@ ApiClient.prototype.getPlant = function(id, callback) {
 
 /**
  * @method getPlants
- * @param options: object of query string parameters, each field of the Plant schema could be used
- * @param callback: the callback triggered with the response or error
+ * @param options - object of query string parameters, each field of the Plant schema could be used
+ * @param {Callback} callback - callback(error, response, client) triggered with the response or error 
  */
 ApiClient.prototype.getPlants = function(options, callback) {
     var req = get(this, '/plants', options, callback);
@@ -129,8 +134,8 @@ ApiClient.prototype.getPlants = function(options, callback) {
 
 /**
  * @method getScenarios
- * @param uid: The name of the scenario or null/undefined if you want to get the list of scenarios
- * @param callback: the callback triggered with the response or error
+ * @param uid - The name of the scenario or null/undefined if you want to get the list of scenarios
+ * @param {Callback} callback - callback(error, response, client) triggered with the response or error 
  */
 ApiClient.prototype.getScenarios = function(uid, callback) {
     var req = null;
@@ -140,6 +145,64 @@ ApiClient.prototype.getScenarios = function(uid, callback) {
         req = get(this, '/scenarios', null, callback);
     }
     req.send();
+}
+
+/**
+ * @method getGameData
+ * @param {Callback} callback - callback(error, response, client) triggered with the response or error 
+ */
+ApiClient.prototype.getGameData = function(callback) {
+
+    if (!this.channelId) {
+        cc.error('Missing channel id');
+        return;
+    }
+
+    var req = null;
+    req = get(this, '/channel/getgamedata/'+encodeURIComponent(this.channelId), null, callback);
+    req.send();
+}
+
+/**
+ * @method setGameData
+ * @param {String} data
+ * @param {Callback} callback - callback(error, response, client) triggered with the response or error 
+ */
+ApiClient.prototype.setGameData = function(data, callback) {
+    if (!this.channelId) {
+        cc.error('Missing channel id');
+        return;
+    }
+
+    var req = null;
+    req = post(this, '/channel/setgamedata', callback);
+    var p = params({
+        chanId : this.channelId,
+        gameData: data
+    });
+    req.send(p);
+}
+
+/**
+ * @method setScore
+ * @param {Number} score
+ * @param {String} details
+ * @param {Callback} callback - callback(error, response, client) triggered with the response or error 
+ */
+ApiClient.prototype.setScore = function(score, details, callback) {
+    if (!this.channelId) {
+        cc.error('Missing channel id');
+        return;
+    }
+
+    var req = null;
+    req = post(this, '/channel/setscore', callback);
+    var p = params({
+        chanId : this.channelId,
+        score: score,
+        details: details
+    });
+    req.send(p);
 }
 
 module.exports = ApiClient;

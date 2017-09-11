@@ -1,0 +1,11 @@
+<div class="row" style="width: 50%; margin:auto;">
+    <div><ul>
+    {{#each channels}}
+    <li>{{created}}, {{phase}}, {{#if closed}} Terminée, SCORE: {{score}} {{else}} En cours <a class="btn btn-primary" href='/game/start/{{_id}}'>{{i18n "resume_game"}}</a> {{/if}}</li>
+    {{/each}}
+    </ul></div>
+</div>    
+
+<div class="row" style="width: 50%; margin:auto;">
+    <a href="/channels/scenarioselection" class="btn btn-primary">{{i18n "create_new_channel"}}</a>
+</div>

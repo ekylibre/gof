@@ -1,5 +1,5 @@
 
-const SharedConsts = require('./constants')
+const SharedConsts = require('./common/constants')
 
 /**
  * Represents a plant species available in the game
@@ -63,7 +63,8 @@ export default class CPlant
         var mode = _Mode;
         if (mode != SharedConsts.CultureModeEnum.NORMAL &&
             mode != SharedConsts.CultureModeEnum.BIO &&
-            mode != SharedConsts.CultureModeEnum.PERMACULTURE)
+            //mode != SharedConsts.CultureModeEnum.PERMACULTURE &&
+            mode != SharedConsts.CultureModeEnum.REASONED)
         {
             cc.error('Invalid culture mode: '+_Mode);
             mode = SharedConsts.CultureModeEnum.NORMAL;

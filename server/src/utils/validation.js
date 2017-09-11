@@ -37,7 +37,8 @@ module.exports = {
     checkLogin : function(payload) {
         const schema = Joi.object().keys({
             email: Joi.string().email().required(),
-            password: Joi.string().required()
+            password: Joi.string().required(),
+            target: Joi.string(),
         });
 
         return Joi.validate(payload, schema);

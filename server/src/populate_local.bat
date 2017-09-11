@@ -1,1 +1,1 @@
-node cli\database.js -c "mongodb://localhost:27017/gof" -p
+node cli\workflow.js -c "mongodb://localhost:27017/gof" -p

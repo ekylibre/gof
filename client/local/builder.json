@@ -4,6 +4,7 @@
   "appABIs": [],
   "buildPath": "..\\server\\src\\public",
   "debug": false,
+  "includeEruda": false,
   "keystoreAlias": "",
   "keystoreAliasPassword": "",
   "keystorePassword": "",
@@ -14,6 +15,5 @@
   "sourceMaps": false,
   "template": "default",
   "useDebugKeystore": true,
-  "vsVersion": "auto",
-  "includeEruda": false
+  "vsVersion": "auto"
 }
