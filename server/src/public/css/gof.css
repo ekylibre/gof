@@ -1,3 +1,21 @@
+html {
+position: relative;
+    min-height: 100%;
+}
+
+body {
+/* Margin bottom by footer height */
+    margin-bottom: 180px;
+}
+.footer {
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+    /* Set the fixed height of the footer here */
+    height: 180px;
+}
+  
+
 video#bgvid {
     position: fixed; right: 0; bottom: 0;
     min-width: 100%; min-height: 100%;
@@ -40,4 +58,65 @@ video#bgvid::-webkit-scrollbar {
     bottom: 0px;
     -moz-box-shadow: inset 0 0px 4px rgba(0, 0, 0, .55);
     -webkit-box-shadow: inset 0 0px 4px rgba(0, 0, 0, .55);
+}
+
+a.disabled {
+    color: gray;
+    pointer-events: none;
+}
+
+.gof-center {
+    text-align: center;
+}
+
+.vertical-align {
+    display: flex;
+    align-items: center;
+}
+
+.gof-right { 
+    text-align: right;
+}
+
+.btn {
+    border-radius: 8px;
+    border: 2px solid transparent;
+    font-weight: bold;
+}
+
+.btn-primary {
+    color: #000;
+    background-color: #5eb290;
+    border-color: #481d22;
+    
+}
+
+.btn-primary:focus,
+.btn-primary.focus {
+  color: #000;
+  background-color: #5eb290;
+  border-color: #481d22;
+}
+.btn-primary:hover {
+  color: #000;
+  background-color: #A5F2D3;
+  border-color: #481d22;
+}
+
+.panel {
+    background-color: #ffe8b3;
+    border: 6px solid #71242c;
+    border-radius: 8px;
+}
+
+
+.panel-info>.panel-heading {
+    border-radius: 0px;
+    border: 0px;
+    background-color: #7C3337;
+    color: #ffe8b3;
+}
+
+.panel-info>.panel-body {
+    border: 0px;
 }

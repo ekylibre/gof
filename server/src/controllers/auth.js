@@ -38,7 +38,13 @@ function AuthController(server) {
     server.route({
         method: 'GET',
         path: '/auth/login',
-        handler: AuthController.loginget
+        handler: AuthController.loginget,
+        config: {
+            auth: {
+                strategy: 'token',
+                mode: 'optional'
+            }
+        }
     });
 
     server.route({
@@ -99,6 +105,9 @@ function AuthController(server) {
 }
 
 AuthController.loginget = function(request, reply) {
+    if(request.auth.isAuthenticated) {
+        return reply.redirect('/dashboard');
+    }
     reply.view('views/login');
 }
 

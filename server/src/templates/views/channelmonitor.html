@@ -33,11 +33,11 @@
                     <div class="panel panel-info">
                         <div class="panel-heading">{{i18n "monitor_panel_pendings_title"}}</div>
                         <div class="panel-body" style="padding: 5%;">
-                            <div><ul>
+                            <ul class="list-group">
                                 {{#each pendings}}
-                                <li>{{email}}</li>
+                                <li class="list-group-item">{{email}}</li>
                                 {{/each}}
-                            </ul></div>
+                            </ul>
                         </div>
                     </div>
                 </div>
@@ -46,9 +46,9 @@
                     <div class="panel panel-info">
                         <div class="panel-heading">{{i18n "monitor_panel_accepted_title"}}</div>
                         <div class="panel-body" style="padding: 5%;">
-                            <ul>
+                            <ul class="list-group">
                                 {{#each accepteds}}
-                                <li>{{email}}</li>
+                                <li class="list-group-item">{{email}}</li>
                                 {{/each}}
                             </ul>
                         </div>
