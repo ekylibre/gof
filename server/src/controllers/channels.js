@@ -6,7 +6,8 @@ const Channel = require('../models/channel');
 const Boom = require('boom');
 const Joi = require('joi');
 const InviteTools = require('../utils/invitetools');
-var moment = require('moment');
+const ScoreExporter = require('../utils/scoreexporter');
+const Moment = require('moment');
 
 function ChannelsController(server){
     server.route({
@@ -49,6 +50,16 @@ function ChannelsController(server){
         method: 'GET',
         path: '/channels/scores/{id}',
         handler: ChannelsController.scores,
+        config: {
+            auth: 'token'
+        }
+
+    });
+
+    server.route({
+        method: 'GET',
+        path: '/channels/exportscores/{id}/{format}',
+        handler: ChannelsController.exportScores,
         config: {
             auth: 'token'
         }
@@ -173,9 +184,10 @@ ChannelsController.scores = function(request, reply) {
         }
 
         var channel = {};
-        channel.created = moment(result.created).format('LL');
+        channel.created = Moment(result.created).format('LL');
         channel.phase = request.i18n.__('scenario_' + result.phase);
         channel.state = request.i18n.__('channelstate_' + result.state);
+        channel.id = result.id;
 
         channel.users = [];
         for(var i=0;i<result.users.length;++i) {
@@ -188,6 +200,26 @@ ChannelsController.scores = function(request, reply) {
 
         var ctx = {channel: channel};
         return reply.view('views/scoresmaster', ctx, {layoutPath:'./templates/layout/dashboard'});
+    });
+}
+
+ChannelsController.exportScores = function(request, reply) {
+    var channelId = request.params.id;
+    var format = request.params.format;
+
+    Channel.findOne({_id: channelId}).populate('users.user').exec((error, channel) => {
+        if(error) {
+            return reply(Boom.badRequest());
+        }
+
+        var exporter = new ScoreExporter(channel, format, request.i18n);
+        var data = exporter.export();
+
+        var dlFileName = 'gameoffarms_scores_' + Moment(channel.created).format('LLL') + '.' + format;
+        dlFileName = dlFileName.replace(/ /g, '_');
+        dlFileName = dlFileName.replace(/:/g, '-');
+
+        reply(data).type('text/csv').header('content-disposition', 'attachment; filename='+dlFileName+';');
     });
 }
 

@@ -6,6 +6,7 @@ const User = require('../models/user');
 const config = require('config');
 const Hoek = require('hoek');
 const Channel = require('../models/channel');
+var moment = require('moment');
 
 function DashboardController(server) {
     
@@ -40,6 +41,8 @@ DashboardController.prototype.dashboardMaster = function(request, reply) {
 
         for(var i=0;i<user.channels.length;++i) {
             var chan = user.channels[i];
+            chan.createdStr = moment(chan.created).format('LL');
+            chan.phaseStr = request.i18n.__('scenario_' + chan.phase);
             chan.closed = chan.state == Constants.ChannelStateEnum.CLOSED;
         }
 
@@ -56,6 +59,8 @@ DashboardController.prototype.dashboardPlayer = function(request, reply) {
         }
         for(var i=0;i<user.channels.length;++i) {
             var chan = user.channels[i];
+            chan.createdStr = moment(chan.created).format('LL');
+            chan.phaseStr = request.i18n.__('scenario_' + chan.phase);
             chan.closed = chan.state == Constants.ChannelStateEnum.CLOSED;
             if(chan.closed) {
                 chan.score = chan.users[0].phaseResult.score;

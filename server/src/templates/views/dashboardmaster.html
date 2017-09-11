@@ -1,11 +1,24 @@
-<div class="row" style="width: 50%; margin:auto;">
-    <div><ul>
+<div class="row">
+    <ul class="list-group">
     {{#each channels}}
-    <li>{{created}}, {{phase}}, {{#if closed}} Terminée {{else}} En cours <a class="btn btn-primary" href='/channels/{{_id}}/monitor'>{{i18n "monitor_channel"}}</a> {{/if}} <a class="btn btn-primary" href='/channels/scores/{{_id}}'>{{i18n "show_scores"}}</a></li>
+        <li class="list-group-item">
+            <div class="row">
+                <div class="col-md-3">{{createdStr}}</div>
+                <div class="col-md-2">{{phaseStr}}</div>
+                {{#if closed}} 
+                    <div class="col-md-2">{{i18n "state_done"}}</div>
+                    <div class="col-md-2"></div>
+                {{else}} 
+                    <div class="col-md-2">{{i18n "state_running"}}</div>
+                    <div class="col-md-2 gof-right"><a class="btn btn-primary" href='/channels/{{_id}}/monitor'>{{i18n "monitor_channel"}}</a></div>
+                {{/if}} 
+                <div class="col-md-3 gof-right"><a class="btn btn-primary" href='/channels/scores/{{_id}}'>{{i18n "show_scores"}}</a></div>
+            </div>
+        </li>
     {{/each}}
-    </ul></div>
+    </ul>
 </div>    
 
-<div class="row" style="width: 50%; margin:auto;">
+<div class="row pull-right">
     <a href="/channels/scenarioselection" class="btn btn-primary">{{i18n "create_new_channel"}}</a>
 </div>

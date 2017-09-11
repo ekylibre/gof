@@ -118,12 +118,11 @@ function preResponseHandler(request, reply) {
     if (!response.isBoom && response.variety === 'view' && request.auth.isAuthenticated) {
         response.source.context = response.source.context || {};
         var ctx = request.i18n;
-        ctx.user = {};
-        ctx.user.firstname = request.auth.credentials.user.firstname;
+        ctx.user = request.auth.credentials.user;
         
-        var component = request.server.render('views/userblock', ctx, {layout: false},
+        var component = request.server.render('views/navbar', ctx, {layout: false},
             (err, rendered, config) => {
-                response.source.context['user_block'] = rendered;
+                response.source.context['navigation_bar'] = rendered;
                 return reply.continue();
             });
         
