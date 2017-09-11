@@ -4,13 +4,13 @@ ffe8b3
 Border Window
 71242c
 
-BG zone text
+BG zone text (saisie texte)
 FEEEC6
 
 Bg Title
 7C3337
 
-Text color1
+Text color1 
 7C3337
 
 Text color2
