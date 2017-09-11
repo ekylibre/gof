@@ -11,7 +11,7 @@ const CParcelSetup = require('./ParcelSetup');
 const CFarm = require('./Farm');
 const CPlant = require('./Plant');
 const i18n = require('LanguageData');
-const SharedConsts = require('./constants');
+const SharedConsts = require('./common/constants');
 const ApiClient = require('./ApiClient');
 const UIDebug = require('./UI/UIDebug');
 const UIEnv = require('./UI/UIEnv');
@@ -605,7 +605,7 @@ export default class CGame
                 }
                 if (id == 2)
                 {
-                    culture = SharedConsts.CultureModeEnum.PERMACULTURE;
+                    culture = SharedConsts.CultureModeEnum.REASONED;
                 }
                 
                 parcel.rotationHistory.push(
