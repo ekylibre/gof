@@ -199,6 +199,7 @@ ChannelsController.scores = function(request, reply) {
         }
 
         var ctx = {channel: channel};
+        ctx.pageTitle = request.i18n.__('channels_scores_title', ctx);
         return reply.view('views/scoresmaster', ctx, {layoutPath:'./templates/layout/dashboard'});
     });
 }
@@ -232,6 +233,7 @@ ChannelsController.scenarioSelection = function(request, reply) {
         var element = {
             id: scenarios[i],
             name: request.i18n.__('scenario_'+scenarios[i]),
+            desc: request.i18n.__('scenario_desc_'+scenarios[i]),
             available: i == 0
         };
         ctx.scenarios.push(element);
@@ -259,6 +261,8 @@ ChannelsController.monitorGet = function(request, reply) {
         //TODO : find recent emails already invited in other channels of same owner
         var ctx = {channel: channel};
 
+        ctx.date = Moment(channel.created).format('LLL');
+        ctx.pageTitle = request.i18n.__('monitor_panel_title');
         ctx.pendings = [];
         ctx.accepteds = [];
 
@@ -347,7 +351,22 @@ ChannelsController.monitorPost = function(request, reply) {
                             var ctx = {channel: channel, error: {global: popError}};
                             return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
                         }
-                        var ctx = {channel: popResult, success: filtered};
+                        var ctx = {channel: popResult};
+                        
+                        ctx.date = Moment(channel.created).format('LLL');
+                        ctx.pageTitle = request.i18n.__('monitor_panel_title');
+                        ctx.pendings = [];
+                        ctx.accepteds = [];
+                        ctx.success = filtered;
+                        
+                        for(var i=0;i<channel.users.length;++i) {
+                            var userRef = channel.users[i];
+                            if(userRef.linked) {
+                                ctx.accepteds.push(userRef.user);
+                            } else {
+                                ctx.pendings.push(userRef.user);
+                            }
+                        }
                         return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
                     });
                     

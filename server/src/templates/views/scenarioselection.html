@@ -1,38 +1,37 @@
 <div class="row">
-    {{#each scenarios}}
-    <div class="col-md-4">
-        <div class="row">
-            <div class="gof-scenario-item" style="background-image: url(/images/{{id}}.jpg);" gof-scenario-id="{{id}}">
-                <span>{{name}}</span>
+    <div class="panel panel-info">
+        <div class="panel-heading">{{i18n "scenario_selection_title"}}</div>
+        <div class="panel-body">
+            <div class="row">
+                {{#each scenarios}}
+                <div class="col-md-4 gof-scenario-item">
+                    <div class="thumbnail" style="background-image: url('/images/{{id}}.jpg'); background-size:cover;">
+                        <div class="caption">
+                            <strong>{{name}}</strong>
+                            <p>{{desc}}</p>
+                            <br/>
+
+                            <a href="#" class="btn btn-primary pull-right {{#if available}}{{else}}disabled{{/if}}" onclick="startScenario('{{id}}');">{{../okButton}}</a>
+                        </div>
+                    </div>
+                </div>
+                {{/each}}
             </div>
         </div>
-        
     </div>
-    {{/each}}
-    <a href='#' id="validate-scenario" class='btn btn-primary disabled'>{{okButton}}</a>
-</div>    
+</div>
 
 <script>
-    var selectedScenario = null;
-    $('.gof-scenario-item').click(function(event){
-        $('.gof-scenario-item').removeClass('active');
-        $(this).addClass('active');
-        selectedScenario = $(this).attr('gof-scenario-id');
-        if(selectedScenario == 'croprotation') {
-            $('#validate-scenario').removeClass('disabled');
-        } else {
-            $('#validate-scenario').addClass('disabled');
-        }
-    });
-
-    $('#validate-scenario').click(function(event){
+    function startScenario(id) {
         $.ajax({
             type: 'POST',
             url: '/channels/create',
-            data: {scenario:selectedScenario},
-            success: function(data) {
+            data: {
+                scenario: id
+            },
+            success: function (data) {
                 window.location.replace(data.target);
             }
         });
-    });
+    }
 </script>
