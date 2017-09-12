@@ -345,6 +345,7 @@ function main() {
     .option('-p, --populate', 'Populate the database with initial data')
     .option('-l, --localisation', 'Build the client localisation file')
     .option('-x, --xml', 'Exports itk xml files')
+    .option('-y, --localxml', 'Exports local itk xml files')
     .parse(process.argv);
 
     if(program.populate) {
@@ -396,12 +397,15 @@ function main() {
             // Authorize a client with the loaded credentials, then call the
             // Google Drive API.
             authorize(JSON.parse(content), function onAuthorized(auth) {
-                workflowitk.exportFiles(auth, function() {});
+                workflowitk.exportFiles(auth, function() {    console.log('workflowitk.exportFiles done!');   });
                 });
         });
     
     }
-   
+
+    if (program.localxml) {
+        workflowitk.exportLocalFiles();
+    }
 }
 
 main();
