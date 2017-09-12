@@ -22,7 +22,7 @@
                 <div class="col-md-4">
                     <div class="panel panel-info">
                         <div class="panel-heading">{{i18n "invite_panel_title"}}</div>
-                        <div class="panel-body" style="padding: 5%;">
+                        <div class="panel-body">
                             <form method="POST" action="/channels/{{channel._id}}/monitor" class="form-horizontal">
                                 <div class="input-group">
                                     <label for="inviteEmails">{{i18n "invite_email_area_label"}}</label>
@@ -37,7 +37,7 @@
                 <div class="col-md-4">
                     <div class="panel panel-info">
                         <div class="panel-heading">{{i18n "monitor_panel_pendings_title"}}</div>
-                        <div class="panel-body" style="padding: 5%;">
+                        <div class="panel-body">
                             <ul class="list-group">
                                 {{#each pendings}}
                                 <li class="list-group-item">{{email}}</li>
@@ -50,7 +50,7 @@
                 <div class="col-md-4">
                     <div class="panel panel-info">
                         <div class="panel-heading">{{i18n "monitor_panel_accepted_title"}}</div>
-                        <div class="panel-body" style="padding: 5%;">
+                        <div class="panel-body">
                             <ul class="list-group">
                                 {{#each accepteds}}
                                 <li class="list-group-item">{{email}}</li>

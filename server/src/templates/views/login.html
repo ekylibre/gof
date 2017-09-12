@@ -1,7 +1,7 @@
 <div class="row" style="padding: 0 20% 0 20%;">
     <div class="panel panel-info">
         <div class="panel-heading">{{i18n "index_welcome"}}</div>
-        <div class="panel-body" style="padding: 5%;">
+        <div class="panel-body">
             {{#if error}}
                 {{#if error.global}}
                 <div class="alert alert-danger" role="alert">
@@ -13,12 +13,12 @@
                 <div class="row">
                     <form id="login-form" method="POST" action="/auth/login" class="form-horizontal">
                         <div class="input-group">
-                            <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
+                            <span class="input-group-addon"><img src='/images/ico_profile.png'></span>
                             <input type="email" name="email" required="required" class="form-control" id="inputEmail" value="{{error.form.email}}" placeholder="{{i18n 'placeholder_email'}}"/>
                         </div>
 
                         <div class="input-group">
-                            <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
+                            <span class="input-group-addon"><img src='/images/ico_password.png'></span>
                             <input type="password" name="password" required="required" class="form-control" id="inputPassword" placeholder="{{i18n 'placeholder_password'}}"/>
                         </div>
                         <input type="submit" class="btn btn-primary pull-right" style="margin-top: 10px;" value='{{i18n "login"}}'/>
