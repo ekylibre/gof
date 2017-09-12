@@ -4,18 +4,16 @@ position: relative;
 }
 
 body {
-/* Margin bottom by footer height */
-    margin-bottom: 180px;
+    margin-bottom: 180px; /*footer height*/
 }
+
 .footer {
     position: absolute;
     bottom: 0;
     width: 100%;
-    /* Set the fixed height of the footer here */
-    height: 180px;
+    height: 180px; /*footer height*/
 }
   
-
 video#bgvid {
     position: fixed; right: 0; bottom: 0;
     min-width: 100%; min-height: 100%;
@@ -24,30 +22,61 @@ video#bgvid {
     background-size: cover;
     overflow: hidden;
 }
+
 video#bgvid::-webkit-scrollbar {
     display: none;
 }
 
-.gof-scenario-item {
-    position:relative;
-    background-repeat: no-repeat;
-    background-size: 400px 343px;
-    width: 400px;
-    height: 343px;
+#chooseRole {
+    width: 100%;
 }
 
-.gof-scenario-item span {
+#selectRole {
+    width: 100%;
+}
+
+.gof-scenario-item {
+    /*position:relative;
+    background-repeat: no-repeat;
+    background-size: 400px 343px;*/
+    
+    margin-bottom: 15px;
+    margin-top: 15px;
+    height: 300px;
+}
+
+.gof-scenario-item>.thumbnail {
+    height: 100%;
+    border: 1px solid #71242c;
+}
+
+.gof-scenario-item>.thumbnail>img {
+    height: 30%;
+}
+
+/* Ellipsis for description of scenario*/
+.gof-scenario-item>.thumbnail>.caption>p {
+    display: block;/* Fallback for non-webkit */
+    display: -webkit-box;
+    max-width: 100%;
+    height: 40%;
+    margin: 0 auto;
+    -webkit-line-clamp: 4;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.gof-scenario-item>.thumbnail>.caption {
     position: absolute;
-    margin: auto;
+    margin: 0 15px; /*the margin of the col-md-4 class*/
     left: 0;
     bottom: 0;
     right: 0;
     color: white; 
-    font: bold 24px/45px Helvetica, Sans-Serif; 
-    
+    overflow: hidden;
     background: rgb(0, 0, 0);
     background: rgba(0, 0, 0, 0.7);
-    padding: 10px; 
 }
 
 .gof-scenario-item-outline {
@@ -60,16 +89,36 @@ video#bgvid::-webkit-scrollbar {
     -webkit-box-shadow: inset 0 0px 4px rgba(0, 0, 0, .55);
 }
 
+.btn.disabled {
+    opacity: 1;
+    color: #a0a0a0;
+    background-color:#808080;
+}
+
 a.disabled {
-    color: gray;
     pointer-events: none;
+    color: #a0a0a0;
 }
 
 .gof-center {
     text-align: center;
 }
 
+.gof-top-spacer {
+    margin-top: 20px;
+}
+
 .vertical-align {
+    display: flex;
+    align-items: center;
+}
+
+.list-group-item {
+    background-color: #FEEEC6;
+    border: 1px solid #71242c;
+}
+
+.list-group-item>.row {
     display: flex;
     align-items: center;
 }
@@ -95,7 +144,10 @@ a.disabled {
 .btn-primary.focus {
   color: #000;
   background-color: #5eb290;
-  border-color: #481d22;
+  border-color: #7C3337;
+  outline: 0;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(124, 51, 55, .6);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(124, 51, 55, .6);
 }
 .btn-primary:hover {
   color: #000;
@@ -103,20 +155,83 @@ a.disabled {
   border-color: #481d22;
 }
 
+.btn-primary:active:focus {
+  color: #000;
+  background-color: #faffa2;
+  border-color: #7C3337;
+  outline: 0;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(124, 51, 55, .6);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(124, 51, 55, .6);
+}
+
 .panel {
     background-color: #ffe8b3;
     border: 6px solid #71242c;
     border-radius: 8px;
+    box-shadow: 4px 4px 3px 3px rgba(0,0,0,.05);
 }
-
 
 .panel-info>.panel-heading {
     border-radius: 0px;
     border: 0px;
     background-color: #7C3337;
-    color: #ffe8b3;
+    color: #FEEEC6;
+    font-size: 18px;
 }
 
 .panel-info>.panel-body {
     border: 0px;
+    padding: 5%;
+}
+
+input.form-control {
+    background-color: #FEEEC6;
+}
+
+.form-control:focus {
+    border-color: #7C3337;
+    outline: 0;
+    -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(124, 51, 55, .6);
+    box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(124, 51, 55, .6);
+}
+
+textarea.form-control {
+    background-color: #FEEEC6;
+}
+
+textarea[name=emails] {
+    resize: none;
+}
+
+.input-group-addon>img {
+    height: 20px;
+}
+
+.input-group>select {
+    background-color: #FEEEC6;
+}
+
+.form-control>option {
+    background-color: #FEEEC6;
+}
+
+
+.input-group-addon {
+    background-color: #FEEEC6;
+}
+
+.row-padding-lr-20p {
+    padding: 0 20%;
+}
+
+.row-padding-lr-25p {
+    padding: 0 25%;
+}
+
+.margin-t-10px {
+    margin-top: 10px;
+}
+
+.margin-t-30px {
+    margin-top: 30px;
 }

@@ -1,34 +1,32 @@
-<div class="row" style="padding: 0 20% 0 20%;">
+<div class="row row-padding-lr-25p">
     <div class="panel panel-info">
         <div class="panel-heading">{{i18n "index_welcome"}}</div>
-        <div class="panel-body" style="padding: 5%;">
-            {{#if error}}
-                {{#if error.global}}
-                <div class="alert alert-danger" role="alert">
-                    {{{error.global}}}
-                </div>
-                {{/if}}
-            {{/if}}
-            <div style="margin: 2%;">
-                <div class="row">
-                    <form id="login-form" method="POST" action="/auth/login" class="form-horizontal">
-                        <div class="input-group">
-                            <span class="input-group-addon"><i class="glyphicon glyphicon-user"></i></span>
-                            <input type="email" name="email" required="required" class="form-control" id="inputEmail" value="{{error.form.email}}" placeholder="{{i18n 'placeholder_email'}}"/>
-                        </div>
+        <div class="panel-body">
+            {{#if error}} {{#if error.global}}
+            <div class="alert alert-danger" role="alert">
+                {{{error.global}}}
+            </div>
+            {{/if}} {{/if}}
+            <div class="row">
+                <form id="login-form" method="POST" action="/auth/login" class="form-horizontal">
+                    <div class="input-group">
+                        <span class="input-group-addon"><img src='/images/ico_profile.png'></span>
+                        <input type="email" name="email" required="required" class="form-control" id="inputEmail" value="{{error.form.email}}" placeholder="{{i18n 'placeholder_email'}}"
+                        />
+                    </div>
 
-                        <div class="input-group">
-                            <span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span>
-                            <input type="password" name="password" required="required" class="form-control" id="inputPassword" placeholder="{{i18n 'placeholder_password'}}"/>
-                        </div>
-                        <input type="submit" class="btn btn-primary pull-right" style="margin-top: 10px;" value='{{i18n "login"}}'/>
-                    </form>
-                </div>
-                <div class="row" style="margin-top:10px;">
-                    <a href="/auth/register" class="btn btn-primary pull-left" role="button">{{i18n "register"}}</a>
-                </div>
-                <div class="row" style="padding-top: 10px;">
-                    <a href="/auth/lostpassword">{{i18n "index_lostpassword_link"}}</a>
+                    <div class="input-group">
+                        <span class="input-group-addon"><img src='/images/ico_password.png'></span>
+                        <input type="password" name="password" required="required" class="form-control" id="inputPassword" placeholder="{{i18n 'placeholder_password'}}"
+                        />
+                    </div>
+                    <input type="submit" class="btn btn-primary pull-right margin-t-10px" value='{{i18n "login"}}' />
+                </form>
+            </div>
+            <div class="row margin-t-30px gof-center">
+                <div class="btn-group">
+                    <a class="btn btn-primary" href='/auth/register'>{{i18n "register"}}</a>
+                    <a class="btn btn-primary" href='/auth/lostpassword'>{{i18n "index_lostpassword_link"}}</a>
                 </div>
             </div>
         </div>
@@ -37,35 +35,34 @@
 
 
 <script type="text/javascript">
-var getUrlParameter = function getUrlParameter(sParam) {
-    var sPageURL = decodeURIComponent(window.location.search.substring(1)),
-        sURLVariables = sPageURL.split('&'),
-        sParameterName,
-        i;
+    var getUrlParameter = function getUrlParameter(sParam) {
+        var sPageURL = decodeURIComponent(window.location.search.substring(1)),
+            sURLVariables = sPageURL.split('&'),
+            sParameterName,
+            i;
 
-    for (i = 0; i < sURLVariables.length; i++) {
-        sParameterName = sURLVariables[i].split('=');
+        for (i = 0; i < sURLVariables.length; i++) {
+            sParameterName = sURLVariables[i].split('=');
 
-        if (sParameterName[0] === sParam) {
-            return sParameterName[1] === undefined ? true : sParameterName[1];
+            if (sParameterName[0] === sParam) {
+                return sParameterName[1] === undefined ? true : sParameterName[1];
+            }
         }
-    }
-};
+    };
 
-$(document).ready(function(){
-    var email = getUrlParameter('email');
-    if(email) {
-        $('#inputEmail').attr('value', email);
-    }
+    $(document).ready(function () {
+        var email = getUrlParameter('email');
+        if (email) {
+            $('#inputEmail').attr('value', email);
+        }
 
-    var target = getUrlParameter('target') || '{{error.form.target}}';
-    if(target) {
-        $('<input>').attr({
-            type: 'hidden',
-            name: 'target',
-            value: target,
-        }).appendTo('#login-form');
-    }
-}); 
-
+        var target = getUrlParameter('target') || '{{error.form.target}}';
+        if (target) {
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'target',
+                value: target,
+            }).appendTo('#login-form');
+        }
+    });
 </script>

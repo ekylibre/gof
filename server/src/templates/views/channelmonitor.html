@@ -1,38 +1,43 @@
-<div class="row" style="padding: 0 20% 0 20%;">
+<div class="row">
     <div class="panel panel-info">
-        <div class="panel-heading">{{i18n "monitor_panel_title"}}</div>
-        <div class="panel-body" style="padding: 5%;">
-            {{#if error}}
-                {{#if error.global}}
-                <div class="alert alert-danger" role="alert">
-                    {{{error.global}}}
-                </div>
-                {{/if}}
-            {{/if}}
-
-            {{#if success}}
-                <div class="alert alert-success" role="alert">
+        <div class="panel-heading">{{pageTitle}} {{date}}</div>
+        <div class="panel-body">
+            {{#if error}} {{#if error.global}}
+            <div class="alert alert-danger" role="alert">
+                {{{error.global}}}
+            </div>
+            {{/if}} {{/if}} {{#if success}}
+            <div class="alert alert-success" role="alert">
+                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                <strong>{{i18n "invitation_sent_success_title"}}</strong>
+                <ul>
                     {{#each success}}
-                        {{this}}
+                    <li>{{this}}</li>
                     {{/each}}
-                </div>
+                </ul>
+            </div>
             {{/if}}
 
             <div class="row">
                 <div class="col-md-4">
-                    <form method="POST" action="/channels/{{channel._id}}/monitor" class="form-horizontal">
-                        <div class="input-group">
-                            <label for="inviteEmails">{{i18n "invite_email_area_label"}}</label>
-                            <textarea class="form-control" id="inviteEmails" name="emails" rows="10"></textarea>
+                    <div class="panel panel-info">
+                        <div class="panel-heading">{{i18n "invite_panel_title"}}</div>
+                        <div class="panel-body">
+                            <form method="POST" action="/channels/{{channel._id}}/monitor" class="form-horizontal">
+                                <div class="input-group">
+                                    <label for="inviteEmails">{{i18n "invite_email_area_label"}}</label>
+                                    <textarea class="form-control" id="inviteEmails" name="emails" rows="10"></textarea>
+                                </div>
+                                <input type="submit" class="btn btn-primary pull-right" style="margin-top: 10px;" value='{{i18n "send_invites"}}' />
+                            </form>
                         </div>
-                        <input type="submit" class="btn btn-primary pull-right" style="margin-top: 10px;" value='{{i18n "send_invites"}}'/>
-                    </form>
+                    </div>
                 </div>
 
                 <div class="col-md-4">
                     <div class="panel panel-info">
                         <div class="panel-heading">{{i18n "monitor_panel_pendings_title"}}</div>
-                        <div class="panel-body" style="padding: 5%;">
+                        <div class="panel-body">
                             <ul class="list-group">
                                 {{#each pendings}}
                                 <li class="list-group-item">{{email}}</li>
@@ -45,7 +50,7 @@
                 <div class="col-md-4">
                     <div class="panel panel-info">
                         <div class="panel-heading">{{i18n "monitor_panel_accepted_title"}}</div>
-                        <div class="panel-body" style="padding: 5%;">
+                        <div class="panel-body">
                             <ul class="list-group">
                                 {{#each accepteds}}
                                 <li class="list-group-item">{{email}}</li>

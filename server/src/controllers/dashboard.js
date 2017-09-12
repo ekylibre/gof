@@ -9,9 +9,8 @@ const Channel = require('../models/channel');
 var moment = require('moment');
 
 function DashboardController(server) {
-    
-    var self = this;
 
+    var self = this;
     server.route({
         method: 'GET',
         path: '/dashboard',
@@ -20,9 +19,7 @@ function DashboardController(server) {
             auth: 'token'
         }
     });
-
 }
-
 
 DashboardController.prototype.dashboardGet = function(request, reply) {
     var user = request.auth.credentials.user;
@@ -41,12 +38,12 @@ DashboardController.prototype.dashboardMaster = function(request, reply) {
 
         for(var i=0;i<user.channels.length;++i) {
             var chan = user.channels[i];
-            chan.createdStr = moment(chan.created).format('LL');
+            chan.createdStr = moment(chan.created).format('LLL');
             chan.phaseStr = request.i18n.__('scenario_' + chan.phase);
             chan.closed = chan.state == Constants.ChannelStateEnum.CLOSED;
         }
 
-        var ctx = { channels: user.channels };
+        var ctx = { channels: user.channels.reverse() };
         return reply.view('views/dashboardmaster', ctx, {layoutPath:'./templates/layout/dashboard'});
     });
 }
@@ -59,7 +56,7 @@ DashboardController.prototype.dashboardPlayer = function(request, reply) {
         }
         for(var i=0;i<user.channels.length;++i) {
             var chan = user.channels[i];
-            chan.createdStr = moment(chan.created).format('LL');
+            chan.createdStr = moment(chan.created).format('LLL');
             chan.phaseStr = request.i18n.__('scenario_' + chan.phase);
             chan.closed = chan.state == Constants.ChannelStateEnum.CLOSED;
             if(chan.closed) {

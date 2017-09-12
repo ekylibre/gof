@@ -1,22 +1,25 @@
-<div class="row" style="width: 50%; margin:auto;">
-    Partie du {{channel.created}}, {{channel.phase}}, {{channel.state}}
-</div>
-
-<div class="row" >
-    <ul class="list-group">
-    {{#each channel.users}}
-        <li class="list-group-item">
-            <div class="row vertical-align">
-                <div class="col-md-4 gof-center-v">{{user.firstName}} {{user.lastName}}</div>
-                {{#if phaseResult}}
-                <div class="col-md-4">{{phaseResult.score}}</div>
-                <div class="col-md-4 gof-right"><a class="btn btn-primary" href="/channels/exportscores/{{../channel.id}}/csv"><span class="glyphicon glyphicon-export"></span> {{i18n "export_csv"}}</a></div>
-                {{else}}
-                <div class="col-md-4"></div>
-                <div class="col-md-4"></div>
-                {{/if}}
+<div class="row gof-top-spacer">
+    <div class="panel panel-info">
+        <div class="panel-heading">{{pageTitle}}</div>
+        <div class="panel-body">
+            <div class="row">
+                <ul class="list-group">
+                    {{#each channel.users}}
+                    <li class="list-group-item">
+                        <div class="row vertical-align">
+                            <div class="col-md-4">{{user.firstName}} {{user.lastName}}</div>
+                            {{#if phaseResult}}
+                            <div class="col-md-4">{{phaseResult.score}}</div>
+                            <div class="col-md-4 gof-right"><a class="btn btn-primary" href="/channels/exportscores/{{../channel.id}}/csv"><span class="glyphicon glyphicon-export"></span> {{i18n "export_csv"}}</a></div>
+                            {{else}}
+                            <div class="col-md-4"></div>
+                            <div class="col-md-4"></div>
+                            {{/if}}
+                        </div>
+                    </li>
+                    {{/each}}
+                </ul>
             </div>
-        </li>
-    {{/each}}
-    </ul>
+        </div>
+    </div>
 </div>
