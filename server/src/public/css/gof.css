@@ -27,6 +27,14 @@ video#bgvid::-webkit-scrollbar {
     display: none;
 }
 
+#chooseRole {
+    width: 100%;
+}
+
+#selectRole {
+    width: 100%;
+}
+
 .gof-scenario-item {
     /*position:relative;
     background-repeat: no-repeat;
@@ -136,12 +144,24 @@ a.disabled {
 .btn-primary.focus {
   color: #000;
   background-color: #5eb290;
-  border-color: #481d22;
+  border-color: #7C3337;
+  outline: 0;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(124, 51, 55, .6);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(124, 51, 55, .6);
 }
 .btn-primary:hover {
   color: #000;
   background-color: #A5F2D3;
   border-color: #481d22;
+}
+
+.btn-primary:active:focus {
+  color: #000;
+  background-color: #faffa2;
+  border-color: #7C3337;
+  outline: 0;
+  -webkit-box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(124, 51, 55, .6);
+  box-shadow: inset 0 1px 1px rgba(0,0,0,.075), 0 0 8px rgba(124, 51, 55, .6);
 }
 
 .panel {
@@ -187,6 +207,31 @@ textarea[name=emails] {
     height: 20px;
 }
 
+.input-group>select {
+    background-color: #FEEEC6;
+}
+
+.form-control>option {
+    background-color: #FEEEC6;
+}
+
+
 .input-group-addon {
     background-color: #FEEEC6;
+}
+
+.row-padding-lr-20p {
+    padding: 0 20%;
+}
+
+.row-padding-lr-25p {
+    padding: 0 25%;
+}
+
+.margin-t-10px {
+    margin-top: 10px;
+}
+
+.margin-t-30px {
+    margin-top: 30px;
 }

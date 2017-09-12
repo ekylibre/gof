@@ -1,25 +1,27 @@
-<div class="row" style="width: 50%; margin:auto;">
+<div class="row row-padding-lr-25p">
     <div class="panel panel-info">
-        <div class="panel-heading"><h4>{{i18n "index_welcome"}}</h4></div>
+        <div class="panel-heading">
+            <h4>{{i18n "index_welcome"}}</h4>
+        </div>
         <div class="panel-body">
-            {{i18n "index_game_synopsis"}}
-
-            <div class="row" style="padding-top:10px;">
+            <strong>{{i18n "index_game_synopsis"}}</strong>
+            <div class="row margin-t-10px gof-center">
                 <a href="/auth/login" class="btn btn-primary">{{i18n "login"}}</a>
             </div>
 
-            <div class="row" style="padding-top:10px;">
-                <a href="/auth/register/master" class="btn btn-primary">{{i18n "im_a_master"}}</a>
-                <a href="/auth/register/player" class="btn btn-primary">{{i18n "im_a_player"}}</a>
+            <div class="row margin-t-30px gof-center">
+                <div class="btn-group">
+                    <a href="/auth/register/master" class="btn btn-primary">{{i18n "im_a_master"}}</a>
+                    <a href="/auth/register/player" class="btn btn-primary">{{i18n "im_a_player"}}</a>
+                </div>
             </div>
 
-            <div class="col-md-12">
-                    <a href="http://www.ekylibre.com/" target="_blank"><img height="125" src="/images/logo_ekylibre.png"/></a>
-                </div>
-    
-                <div class="col-md-12">
-                    {{i18n "ekylibre_copyright"}}
-                </div>
+            <div class="row margin-t-30px gof-center">
+                <a href="http://www.ekylibre.com/" target="_blank"><img height="125" src="/images/logo_ekylibre.png"/></a>
+            </div>
+            <div class="row gof-center">
+                {{i18n "ekylibre_copyright"}}
+            </div>
         </div>
     </div>
 </div>
