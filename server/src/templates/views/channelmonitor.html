@@ -24,9 +24,9 @@
                         <div class="panel-heading">{{i18n "invite_panel_title"}}</div>
                         <div class="panel-body">
                             <form method="POST" action="/channels/{{channel._id}}/monitor" class="form-horizontal">
-                                <div class="input-group">
+                                <div class="input-group ui-widget">
                                     <label for="inviteEmails">{{i18n "invite_email_area_label"}}</label>
-                                    <textarea class="form-control" id="inviteEmails" name="emails" rows="10"></textarea>
+                                    <textarea class="form-control ui-autocomplete-input" id="inviteEmails" name="emails" rows="10" autocomplete="off"></textarea>
                                 </div>
                                 <input type="submit" class="btn btn-primary pull-right" style="margin-top: 10px;" value='{{i18n "send_invites"}}' />
                             </form>
@@ -63,3 +63,47 @@
         </div>
     </div>
 </div>
+
+<script>
+
+    var recentEmails = "{{recentEmails}}".split(',');
+
+    function split( val ) {
+      return val.split(/[\s,]+/);
+    }
+    function extractLast( term ) {
+      return split( term ).pop();
+    }
+ 
+    $( "#inviteEmails" )
+      // don't navigate away from the field on tab when selecting an item
+      .on( "keydown", function( event ) {
+        if ( event.keyCode === $.ui.keyCode.TAB &&
+            $( this ).autocomplete( "instance" ).menu.active ) {
+          event.preventDefault();
+        }
+      })
+      .autocomplete({
+        minLength: 0,
+        source: function( request, response ) {
+          // delegate back to autocomplete, but extract the last term
+          response( $.ui.autocomplete.filter(
+            recentEmails, extractLast( request.term ) ) );
+        },
+        focus: function() {
+          // prevent value inserted on focus
+          return false;
+        },
+        select: function( event, ui ) {
+          var terms = split( this.value );
+          // remove the current input
+          terms.pop();
+          // add the selected item
+          terms.push( ui.item.value );
+          // add placeholder to get the comma-and-space at the end
+          terms.push( "" );
+          this.value = terms.join( "\n" );
+          return false;
+        }
+      });
+</script>

@@ -274,7 +274,36 @@ ChannelsController.monitorGet = function(request, reply) {
                 ctx.pendings.push(userRef.user);
             }
         }
-        return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
+
+        var recentEmails = [];
+        User.findOne({email:request.auth.credentials.user.email}).select('channels').exec((error, channels) => {
+            if(error) {
+                ctx.recentEmails = recentEmails.join(',');
+                return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
+            }
+            Channel.find({
+                _id : { $in : channels.channels}
+            }).populate('users.user').exec((error, channels) => {
+                if(!error) {
+                    for(var i=0;i<channels.length;++i) {
+                        for(var j=0;j<channels[i].users.length;++j) {
+                            var email = channels[i].users[j].user.email;
+                            if( recentEmails.indexOf(email) == -1 && 
+                                ctx.pendings.find(x => x.email == email) == null) {
+                                recentEmails.push(email);
+                            }
+                        }
+                    }
+                }
+
+                ctx.recentEmails = recentEmails.join(',');
+                return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
+            });
+        });
+        
+        
+
+        
     });
 }
 
