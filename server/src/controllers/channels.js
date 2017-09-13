@@ -179,12 +179,12 @@ ChannelsController.create = function(request, reply) {
 ChannelsController.scores = function(request, reply) {
     var channelId = request.params.id;
     Channel.findOne({_id: channelId}).populate('users.user').exec((error, result) => {
-        if(error) {
+        if(error || !result) {
             return reply(Boom.badRequest());
         }
 
         var channel = {};
-        channel.created = Moment(result.created).format('LL');
+        channel.created = Moment(result.created).format('LLL');
         channel.phase = request.i18n.__('scenario_' + result.phase);
         channel.state = request.i18n.__('channelstate_' + result.state);
         channel.id = result.id;
@@ -195,6 +195,7 @@ ChannelsController.scores = function(request, reply) {
                 user: result.users[i].user,
                 phaseResult: result.users[i].phaseResult
             };
+            element.phaseResult.scoreStr = Math.round(element.phaseResult.score * 20) + " / 20";
             channel.users.push(element);
         }
 
@@ -258,11 +259,13 @@ ChannelsController.monitorGet = function(request, reply) {
             return reply(Boom.badRequest());
         }
 
-        //TODO : find recent emails already invited in other channels of same owner
-        var ctx = {channel: channel};
+        var titleCtx = {};
+        titleCtx.date = Moment(channel.created).format('LLL');
+        titleCtx.phase = request.i18n.__('scenario_' + channel.phase);
+        titleCtx.state = request.i18n.__('channelstate_' + channel.state);
 
-        ctx.date = Moment(channel.created).format('LLL');
-        ctx.pageTitle = request.i18n.__('monitor_panel_title');
+        var ctx = {channel: channel};
+        ctx.pageTitle = request.i18n.__('monitor_panel_title', titleCtx);
         ctx.pendings = [];
         ctx.accepteds = [];
 
@@ -344,6 +347,8 @@ ChannelsController.monitorPost = function(request, reply) {
                         }
                         
                         if(!user) {
+                            //we don't know this user, maybe we should keep a track of this invite for security?
+
                             return resolve();
                         }
 
