@@ -287,7 +287,7 @@ AuthController.registerpost = function(request, reply) {
                                             //get channel id
                                             var splitted = request.payload.target.split('/');
                                             var chanId = splitted[3];
-                                            Channel.findById(chanId).populate('users.user').exec((error, channel) => {
+                                            Channel.findById(chanId).populate('users.user invitesOfNonUsers').exec((error, channel) => {
                                                 if(error) {
                                                     return reply(Boom.internal());
                                                 }
@@ -300,14 +300,21 @@ AuthController.registerpost = function(request, reply) {
                                                     phaseResult: null 
                                                 });
 
+                                                //find associated invite to remove it
+                                                for(var i=0;i<channel.invitesOfNonUsers.length;++i) {
+                                                    var iEmail = channel.invitesOfNonUsers[i].email;
+                                                    if(iEmail == u.email || iEmail == request.payload.srcEmail) {
+                                                        channel.invitesOfNonUsers.splice(i, 1);
+                                                        break;
+                                                    }
+                                                }
+
                                                 channel.save((error, saveResult) => {
                                                     if(error) {
                                                         return reply(Boom.internal());
                                                     }
                                                     return reply.redirect(path);
                                                 });
-
-                                                
                                             });
                                         }
                                     } else {

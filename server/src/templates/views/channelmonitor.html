@@ -1,7 +1,7 @@
 <div class="row">
     <div class="panel panel-info">
         <div class="panel-heading">{{pageTitle}} {{date}}</div>
-        <div class="panel-body">
+        <div class="panel-body panel-nesting">
             {{#if error}} {{#if error.global}}
             <div class="alert alert-danger" role="alert">
                 {{{error.global}}}
@@ -40,7 +40,7 @@
                         <div class="panel-body">
                             <ul class="list-group">
                                 {{#each pendings}}
-                                <li class="list-group-item">{{email}}</li>
+                                <li class="list-group-item">{{this}}</li>
                                 {{/each}}
                             </ul>
                         </div>
@@ -53,7 +53,7 @@
                         <div class="panel-body">
                             <ul class="list-group">
                                 {{#each accepteds}}
-                                <li class="list-group-item">{{email}}</li>
+                                <li class="list-group-item accepted-email">{{firstName}} {{lastName}} ({{email}})</li>
                                 {{/each}}
                             </ul>
                         </div>

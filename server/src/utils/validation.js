@@ -58,6 +58,7 @@ module.exports = {
                 Constants.UserRoleEnum.OTHER).required(),
             establishment: Joi.string(),
             target: Joi.string(),
+            srcEmail: Joi.string().email(),
         });
 
         return Joi.validate(payload, schema);

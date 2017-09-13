@@ -66,6 +66,11 @@
         var email = $.url().param('email');
         if (email) {
             $('#inputEmail').attr('value', email);
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'srcEmail',
+                value: email,
+            }).appendTo('#register-form');
         }
 
         //var target = getUrlParameter('target') || '{{error.form.target}}';

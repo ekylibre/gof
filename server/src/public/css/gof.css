@@ -133,6 +133,12 @@ a.disabled {
     align-items: center;
 }
 
+.text-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .gof-right {
     text-align: right;
 }
@@ -192,6 +198,10 @@ a.disabled {
 .panel-info>.panel-body {
     border: 0px;
     padding: 5%;
+}
+
+.panel-info>.panel-nesting {
+    padding: 5px;
 }
 
 input.form-control {

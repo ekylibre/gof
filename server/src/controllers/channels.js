@@ -254,9 +254,12 @@ ChannelsController.scenarioSelection = function(request, reply) {
 
 ChannelsController.monitorGet = function(request, reply) {
     var chanId = request.params.chanId;
-    Channel.findById(chanId).populate('users.user').exec((error, channel) => {
+    Channel.findById(chanId).populate('users.user invitesOfNonUsers').exec((error, channel) => {
         if(error) {
-            return reply(Boom.badRequest());
+            return reply(Boom.internal());
+        }
+        if(!channel) {
+            return reply(Boom.badRequest());   
         }
 
         var titleCtx = {};
@@ -276,6 +279,10 @@ ChannelsController.monitorGet = function(request, reply) {
             } else {
                 ctx.pendings.push(userRef.user);
             }
+        }
+
+        for(var i=0;i<channel.invitesOfNonUsers.length;++i) {
+            ctx.pendings.push(channel.invitesOfNonUsers[i].email);
         }
 
         var recentEmails = [];
@@ -347,22 +354,26 @@ ChannelsController.monitorPost = function(request, reply) {
                         }
                         
                         if(!user) {
-                            //we don't know this user, maybe we should keep a track of this invite for security? 
-                            //tiny chance that someone could find a link to a channel
-                            return resolve();
-                        }
-
-                        //maybe this user was already added to the channel
-                        var already = channel.users.find(function(e){
-                            return e.user.email == email;
-                        });
-
-                        //so avoid pushing him multiple times
-                        if(!already) {
-                            channel.users.push({
-                                user: user.id,
-                                phaseResult: null 
+                            //we don't know this user, we keep a track of this invite in invitesOfNonUsers
+                            var already = channel.invitesOfNonUsers.find(function(e){
+                                return e.email == email;
                             });
+                            if(!already) {
+                                channel.invitesOfNonUsers.push({email:email});
+                            }
+                        } else {
+
+                            //maybe this user was already added to the channel
+                            var already = channel.users.find(function(e){
+                                return e.user.email == email;
+                            });
+                            //so avoid pushing him multiple times
+                            if(!already) {
+                                channel.users.push({
+                                    user: user.id,
+                                    phaseResult: null 
+                                });
+                            }
                         }
                         resolve();
                     });
@@ -380,7 +391,7 @@ ChannelsController.monitorPost = function(request, reply) {
                         return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
                     }
 
-                    channel.populate('users.user', function(popError, popResult){
+                    channel.populate('users.user invitesOfNonUsers', function(popError, popResult){
                         if(popError) {
                             var ctx = {channel: channel, error: {global: popError}};
                             return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
@@ -400,6 +411,10 @@ ChannelsController.monitorPost = function(request, reply) {
                             } else {
                                 ctx.pendings.push(userRef.user);
                             }
+                        }
+
+                        for(var i=0;i<channel.invitesOfNonUsers.length;++i) {
+                            ctx.pendings.push(channel.invitesOfNonUsers[i].email);
                         }
                         return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
                     });
