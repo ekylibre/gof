@@ -277,31 +277,32 @@ ChannelsController.monitorGet = function(request, reply) {
             if(userRef.linked) {
                 ctx.accepteds.push(userRef.user);
             } else {
-                ctx.pendings.push(userRef.user.email);
+                ctx.pendings.push(userRef.user);
             }
         }
 
         for(var i=0;i<channel.invitesOfNonUsers.length;++i) {
-            ctx.pendings.push(channel.invitesOfNonUsers[i].email);
+            ctx.pendings.push({email:channel.invitesOfNonUsers[i].email});
         }
 
         var recentEmails = [];
         User.findOne({email:request.auth.credentials.user.email}).select('channels').exec((error, channels) => {
             if(error) {
-                ctx.recentEmails = recentEmails.join(',');
-                return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
+                return reply(Boom.internal());
             }
+
             Channel.find({
                 _id : { $in : channels.channels}
             }).populate('users.user').exec((error, channels) => {
-                if(!error) {
-                    for(var i=0;i<channels.length;++i) {
-                        for(var j=0;j<channels[i].users.length;++j) {
-                            var email = channels[i].users[j].user.email;
-                            if( recentEmails.indexOf(email) == -1 && 
-                                ctx.pendings.find(x => x.email == email) == null) {
-                                recentEmails.push(email);
-                            }
+                if(error) {
+                    return reply(Boom.internal());
+                }
+                for(var i=0;i<channels.length;++i) {
+                    for(var j=0;j<channels[i].users.length;++j) {
+                        var email = channels[i].users[j].user.email;
+                        if( recentEmails.indexOf(email) == -1 && 
+                            ctx.pendings.find(x => x.email == email) == null) {
+                            recentEmails.push(email);
                         }
                     }
                 }
@@ -321,11 +322,13 @@ ChannelsController.monitorPost = function(request, reply) {
 
     //Filter emails
     var emails = request.payload.emails.split(/[\s,]+/);
-    var errors = [];
+    var wrongEmails = [];
     var filtered = emails.filter(s => {
         var vResult = Joi.validate(s, Joi.string().email());
         if(vResult.error != null) {
-            errors.push(s);
+            if(s && s.length) {
+                wrongEmails.push(s);
+            }
             return false;
         }
         return true;
@@ -386,20 +389,21 @@ ChannelsController.monitorPost = function(request, reply) {
             channel.save(
                 function(error, result) {
                     if(error) {
-                        //something goes wrong
-                        var ctx = {channel: channel, error: {global: error}};
-                        return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
+                        return reply(Boom.internal());
                     }
 
                     channel.populate('users.user invitesOfNonUsers', function(popError, popResult){
                         if(popError) {
-                            var ctx = {channel: channel, error: {global: popError}};
-                            return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
+                            return reply(Boom.internal());
                         }
+                        var titleCtx = {};
+                        titleCtx.date = Moment(channel.created).format('LLL');
+                        titleCtx.phase = request.i18n.__('scenario_' + channel.phase);
+                        titleCtx.state = request.i18n.__('channelstate_' + channel.state);
+
                         var ctx = {channel: popResult};
-                        
                         ctx.date = Moment(channel.created).format('LLL');
-                        ctx.pageTitle = request.i18n.__('monitor_panel_title');
+                        ctx.pageTitle = request.i18n.__('monitor_panel_title', titleCtx);
                         ctx.pendings = [];
                         ctx.accepteds = [];
                         ctx.success = filtered;
@@ -414,7 +418,10 @@ ChannelsController.monitorPost = function(request, reply) {
                         }
 
                         for(var i=0;i<channel.invitesOfNonUsers.length;++i) {
-                            ctx.pendings.push(channel.invitesOfNonUsers[i].email);
+                            ctx.pendings.push({email:channel.invitesOfNonUsers[i].email});
+                        }
+                        if(wrongEmails.length > 0) {
+                            ctx.wrongEmails = wrongEmails;
                         }
                         return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
                     });

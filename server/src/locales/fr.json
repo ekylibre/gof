@@ -69,6 +69,7 @@
 	"export_score_header": "Score",
 	"state_done": "Terminé",
 	"state_running": "En cours",
+	"invitation_wrong_email_title": "Votre saisie contient une ou plusieurs erreurs: ",
 	"invitation_sent_success_title": "Un email d'invitation a bien été envoyé aux destinataires suivants:",
 	"channels_scores_title": "Partie du {{channel.created}}, {{channel.phase}}, {{channel.state}}",
 	"scenario_budgetplan": "Budget prévisionnel",
