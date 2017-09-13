@@ -35,7 +35,7 @@
 
 
 <script type="text/javascript">
-    var getUrlParameter = function getUrlParameter(sParam) {
+    /*var getUrlParameter = function getUrlParameter(sParam) {
         var sPageURL = decodeURIComponent(window.location.search.substring(1)),
             sURLVariables = sPageURL.split('&'),
             sParameterName,
@@ -48,15 +48,17 @@
                 return sParameterName[1] === undefined ? true : sParameterName[1];
             }
         }
-    };
+    };*/
 
     $(document).ready(function () {
-        var email = getUrlParameter('email');
+        //var email = getUrlParameter('email');
+        var email = $.url().param('email');
         if (email) {
             $('#inputEmail').attr('value', email);
         }
 
-        var target = getUrlParameter('target') || '{{error.form.target}}';
+        //var target = getUrlParameter('target') || '{{error.form.target}}';
+        var target = $.url().param('target') || '{{error.form.target}}';
         if (target) {
             $('<input>').attr({
                 type: 'hidden',

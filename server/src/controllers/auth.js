@@ -10,6 +10,7 @@ const Mailer = require('../utils/mailer');
 const Validation = require('../utils/validation')
 const config = require('config');
 const Hoek = require('hoek');
+const Channel = require('../models/channel');
 
 var cookie_options = {
     ttl: 12 * 3600 * 1000, // expires in 12h
@@ -106,6 +107,9 @@ function AuthController(server) {
 
 AuthController.loginget = function(request, reply) {
     if(request.auth.isAuthenticated) {
+        if(request.query.target) {
+            return reply.redirect(request.query.target);
+        }
         return reply.redirect('/dashboard');
     }
     reply.view('views/login');
@@ -195,8 +199,16 @@ AuthController.registerget = function(request, reply) {
         );
     };
 
+    var match = false;
     for(var i=0; i<ctx.roles.length;++i) {
-        ctx.roles[i].selected = ctx.roles[i].id == predefinedRole;
+        match = ctx.roles[i].id == predefinedRole;
+        ctx.roles[i].selected = match;
+        if(match) {
+            break;
+        }
+    }
+    if(!match && ctx.roles.length > 1) {
+        ctx.roles[1].selected = true;
     }
 
     reply.view('views/register', ctx);
@@ -250,7 +262,12 @@ AuthController.registerpost = function(request, reply) {
                             var mailer = new Mailer();
                             var ctx = request.i18n;
                             ctx.user = u;
-                            ctx.url = getUrl(request, "/auth/login");
+                            var path = '/auth/login';
+                            if(request.payload.target) {
+                                path = '/auth/login?email='+encodeURIComponent(u.email)+'&target=' + encodeURIComponent(request.payload.target);
+                            }
+
+                            ctx.url = getUrl(request, path);
                             
                             request.server.render('mails/welcome', ctx, { layoutPath: './templates/mails/layout', }, 
                                 (error, html, config) => {
@@ -263,7 +280,39 @@ AuthController.registerpost = function(request, reply) {
                                         mailer.sendMail(u.email, subject, text, html);
                                         mailer.destroy();
                                     }
-                                    reply.view('views/register', {user: u});
+                                    
+                                    if(request.payload.target) {
+                                        //maybe the user was invited to join a game?
+                                        if(request.payload.target.startsWith('/game/start/')) {
+                                            //get channel id
+                                            var splitted = request.payload.target.split('/');
+                                            var chanId = splitted[3];
+                                            Channel.findById(chanId).populate('users.user').exec((error, channel) => {
+                                                if(error) {
+                                                    return reply(Boom.internal());
+                                                }
+                                                if(!channel) {
+                                                    return reply(Boom.badRequest());
+                                                }
+
+                                                channel.users.push({
+                                                    user: u.id,
+                                                    phaseResult: null 
+                                                });
+
+                                                channel.save((error, saveResult) => {
+                                                    if(error) {
+                                                        return reply(Boom.internal());
+                                                    }
+                                                    return reply.redirect(path);
+                                                });
+
+                                                
+                                            });
+                                        }
+                                    } else {
+                                        return reply.redirect(path);
+                                    }
                                 }
                             );
                     });

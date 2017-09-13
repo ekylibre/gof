@@ -347,8 +347,8 @@ ChannelsController.monitorPost = function(request, reply) {
                         }
                         
                         if(!user) {
-                            //we don't know this user, maybe we should keep a track of this invite for security?
-
+                            //we don't know this user, maybe we should keep a track of this invite for security? 
+                            //tiny chance that someone could find a link to a channel
                             return resolve();
                         }
 
@@ -418,10 +418,22 @@ ChannelsController.acceptChannelInvite = function(request, reply) {
     var chanId = request.params.chanId;
     var target = '/game/start/' + chanId;
     if(!request.auth.isAuthenticated) {
-        //redirect to login
-        return reply.redirect('/auth/login?email='+encodeURIComponent(request.params.email)+'&target='+encodeURIComponent(target));
+        var email = request.params.email;
+        User.findOne({email: email}).exec((error, user) => {
+            if(error) {
+                return reply(Boom.internal());
+            }
+
+            if(!user) {
+                //redirect to register
+                return reply.redirect('/auth/register/student?email='+encodeURIComponent(email)+'&target='+encodeURIComponent(target));
+            } 
+            //redirect to login
+            return reply.redirect('/auth/login?email='+encodeURIComponent(email)+'&target='+encodeURIComponent(target));
+        });
+    } else {
+        return reply.redirect(target);
     }
-    return reply.redirect(target);
 }
 
 module.exports = ChannelsController;

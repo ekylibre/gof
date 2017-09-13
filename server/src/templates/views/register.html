@@ -14,7 +14,7 @@
             </div>
             {{/if}}
         {{/if}}
-        <form method="POST" action="/auth/register" class="form-horizontal">
+        <form id="register-form" method="POST" action="/auth/register" class="form-horizontal">
             <div class="input-group {{#if error.faults.lastname}}has-error{{/if}}">
                 <span class="input-group-addon"><img src='/images/ico_profile.png'></span>
                 <input type="text" name="lastname" required="required" class="form-control" id="inputLastname" value="{{error.form.lastname}}" placeholder="{{i18n 'placeholder_lastname'}}"/>
@@ -59,5 +59,25 @@
     </div>
     </div>
 </div>
+<script>
 
+    $(document).ready(function () {
+        //var email = getUrlParameter('email');
+        var email = $.url().param('email');
+        if (email) {
+            $('#inputEmail').attr('value', email);
+        }
+
+        //var target = getUrlParameter('target') || '{{error.form.target}}';
+        var target = $.url().param('target') || '{{error.form.target}}';
+        if (target) {
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'target',
+                value: target,
+            }).appendTo('#register-form');
+        }
+    });
+
+</script>
 {{/if}}
