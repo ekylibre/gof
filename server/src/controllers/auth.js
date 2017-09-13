@@ -186,16 +186,14 @@ AuthController.logout = function(request, reply) {
     });
 }
 
-AuthController.registerget = function(request, reply) {
-
-    var predefinedRole = request.params.role;
+function buildRoleContext(predefinedRole, i18n) {
     var ctx = {roles: []};
 
     var roleKeys = Object.keys(Constants.UserRoleEnum);
     for(var i=0; i<roleKeys.length; ++i) {
         var role = Constants.UserRoleEnum[roleKeys[i]];
         ctx.roles.push(
-            {id: role, name: request.i18n.__(role)}
+            {id: role, name: i18n.__(role)}
         );
     };
 
@@ -211,17 +209,22 @@ AuthController.registerget = function(request, reply) {
         ctx.roles[1].selected = true;
     }
 
+    return ctx;
+}
+
+AuthController.registerget = function(request, reply) {
+
+    var ctx = buildRoleContext(request.params.role, request.i18n);
     reply.view('views/register', ctx);
 }
 
 AuthController.registerpost = function(request, reply) {
 
     const vResult = Validation.checkRegister(request.payload);
-
+    var roleContext = buildRoleContext(request.payload.role, request.i18n);
+    
     if(vResult.error) {
-        return reply.view('views/register', {
-            error: Validation.buildContext(request, "register_failed", vResult.error)
-        });
+        return reply.view('views/register', Validation.buildContext(request, "register_failed", vResult.error, roleContext));
     }
 
     var first = request.payload.firstname;
@@ -238,13 +241,13 @@ AuthController.registerpost = function(request, reply) {
     User.findOne({email: email}, 
         (error, result) => {
             if(result && result.email == email) {
-                return reply.view('views/register', Validation.buildContext(request, "register_failed_already_exists"));
+                return reply.view('views/register', Validation.buildContext(request, "register_failed_already_exists", null, roleContext));
             }
 
             Bcrypt.hash(p1, 10,
                 (err, encrypted) => {
                     if(err) {
-                        return reply.view('views/register', Validation.buildContext(request, "generic_error"));
+                        return reply.view('views/register', Validation.buildContext(request, "generic_error", null, roleContext));
                     }
                     var u = new User();
                     u.firstName = first;
@@ -256,7 +259,7 @@ AuthController.registerpost = function(request, reply) {
                     u.save(
                         (error, user) => {
                             if(error) {
-                                return reply.view('views/register', Validation.buildContext(request, "generic_error"));
+                                return reply.view('views/register', Validation.buildContext(request, "generic_error", null, roleContext));
                             }
                             
                             var mailer = new Mailer();

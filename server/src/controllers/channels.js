@@ -277,7 +277,7 @@ ChannelsController.monitorGet = function(request, reply) {
             if(userRef.linked) {
                 ctx.accepteds.push(userRef.user);
             } else {
-                ctx.pendings.push(userRef.user);
+                ctx.pendings.push(userRef.user.email);
             }
         }
 

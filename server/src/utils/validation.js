@@ -4,12 +4,12 @@ const Hoek = require('hoek');
 
 module.exports = {
 
-    buildContext : function(request, globalMsgId, joiError) {
+    buildContext : function(request, globalMsgId, joiError, mergeCtx) {
         var error = {
             form: {}
         };
 
-        var ctx = {};
+        var ctx = mergeCtx || {};
 
         var keys = Object.keys(request.payload);
         keys.forEach(function(k){
