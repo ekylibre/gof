@@ -8,6 +8,7 @@ const SharedConsts = require('./common/constants')
  * @property {Dictionary(key: CultureModeEnum, value: number)} dbId entry id in database for each culture modes
  * @property {Dictionary(key: CultureModeEnum, value: number)} buyPrices price of seeds for a culture mode and per hectare
  * @property {Dictionary(key: CultureModeEnum, value: number)} sellPrices selling price of a ton of product
+ * @property {Dictionary(key: CultureModeEnum, value: Object)} itks itk data
  */
 export default class CPlant
 {
@@ -22,6 +23,7 @@ export default class CPlant
         this.dbId = {};
         this.buyPrices = {};
         this.sellPrices = {};
+        this.itks = {};
 
         this.tiledGID = [];
 
@@ -29,18 +31,18 @@ export default class CPlant
         {
             this.species = _JSON.species;
 
-            this.updatePrices(_JSON);
+            this.update(_JSON);
         }
         
         if (this.species === undefined)
         {
-            this.valid = false;
+            this._valid = false;
             cc.error('Invalid plant JSon: '+_JSON);
         }
 
     }
 
-    updatePrices(_JSON)
+    update(_JSON)
     {
         if (_JSON.cultureMode !== undefined && _JSON.pricePerHectare !== undefined)
         {
@@ -55,6 +57,8 @@ export default class CPlant
             this.buyPrices[mode] = _JSON.pricePerHectare;
 
             this.sellPrices[mode] = _JSON.pricePerHectare * 10;
+
+            this.itks[mode] = _JSON.itk;
         }        
     }
 
@@ -73,6 +77,16 @@ export default class CPlant
         return mode;
     }
 
+    getUnitCosts(_Mode)
+    {
+        var itk = getItk(_Mode);
+        if (itk)
+        {
+            return itk.unitCosts;
+        }
+        return null;
+    }
+
     getBuyPrice(_Mode)
     {
         return this.buyPrices[this._CultureMode(_Mode)];
@@ -81,6 +95,11 @@ export default class CPlant
     getSellPrice(_Mode)
     {
         return this.sellPrices[this._CultureMode(_Mode)];
+    }
+
+    getItk(_Mode)
+    {
+        return this.itks[this._CultureMode(_Mode)];
     }
 
     get isFallow()
