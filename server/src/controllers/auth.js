@@ -10,6 +10,7 @@ const Mailer = require('../utils/mailer');
 const Validation = require('../utils/validation')
 const config = require('config');
 const Hoek = require('hoek');
+const Channel = require('../models/channel');
 
 var cookie_options = {
     ttl: 12 * 3600 * 1000, // expires in 12h
@@ -106,6 +107,9 @@ function AuthController(server) {
 
 AuthController.loginget = function(request, reply) {
     if(request.auth.isAuthenticated) {
+        if(request.query.target) {
+            return reply.redirect(request.query.target);
+        }
         return reply.redirect('/dashboard');
     }
     reply.view('views/login');
@@ -182,34 +186,45 @@ AuthController.logout = function(request, reply) {
     });
 }
 
-AuthController.registerget = function(request, reply) {
-
-    var predefinedRole = request.params.role;
+function buildRoleContext(predefinedRole, i18n) {
     var ctx = {roles: []};
 
     var roleKeys = Object.keys(Constants.UserRoleEnum);
     for(var i=0; i<roleKeys.length; ++i) {
         var role = Constants.UserRoleEnum[roleKeys[i]];
         ctx.roles.push(
-            {id: role, name: request.i18n.__(role)}
+            {id: role, name: i18n.__(role)}
         );
     };
 
+    var match = false;
     for(var i=0; i<ctx.roles.length;++i) {
-        ctx.roles[i].selected = ctx.roles[i].id == predefinedRole;
+        match = ctx.roles[i].id == predefinedRole;
+        ctx.roles[i].selected = match;
+        if(match) {
+            break;
+        }
+    }
+    if(!match && ctx.roles.length > 1) {
+        ctx.roles[1].selected = true;
     }
 
+    return ctx;
+}
+
+AuthController.registerget = function(request, reply) {
+
+    var ctx = buildRoleContext(request.params.role, request.i18n);
     reply.view('views/register', ctx);
 }
 
 AuthController.registerpost = function(request, reply) {
 
     const vResult = Validation.checkRegister(request.payload);
-
+    var roleContext = buildRoleContext(request.payload.role, request.i18n);
+    
     if(vResult.error) {
-        return reply.view('views/register', {
-            error: Validation.buildContext(request, "register_failed", vResult.error)
-        });
+        return reply.view('views/register', Validation.buildContext(request, "register_failed", vResult.error, roleContext));
     }
 
     var first = request.payload.firstname;
@@ -226,13 +241,13 @@ AuthController.registerpost = function(request, reply) {
     User.findOne({email: email}, 
         (error, result) => {
             if(result && result.email == email) {
-                return reply.view('views/register', Validation.buildContext(request, "register_failed_already_exists"));
+                return reply.view('views/register', Validation.buildContext(request, "register_failed_already_exists", null, roleContext));
             }
 
             Bcrypt.hash(p1, 10,
                 (err, encrypted) => {
                     if(err) {
-                        return reply.view('views/register', Validation.buildContext(request, "generic_error"));
+                        return reply.view('views/register', Validation.buildContext(request, "generic_error", null, roleContext));
                     }
                     var u = new User();
                     u.firstName = first;
@@ -244,13 +259,18 @@ AuthController.registerpost = function(request, reply) {
                     u.save(
                         (error, user) => {
                             if(error) {
-                                return reply.view('views/register', Validation.buildContext(request, "generic_error"));
+                                return reply.view('views/register', Validation.buildContext(request, "generic_error", null, roleContext));
                             }
                             
                             var mailer = new Mailer();
                             var ctx = request.i18n;
                             ctx.user = u;
-                            ctx.url = getUrl(request, "/auth/login");
+                            var path = '/auth/login';
+                            if(request.payload.target) {
+                                path = '/auth/login?email='+encodeURIComponent(u.email)+'&target=' + encodeURIComponent(request.payload.target);
+                            }
+
+                            ctx.url = getUrl(request, path);
                             
                             request.server.render('mails/welcome', ctx, { layoutPath: './templates/mails/layout', }, 
                                 (error, html, config) => {
@@ -263,7 +283,46 @@ AuthController.registerpost = function(request, reply) {
                                         mailer.sendMail(u.email, subject, text, html);
                                         mailer.destroy();
                                     }
-                                    reply.view('views/register', {user: u});
+                                    
+                                    if(request.payload.target) {
+                                        //maybe the user was invited to join a game?
+                                        if(request.payload.target.startsWith('/game/start/')) {
+                                            //get channel id
+                                            var splitted = request.payload.target.split('/');
+                                            var chanId = splitted[3];
+                                            Channel.findById(chanId).populate('users.user invitesOfNonUsers').exec((error, channel) => {
+                                                if(error) {
+                                                    return reply(Boom.internal());
+                                                }
+                                                if(!channel) {
+                                                    return reply(Boom.badRequest());
+                                                }
+
+                                                channel.users.push({
+                                                    user: u.id,
+                                                    phaseResult: null 
+                                                });
+
+                                                //find associated invite to remove it
+                                                for(var i=0;i<channel.invitesOfNonUsers.length;++i) {
+                                                    var iEmail = channel.invitesOfNonUsers[i].email;
+                                                    if(iEmail == u.email || iEmail == request.payload.srcEmail) {
+                                                        channel.invitesOfNonUsers.splice(i, 1);
+                                                        break;
+                                                    }
+                                                }
+
+                                                channel.save((error, saveResult) => {
+                                                    if(error) {
+                                                        return reply(Boom.internal());
+                                                    }
+                                                    return reply.redirect(path);
+                                                });
+                                            });
+                                        }
+                                    } else {
+                                        return reply.redirect(path);
+                                    }
                                 }
                             );
                     });

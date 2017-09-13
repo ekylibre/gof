@@ -9,7 +9,7 @@
                         <div class="row vertical-align">
                             <div class="col-md-4">{{user.firstName}} {{user.lastName}}</div>
                             {{#if phaseResult}}
-                            <div class="col-md-4">{{phaseResult.score}}</div>
+                            <div class="col-md-4">{{phaseResult.scoreStr}}</div>
                             <div class="col-md-4 gof-right"><a class="btn btn-primary" href="/channels/exportscores/{{../channel.id}}/csv"><span class="glyphicon glyphicon-export"></span> {{i18n "export_csv"}}</a></div>
                             {{else}}
                             <div class="col-md-4"></div>

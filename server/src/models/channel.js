@@ -3,6 +3,11 @@
 const Constants = require('../../../common/constants');
 var mongoose = require ('mongoose');
 
+// Channel sub schema, representing an invite of an unregistered user
+var ChanInviteSchema = new mongoose.Schema({
+    email: String
+});
+
 // Channel sub schema, representing a phase result
 var PhaseResultSchema = new mongoose.Schema({
     score: Number,                              // phase score
@@ -23,6 +28,7 @@ var ChanUserSchema = new mongoose.Schema({
 // Channel schema
 var ChannelSchema = new mongoose.Schema({
     users: [ChanUserSchema],
+    invitesOfNonUsers: [ChanInviteSchema],
     state: {
         type: String,
         enum: [ Constants.ChannelStateEnum.OPENED, Constants.ChannelStateEnum.CLOSED ],

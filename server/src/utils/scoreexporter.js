@@ -12,7 +12,7 @@ function ScoreExporter(channel, format, i18n) {
 }
 
 var specific_data_export = {
-    croprotation: function(header, bodyLine, details) {
+    croprotation: function(header, bodyLine, details, i18n) {
         var hpop = false;
         var r = JSON.parse(details);
         for(var i=0;i<r.length;++i) {
@@ -21,7 +21,8 @@ var specific_data_export = {
                 header.push(detail.parcelName);
                 hpop = true;
             }
-            bodyLine.push(detail.note);
+            var choice = i18n.__('activity_' + detail.choice.species) + " " + i18n.__('culture_' + detail.choice.culture);
+            bodyLine.push(choice);
         }
         return hpop;
     }
@@ -45,12 +46,12 @@ var export_funcs = {
             var user = channelUser.user;
             if(channelUser.phaseResult && channelUser.phaseResult.details) {
                 bodyLine.push(user.email);
-                bodyLine.push(channelUser.phaseResult.score);
+                bodyLine.push(Math.round(channelUser.phaseResult.score * 20));
                 //now export the scenario specific data
                 var f = specific_data_export[chan.phase];
                 if(f) {
                     var h = headerPopulated ? null : header;
-                    var result = f(h, bodyLine, channelUser.phaseResult.details);
+                    var result = f(h, bodyLine, channelUser.phaseResult.details, self.i18n);
                     if(h && result) {
                         headerPopulated = true;
                     }

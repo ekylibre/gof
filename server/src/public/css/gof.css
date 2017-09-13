@@ -133,6 +133,12 @@ a.disabled {
     align-items: center;
 }
 
+.text-ellipsis {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
 .gof-right {
     text-align: right;
 }
@@ -178,7 +184,7 @@ a.disabled {
     background-color: #ffe8b3;
     border: 6px solid #71242c;
     border-radius: 8px;
-    box-shadow: 4px 4px 3px 3px rgba(0, 0, 0, .05);
+    box-shadow: 8px 8px 10px 0px rgba(0, 0, 0, .2);
 }
 
 .panel-info>.panel-heading {
@@ -192,6 +198,10 @@ a.disabled {
 .panel-info>.panel-body {
     border: 0px;
     padding: 5%;
+}
+
+.panel-info>.panel-nesting {
+    padding: 5px;
 }
 
 input.form-control {

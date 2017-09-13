@@ -179,12 +179,12 @@ ChannelsController.create = function(request, reply) {
 ChannelsController.scores = function(request, reply) {
     var channelId = request.params.id;
     Channel.findOne({_id: channelId}).populate('users.user').exec((error, result) => {
-        if(error) {
+        if(error || !result) {
             return reply(Boom.badRequest());
         }
 
         var channel = {};
-        channel.created = Moment(result.created).format('LL');
+        channel.created = Moment(result.created).format('LLL');
         channel.phase = request.i18n.__('scenario_' + result.phase);
         channel.state = request.i18n.__('channelstate_' + result.state);
         channel.id = result.id;
@@ -195,6 +195,7 @@ ChannelsController.scores = function(request, reply) {
                 user: result.users[i].user,
                 phaseResult: result.users[i].phaseResult
             };
+            element.phaseResult.scoreStr = Math.round(element.phaseResult.score * 20) + " / 20";
             channel.users.push(element);
         }
 
@@ -253,16 +254,21 @@ ChannelsController.scenarioSelection = function(request, reply) {
 
 ChannelsController.monitorGet = function(request, reply) {
     var chanId = request.params.chanId;
-    Channel.findById(chanId).populate('users.user').exec((error, channel) => {
+    Channel.findById(chanId).populate('users.user invitesOfNonUsers').exec((error, channel) => {
         if(error) {
-            return reply(Boom.badRequest());
+            return reply(Boom.internal());
+        }
+        if(!channel) {
+            return reply(Boom.badRequest());   
         }
 
-        //TODO : find recent emails already invited in other channels of same owner
-        var ctx = {channel: channel};
+        var titleCtx = {};
+        titleCtx.date = Moment(channel.created).format('LLL');
+        titleCtx.phase = request.i18n.__('scenario_' + channel.phase);
+        titleCtx.state = request.i18n.__('channelstate_' + channel.state);
 
-        ctx.date = Moment(channel.created).format('LLL');
-        ctx.pageTitle = request.i18n.__('monitor_panel_title');
+        var ctx = {channel: channel};
+        ctx.pageTitle = request.i18n.__('monitor_panel_title', titleCtx);
         ctx.pendings = [];
         ctx.accepteds = [];
 
@@ -275,23 +281,28 @@ ChannelsController.monitorGet = function(request, reply) {
             }
         }
 
+        for(var i=0;i<channel.invitesOfNonUsers.length;++i) {
+            ctx.pendings.push({email:channel.invitesOfNonUsers[i].email});
+        }
+
         var recentEmails = [];
         User.findOne({email:request.auth.credentials.user.email}).select('channels').exec((error, channels) => {
             if(error) {
-                ctx.recentEmails = recentEmails.join(',');
-                return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
+                return reply(Boom.internal());
             }
+
             Channel.find({
                 _id : { $in : channels.channels}
             }).populate('users.user').exec((error, channels) => {
-                if(!error) {
-                    for(var i=0;i<channels.length;++i) {
-                        for(var j=0;j<channels[i].users.length;++j) {
-                            var email = channels[i].users[j].user.email;
-                            if( recentEmails.indexOf(email) == -1 && 
-                                ctx.pendings.find(x => x.email == email) == null) {
-                                recentEmails.push(email);
-                            }
+                if(error) {
+                    return reply(Boom.internal());
+                }
+                for(var i=0;i<channels.length;++i) {
+                    for(var j=0;j<channels[i].users.length;++j) {
+                        var email = channels[i].users[j].user.email;
+                        if( recentEmails.indexOf(email) == -1 && 
+                            ctx.pendings.find(x => x.email == email) == null) {
+                            recentEmails.push(email);
                         }
                     }
                 }
@@ -311,11 +322,13 @@ ChannelsController.monitorPost = function(request, reply) {
 
     //Filter emails
     var emails = request.payload.emails.split(/[\s,]+/);
-    var errors = [];
+    var wrongEmails = [];
     var filtered = emails.filter(s => {
         var vResult = Joi.validate(s, Joi.string().email());
         if(vResult.error != null) {
-            errors.push(s);
+            if(s && s.length) {
+                wrongEmails.push(s);
+            }
             return false;
         }
         return true;
@@ -344,20 +357,26 @@ ChannelsController.monitorPost = function(request, reply) {
                         }
                         
                         if(!user) {
-                            return resolve();
-                        }
-
-                        //maybe this user was already added to the channel
-                        var already = channel.users.find(function(e){
-                            return e.user.email == email;
-                        });
-
-                        //so avoid pushing him multiple times
-                        if(!already) {
-                            channel.users.push({
-                                user: user.id,
-                                phaseResult: null 
+                            //we don't know this user, we keep a track of this invite in invitesOfNonUsers
+                            var already = channel.invitesOfNonUsers.find(function(e){
+                                return e.email == email;
                             });
+                            if(!already) {
+                                channel.invitesOfNonUsers.push({email:email});
+                            }
+                        } else {
+
+                            //maybe this user was already added to the channel
+                            var already = channel.users.find(function(e){
+                                return e.user.email == email;
+                            });
+                            //so avoid pushing him multiple times
+                            if(!already) {
+                                channel.users.push({
+                                    user: user.id,
+                                    phaseResult: null 
+                                });
+                            }
                         }
                         resolve();
                     });
@@ -370,20 +389,21 @@ ChannelsController.monitorPost = function(request, reply) {
             channel.save(
                 function(error, result) {
                     if(error) {
-                        //something goes wrong
-                        var ctx = {channel: channel, error: {global: error}};
-                        return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
+                        return reply(Boom.internal());
                     }
 
-                    channel.populate('users.user', function(popError, popResult){
+                    channel.populate('users.user invitesOfNonUsers', function(popError, popResult){
                         if(popError) {
-                            var ctx = {channel: channel, error: {global: popError}};
-                            return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
+                            return reply(Boom.internal());
                         }
+                        var titleCtx = {};
+                        titleCtx.date = Moment(channel.created).format('LLL');
+                        titleCtx.phase = request.i18n.__('scenario_' + channel.phase);
+                        titleCtx.state = request.i18n.__('channelstate_' + channel.state);
+
                         var ctx = {channel: popResult};
-                        
                         ctx.date = Moment(channel.created).format('LLL');
-                        ctx.pageTitle = request.i18n.__('monitor_panel_title');
+                        ctx.pageTitle = request.i18n.__('monitor_panel_title', titleCtx);
                         ctx.pendings = [];
                         ctx.accepteds = [];
                         ctx.success = filtered;
@@ -395,6 +415,13 @@ ChannelsController.monitorPost = function(request, reply) {
                             } else {
                                 ctx.pendings.push(userRef.user);
                             }
+                        }
+
+                        for(var i=0;i<channel.invitesOfNonUsers.length;++i) {
+                            ctx.pendings.push({email:channel.invitesOfNonUsers[i].email});
+                        }
+                        if(wrongEmails.length > 0) {
+                            ctx.wrongEmails = wrongEmails;
                         }
                         return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
                     });
@@ -413,10 +440,22 @@ ChannelsController.acceptChannelInvite = function(request, reply) {
     var chanId = request.params.chanId;
     var target = '/game/start/' + chanId;
     if(!request.auth.isAuthenticated) {
-        //redirect to login
-        return reply.redirect('/auth/login?email='+encodeURIComponent(request.params.email)+'&target='+encodeURIComponent(target));
+        var email = request.params.email;
+        User.findOne({email: email}).exec((error, user) => {
+            if(error) {
+                return reply(Boom.internal());
+            }
+
+            if(!user) {
+                //redirect to register
+                return reply.redirect('/auth/register/student?email='+encodeURIComponent(email)+'&target='+encodeURIComponent(target));
+            } 
+            //redirect to login
+            return reply.redirect('/auth/login?email='+encodeURIComponent(email)+'&target='+encodeURIComponent(target));
+        });
+    } else {
+        return reply.redirect(target);
     }
-    return reply.redirect(target);
 }
 
 module.exports = ChannelsController;
