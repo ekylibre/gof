@@ -7,12 +7,13 @@
                     {{#each channel.users}}
                     <li class="list-group-item">
                         <div class="row vertical-align">
-                            <div class="col-md-4">{{user.firstName}} {{user.lastName}}</div>
+                            <div class="col-md-3 text-ellipsis"><strong class="text-capitalize">{{user.firstName}} {{user.lastName}}</strong></div>
+                            <div class="col-md-3 text-ellipsis">{{user.email}}</div>
                             {{#if phaseResult}}
-                            <div class="col-md-4">{{phaseResult.scoreStr}}</div>
+                            <div class="col-md-2"><strong>{{phaseResult.scoreStr}}</strong></div>
                             <div class="col-md-4 gof-right"><a class="btn btn-primary" href="/channels/exportscores/{{../channel.id}}/csv"><span class="glyphicon glyphicon-export"></span> {{i18n "export_csv"}}</a></div>
                             {{else}}
-                            <div class="col-md-4"></div>
+                            <div class="col-md-2">{{i18n "channelstate_opened"}}</div>
                             <div class="col-md-4"></div>
                             {{/if}}
                         </div>

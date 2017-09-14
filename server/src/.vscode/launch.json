@@ -17,7 +17,7 @@
             "name": "populateDB",
             "program": "${workspaceRoot}/cli/workflow.js",
             "args": [
-                "-c", "mongodb://localhost:27017/gof",  "-p" 
+                "-c", "mongodb://localhost:27017/gof",  "-px" 
             ]
         },
         {
