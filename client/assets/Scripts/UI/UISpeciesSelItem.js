@@ -299,37 +299,37 @@ var UISpeciesSelItem = cc.Class({
                     var itkNormal = this._plant.getItk(SharedConsts.CultureModeEnum.NORMAL);
                     if (itkNormal && itkNormal.unitCosts)
                     {
-                        this.buyPriceNormal.string = itkNormal.unitCosts.money;
-                        this.sellPriceNormal.string = itkNormal.unitResults.money;
+                        this.buyPriceNormal.string = i18n.t('price_per_hectare',{ val: itkNormal.unitCosts.money.toLocaleString(undefined, {maximumFractionDigits:2}) });
+                        this.sellPriceNormal.string = i18n.t('sell_per_qt',{ val: itkNormal.unitResults.money.toLocaleString(undefined, {maximumFractionDigits:2}) });
                     }
                     else
                     {
-                        this.buyPriceNormal.string = this._plant.getBuyPrice(SharedConsts.CultureModeEnum.NORMAL).toString();
-                        this.sellPriceNormal.string = this._plant.getSellPrice(SharedConsts.CultureModeEnum.NORMAL).toString();                       
+                        this.buyPriceNormal.string =  i18n.t('price_per_hectare',{ val: this._plant.getBuyPrice(SharedConsts.CultureModeEnum.NORMAL).toLocaleString(undefined, {maximumFractionDigits:2}) });
+                        this.sellPriceNormal.string = i18n.t('sell_per_qt',{ val: this._plant.getSellPrice(SharedConsts.CultureModeEnum.NORMAL).toLocaleString(undefined, {maximumFractionDigits:2}) });
                     }
 
                     var itkBio = this._plant.getItk(SharedConsts.CultureModeEnum.BIO);
                     if (itkBio && itkBio.unitCosts)
                     {
-                        this.buyPriceBio.string = itkBio.unitCosts.money;
-                        this.sellPriceBio.string = itkBio.unitResults.money;
+                        this.buyPriceBio.string = i18n.t('price_per_hectare',{ val: itkBio.unitCosts.money.toLocaleString(undefined, {maximumFractionDigits:2}) });
+                        this.sellPriceBio.string = i18n.t('sell_per_qt',{ val: itkBio.unitResults.money.toLocaleString(undefined, {maximumFractionDigits:2}) });
                     }
                     else
                     {
-                        this.buyPriceBio.string = this._plant.getBuyPrice(SharedConsts.CultureModeEnum.BIO).toString();
-                        this.sellPriceBio.string = this._plant.getSellPrice(SharedConsts.CultureModeEnum.BIO).toString();                       
+                        this.buyPriceBio.string =  i18n.t('price_per_hectare',{ val: this._plant.getBuyPrice(SharedConsts.CultureModeEnum.BIO).toLocaleString(undefined, {maximumFractionDigits:2}) });
+                        this.sellPriceBio.string = i18n.t('sell_per_qt',{ val: this._plant.getSellPrice(SharedConsts.CultureModeEnum.BIO).toLocaleString(undefined, {maximumFractionDigits:2}) });
                     }
 
                     var itkReasoned = this._plant.getItk(SharedConsts.CultureModeEnum.REASONED);
                     if (itkReasoned && itkReasoned.unitCosts)
                     {
-                        this.buyPriceReasoned.string = itkReasoned.unitCosts.money;
-                        this.sellPriceReasoned.string = itkReasoned.unitResults.money;
+                        this.buyPriceReasoned.string = i18n.t('price_per_hectare',{ val: itkReasoned.unitCosts.money.toLocaleString(undefined, {maximumFractionDigits:2}) });
+                        this.sellPriceReasoned.string = i18n.t('sell_per_qt',{ val: itkReasoned.unitResults.money.toLocaleString(undefined, {maximumFractionDigits:2}) });
                     }
                     else
                     {
-                        this.buyPriceReasoned.string = this._plant.getBuyPrice(SharedConsts.CultureModeEnum.REASONED).toString();
-                        this.sellPriceReasoned.string = this._plant.getSellPrice(SharedConsts.CultureModeEnum.REASONED).toString();                       
+                        this.buyPriceReasoned.string =  i18n.t('price_per_hectare',{ val: this._plant.getBuyPrice(SharedConsts.CultureModeEnum.REASONED).toLocaleString(undefined, {maximumFractionDigits:2}) });
+                        this.sellPriceReasoned.string = i18n.t('sell_per_qt',{ val: this._plant.getSellPrice(SharedConsts.CultureModeEnum.REASONED).toLocaleString(undefined, {maximumFractionDigits:2}) });
                     }
 
                     this.btNormal.interactable = this.cultureMode != SharedConsts.CultureModeEnum.NORMAL;

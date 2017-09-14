@@ -86,16 +86,23 @@ var UIParcelHistoryItem = cc.Class({
         this.parcel = _Parcel;
         this.year = _Year;
 
-        var y;
-        if (_Year <0)
+        if (_Year)
         {
-            y = _Year.toString();
+            var y;
+            if (_Year <0)
+            {
+                y = _Year.toString();
+            }
+            else
+            {
+                y = '+'+_Year.toString();
+            }
+            this.lbYear.string = y; //i18n.t('parcel_history_year', { 'val': y});
         }
         else
         {
-            y = '+'+_Year.toString();
+            this.lbYear.string = '';
         }
-        this.lbYear.string = i18n.t('parcel_history_year', { 'val': y});
 
         if (_Data === undefined || _Data === null)
         {
