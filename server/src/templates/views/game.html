@@ -1,6 +1,5 @@
 <div id="GameDiv">
-  <canvas id="GameCanvas" width="1280" height="720" gof-access-token="{{accessToken}}"
-    gof-channel-id="{{channelId}}"></canvas>
+  <canvas id="GameCanvas" width="1280" height="720" gof-access-token="{{accessToken}}" gof-channel-id="{{channelId}}"></canvas>
   <div id="splash">
     <div class="progress-bar stripes">
       <span style="width: 0%"></span>
@@ -39,7 +38,6 @@
       gameDiv.style.margin = "auto";
 
       var policy = new cc.ResolutionPolicy(cc.ContainerStrategy.PROPORTION_TO_FRAME, cc.ContentStrategy.EXACT_FIT);
-      //cc.view.setDesignResolutionSize(1280, 720, cc.ResolutionPolicy.NO_BORDER);
       cc.view.setDesignResolutionSize(1280, 720, policy);
       cc.view.setFrameSize(newWidth, newHeight);
 
@@ -108,13 +106,8 @@
       cc.director.on(cc.Director.EVENT_AFTER_SCENE_LAUNCH, onFirstSceneLoaded);
     };
 
-    $("#GameCanvas").click(function(event){
+    $("#GameCanvas").click(function (event) {
       gofs();
     });
-
   </script>
 </div>
-
-<!--div id="BtnFullscreen" class="row" style="text-align: center; margin-top:10px;">
-  <button class="btn btn-primary" onclick="gofs();">{{i18n "game_set_fullscreen"}}</button>
-</div-->
