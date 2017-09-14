@@ -731,21 +731,23 @@ export default class CGame
                                     time = wg.workingTimePerSizeUnit;
                                     procedure.unitCosts.time += time;
                                 }
-                                if (wg.tools)
-                                {
-                                    for (var i=0; i<wg.tools.length; i++)
-                                    {
-                                        var usable = instance.findUsableItem(wg.tools[i].name);
-                                        if (usable)
-                                        {
-                                            procedure.unitCosts.money += time * usable.pricePerUnit;
-                                        }
-                                        else
-                                        {
-                                            cc.warn('Missing tool datas: '+wg.tools[i].name);
-                                        }
-                                    }
-                                }
+
+                                // ignoring tools at the moment: do they have a cost per hour?
+                                // if (wg.tools)
+                                // {
+                                //     for (var i=0; i<wg.tools.length; i++)
+                                //     {
+                                //         var usable = instance.findUsableItem(wg.tools[i].name);
+                                //         if (usable)
+                                //         {
+                                //             procedure.unitCosts.money += time * usable.pricePerUnit;
+                                //         }
+                                //         else
+                                //         {
+                                //             cc.warn('Missing tool datas: '+wg.tools[i].name);
+                                //         }
+                                //     }
+                                // }
                                 if (wg.doers)
                                 {
                                     for (var i=0; i<wg.doers.length; i++)
@@ -757,7 +759,14 @@ export default class CGame
                                         }
                                         else
                                         {
-                                            cc.warn('Missing doers datas: '+wg.doers[i]);
+                                            if (wg.doers[i].indexOf('driver')>=0)
+                                            {
+                                                procedure.unitCosts.money += time * 100;
+                                            }
+                                            else
+                                            {
+                                                cc.warn('Missing doers datas: '+wg.doers[i]);
+                                            }
                                         }
                                     }                    
                                 }
@@ -769,7 +778,7 @@ export default class CGame
                             for (var inputId=0; inputId<procedure.inputs.length; inputId++)
                             {
                                 var input = procedure.inputs[inputId];
-                                var usable = instance.findUsableItem(input.name);
+                                var usable = instance.findUsableItem(input.name.trim());
                                 if (usable)
                                 {
                                     if (!input.unitPerSizeUnit ||
@@ -777,12 +786,16 @@ export default class CGame
                                     {
                                         cc.warn('Missing or unsupport unitPerSizeUnit: '+input.unitPerSizeUnit+' in itk input: '+input.name);
                                     }
+                                    if (usable.unit && usable.unit != input.unitPerSizeUnit)
+                                    {
+                                        cc.warn('Units not corresponding: input '+input.name+'='+input.unitPerSizeUnit+' / additive='+usable.unit);
+                                    }
                                     procedure.unitCosts.money += usable.pricePerUnit;
                                 }
                                 else
                                 {
                                     // check if its a seed, and get price from CPlant
-                                    if (input.name.indexOf('_seed')>0)
+                                    if (input.name.indexOf('_seed')>0 || input.name.indexOf('_grain')>0)
                                     {
                                         procedure.unitCosts.money += plant.getBuyPrice(itk.culture.mode);
                                     }
@@ -802,7 +815,7 @@ export default class CGame
                                 {
                                     if (!output.unitPerSizeUnit || output.unitPerSizeUnit != 'qt')
                                     {
-                                        cc.warn('Missing or unsupport unitPerSizeUnit: '+output.unitPerSizeUnit+' in itk output: '+output.name);
+                                        cc.warn('Missing or unsupported unitPerSizeUnit: '+output.unitPerSizeUnit+' in itk output: '+output.name);
                                     }
 
                                     itk.unitResults.money += usable.pricePerUnit;

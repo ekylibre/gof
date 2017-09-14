@@ -23,6 +23,11 @@ export default class CUsableItem
          */
         this.pricePerUnit = _JSON.price;
 
+        /**
+         * Unit
+         */
+        this.unit = _JSON.unit;
+
         this._valid = this.dbId && this.name && this.pricePerUnit;
 
     }

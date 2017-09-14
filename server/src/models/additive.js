@@ -14,7 +14,8 @@ var AdditiveSchema = new mongoose.Schema({
         unique: true
     },
 
-    price: Number
+    price: Number,
+    unit: String
 
 });
 

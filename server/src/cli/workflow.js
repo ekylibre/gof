@@ -343,6 +343,11 @@ function exportITK(err) {
         return;
     }
 
+    if (!program.xml) {
+        populateComplete();
+        return;
+    }
+
     fs.readFile('./cli/client_secret_drive.json', function processClientSecrets(err, content) {
         if (err) {
             console.error(err);
@@ -407,7 +412,7 @@ function main() {
         });
     }
 
-    if(program.xml) {
+    if(!program.populate && program.xml) {
         exportITK();
     }
 
