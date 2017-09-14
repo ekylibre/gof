@@ -204,6 +204,19 @@ a.disabled {
     padding: 5px;
 }
 
+.form-group div {
+    position: relative;
+    margin-right: 15px;
+}
+.input-group.required:after {
+    position: absolute;
+    content: "*"; 
+    right: -10px;
+    color: #7C3337;
+    font-size: 20px;
+    bottom: 0;
+}
+
 input.form-control {
     background-color: #FEEEC6;
 }

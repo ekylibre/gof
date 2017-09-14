@@ -102,6 +102,7 @@
 	"culture_reasoned": "Raisonné",
 	"culturebio": "culturebio",
 	"culturereasoned": "culturereasoned",
-	"activity_pasture": "activity_pasture",
-	"culturenormal": "culturenormal"
+	"culturenormal": "culturenormal",
+	"form_required_fields": "* Mentions obligatoires",
+	"select_role_label": "Je suis: "
 }
