@@ -2,7 +2,8 @@
 const i18n = require('LanguageData');
 const CPlant = require('Plant');
 const RscPreload = require('RscPreload');
-const SharedConsts = require('../common/constants')
+const SharedConsts = require('../common/constants');
+const UIEnv = require('./UIEnv');
 
 var UISpeciesSelItem = cc.Class({
     extends: cc.Component,
@@ -125,6 +126,15 @@ var UISpeciesSelItem = cc.Class({
          * Add button (aka validate button)
          */
         btAdd:
+        {
+            default: null,
+            type: cc.Button
+        },
+
+        /**
+         * Plant info button
+         */
+        btInfo:
         {
             default: null,
             type: cc.Button
@@ -329,6 +339,15 @@ var UISpeciesSelItem = cc.Class({
 
             }
 
+            if (this._plant.getItk(SharedConsts.CultureModeEnum.NORMAL))
+            {
+                this.btInfo.interactable = true;              
+            }
+            else
+            {
+                this.btInfo.interactable = false;                
+            }
+
             if (this._selectionChanged)
             {
                 this.hlSelected.active = this._isSelected;
@@ -383,6 +402,13 @@ var UISpeciesSelItem = cc.Class({
         }
     },
 
+    onBtInfo: function()
+    {
+        if (this._plant != null)
+        {
+            UIEnv.speciesInfos.show(UIEnv.speciesSelect._parcel, this._plant, this._cultureMode);
+        }         
+    }
 });
 
 module.exports = UISpeciesSelItem;

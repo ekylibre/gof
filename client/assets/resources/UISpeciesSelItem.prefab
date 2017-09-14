@@ -3771,9 +3771,11 @@
   },
   {
     "__type__": "cc.ClickEvent",
-    "target": null,
+    "target": {
+      "__id__": 1
+    },
     "component": "UISpeciesSelItem",
-    "handler": "onBtAdd",
+    "handler": "onBtInfo",
     "customEventData": ""
   },
   {
@@ -4109,6 +4111,9 @@
     },
     "btAdd": {
       "__id__": 21
+    },
+    "btInfo": {
+      "__id__": 123
     },
     "hlSelected": {
       "__id__": 126
