@@ -1,13 +1,13 @@
 'use strict';
 
-const Plant = require('../models/plant');
+const Activity = require('../models/activity');
 const Boom = require('boom');
 
-function PlantsController(server){
+function ActivitiesController(server){
     server.route({
         method: 'GET',
-        path: '/plants',
-        handler: PlantsController.getAll/*,
+        path: '/activities',
+        handler: ActivitiesController.getAll/*,
         config: {
             auth: {
                 strategy: 'token'
@@ -16,8 +16,8 @@ function PlantsController(server){
     });
 }
 
-PlantsController.getAll = function(request, reply) {
-    Plant.find(
+ActivitiesController.getAll = function(request, reply) {
+    Activity.find(
         (error, results) => {
             if(error) {
                 reply(Boom.serverUnavailable('Database error!', error));
@@ -28,4 +28,4 @@ PlantsController.getAll = function(request, reply) {
     );
 }
 
-module.exports = PlantsController;
+module.exports = ActivitiesController;

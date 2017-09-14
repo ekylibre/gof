@@ -286,12 +286,41 @@ var UISpeciesSelItem = cc.Class({
                 }
                 else
                 {
-                    this.buyPriceNormal.string = this._plant.getBuyPrice(SharedConsts.CultureModeEnum.NORMAL).toString();
-                    this.buyPriceBio.string = this._plant.getBuyPrice(SharedConsts.CultureModeEnum.BIO).toString();
-                    this.buyPriceReasoned.string = this._plant.getBuyPrice(SharedConsts.CultureModeEnum.REASONED).toString();
-                    this.sellPriceNormal.string = this._plant.getSellPrice(SharedConsts.CultureModeEnum.NORMAL).toString();
-                    this.sellPriceBio.string = this._plant.getSellPrice(SharedConsts.CultureModeEnum.BIO).toString();
-                    this.sellPriceReasoned.string = this._plant.getSellPrice(SharedConsts.CultureModeEnum.REASONED).toString();
+                    var itkNormal = this._plant.getItk(SharedConsts.CultureModeEnum.NORMAL);
+                    if (itkNormal && itkNormal.unitCosts)
+                    {
+                        this.buyPriceNormal.string = itkNormal.unitCosts.money;
+                        this.sellPriceNormal.string = itkNormal.unitResults.money;
+                    }
+                    else
+                    {
+                        this.buyPriceNormal.string = this._plant.getBuyPrice(SharedConsts.CultureModeEnum.NORMAL).toString();
+                        this.sellPriceNormal.string = this._plant.getSellPrice(SharedConsts.CultureModeEnum.NORMAL).toString();                       
+                    }
+
+                    var itkBio = this._plant.getItk(SharedConsts.CultureModeEnum.BIO);
+                    if (itkBio && itkBio.unitCosts)
+                    {
+                        this.buyPriceBio.string = itkBio.unitCosts.money;
+                        this.sellPriceBio.string = itkBio.unitResults.money;
+                    }
+                    else
+                    {
+                        this.buyPriceBio.string = this._plant.getBuyPrice(SharedConsts.CultureModeEnum.BIO).toString();
+                        this.sellPriceBio.string = this._plant.getSellPrice(SharedConsts.CultureModeEnum.BIO).toString();                       
+                    }
+
+                    var itkReasoned = this._plant.getItk(SharedConsts.CultureModeEnum.REASONED);
+                    if (itkReasoned && itkReasoned.unitCosts)
+                    {
+                        this.buyPriceReasoned.string = itkReasoned.unitCosts.money;
+                        this.sellPriceReasoned.string = itkReasoned.unitResults.money;
+                    }
+                    else
+                    {
+                        this.buyPriceReasoned.string = this._plant.getBuyPrice(SharedConsts.CultureModeEnum.REASONED).toString();
+                        this.sellPriceReasoned.string = this._plant.getSellPrice(SharedConsts.CultureModeEnum.REASONED).toString();                       
+                    }
 
                     this.btNormal.interactable = this.cultureMode != SharedConsts.CultureModeEnum.NORMAL;
                     this.btBio.interactable = this.cultureMode != SharedConsts.CultureModeEnum.BIO;

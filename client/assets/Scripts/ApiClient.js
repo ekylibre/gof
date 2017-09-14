@@ -113,24 +113,47 @@ ApiClient.prototype.login = function(email, password, callback) {
 }
 
 /**
- * @method getPlant
- * @param id - the mongoId of the plant
+ * @method getItems
+ * @param {String} from - one of ('activities', 'tools', 'equipements', 'additives')
+ * @param options - object of query string parameters
  * @param {Callback} callback - callback(error, response, client) triggered with the response or error 
  */
-ApiClient.prototype.getPlant = function(id, callback) {
-    var req = get(this, '/plants/'+encodeURIComponent(id), null, callback);
+ApiClient.prototype.getItems = function(from, options, callback) {
+    var req = get(this, '/'+from, options, callback);
     req.send();
 }
 
 /**
- * @method getPlants
- * @param options - object of query string parameters, each field of the Plant schema could be used
+ * @method getItem
+ * @param {String} from - one of ('activities', 'tools', 'equipements', 'additives')
+ * @param {String} id - the mongoId of the item
  * @param {Callback} callback - callback(error, response, client) triggered with the response or error 
  */
-ApiClient.prototype.getPlants = function(options, callback) {
-    var req = get(this, '/plants', options, callback);
+ApiClient.prototype.getItem = function(from, id, callback) {
+    var req = get(this, '/'+from+'/'+encodeURIComponent(id), null, callback);
     req.send();
 }
+
+/**
+ * @method getActivity
+ * @param id - the mongoId of the plant
+ * @param {Callback} callback - callback(error, response, client) triggered with the response or error 
+ */
+ApiClient.prototype.getActivity = function(id, callback) {
+    var req = get(this, '/activities/'+encodeURIComponent(id), null, callback);
+    req.send();
+}
+
+/**
+ * @method getActivities
+ * @param options - object of query string parameters, each field of the Activity schema could be used
+ * @param {Callback} callback - callback(error, response, client) triggered with the response or error 
+ */
+ApiClient.prototype.getActivities = function(options, callback) {
+    var req = get(this, '/activities', options, callback);
+    req.send();
+}
+
 
 /**
  * @method getScenarios

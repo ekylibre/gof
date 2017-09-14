@@ -3,7 +3,7 @@
 const Constants = require('../../../common/constants');
 var mongoose = require ('mongoose');
 
-var PlantSchema = new mongoose.Schema({
+var ActivitySchema = new mongoose.Schema({
     linkDbId: {
         type: Number,
         unique: true
@@ -20,7 +20,8 @@ var PlantSchema = new mongoose.Schema({
         ],
         required: true,
         default: 'normal'
-    } 
+    },
+    itk: mongoose.Schema.Types.Mixed
 });
 
-module.exports = mongoose.model('Plant', PlantSchema);
+module.exports = mongoose.model('Activity', ActivitySchema);

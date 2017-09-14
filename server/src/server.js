@@ -11,7 +11,7 @@ const i18n = require('i18n');
 const Constants = require('../../common/constants');
 const IndexController = require('./controllers/index')
 const AuthController = require('./controllers/auth');
-const PlantsController = require('./controllers/plants');
+const ActivitiesController = require('./controllers/activities');
 const GameController = require('./controllers/game');
 const ChannelsController = require('./controllers/channels');
 const DashboardController = require('./controllers/dashboard');
@@ -95,7 +95,7 @@ function register_plugins(server)
 function setup_routes(server) {
     new IndexController(server);
     new AuthController(server);
-    new PlantsController(server);
+    new ActivitiesController(server);
     new GameController(server);
     new ChannelsController(server);
     new DashboardController(server);
