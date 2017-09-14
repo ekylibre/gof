@@ -3,61 +3,91 @@
     {{{i18n "welcome_new_user"}}}
 </div>
 {{else}}
-<div class="row" style="padding: 0 20% 0 20%;">
+<div class="row row-padding-lr-20p">
     <div class="panel panel-info">
-    <div class="panel-heading">{{i18n "register_panel_title"}}</div>
-    <div class="panel-body">
-        {{#if error}}
-            {{#if error.global}}
+        <div class="panel-heading">{{i18n "register_panel_title"}}</div>
+        <div class="panel-body">
+            {{#if error}} {{#if error.global}}
             <div class="alert alert-danger" role="alert">
                 {{{error.global}}}
             </div>
-            {{/if}}
-        {{/if}}
-        <form method="POST" action="/auth/register" class="form-horizontal">
-            <div class="input-group {{#if error.faults.lastname}}has-error{{/if}}">
-                <span class="input-group-addon"><img src='/images/ico_profile.png'></span>
-                <input type="text" name="lastname" required="required" class="form-control" id="inputLastname" value="{{error.form.lastname}}" placeholder="{{i18n 'placeholder_lastname'}}"/>
-            </div>
+            {{/if}} {{/if}}
+            <form id="register-form" method="POST" action="/auth/register" class="form-horizontal">
+                <div class="input-group required {{#if error.faults.lastname}}has-error{{/if}}">
+                    <span class="input-group-addon"><img src='/images/ico_profile.png'></span>
+                    <input type="text" name="lastname" required="required" class="form-control" id="inputLastname" value="{{error.form.lastname}}"
+                        placeholder="{{i18n 'placeholder_lastname'}}" />
+                </div>
 
-            <div class="input-group {{#if error.faults.firstname}}has-error{{/if}}">
-                <span class="input-group-addon"><img src='/images/ico_profile.png'></span>
-                <input type="text" name="firstname" required="required" class="form-control" id="inputFirstname" value="{{error.form.firstname}}" placeholder="{{i18n 'placeholder_firstname'}}"/>
-            </div>
+                <div class="input-group required {{#if error.faults.firstname}}has-error{{/if}}">
+                    <span class="input-group-addon"><img src='/images/ico_profile.png'></span>
+                    <input type="text" name="firstname" required="required" class="form-control" id="inputFirstname" value="{{error.form.firstname}}"
+                        placeholder="{{i18n 'placeholder_firstname'}}" />
+                </div>
 
-            <div class="input-group {{#if error.faults.email}}has-error{{/if}}">
-                <span class="input-group-addon"><img src='/images/ico_mail.png'></span>
-                <input type="email" name="email" required="required" class="form-control" id="inputEmail" value="{{error.form.email}}" placeholder="{{i18n 'placeholder_email'}}"/>
-            </div>
+                <div class="input-group required {{#if error.faults.email}}has-error{{/if}}">
+                    <span class="input-group-addon"><img src='/images/ico_mail.png'></span>
+                    <input type="email" name="email" required="required" class="form-control" id="inputEmail" value="{{error.form.email}}" placeholder="{{i18n 'placeholder_email'}}"
+                    />
+                </div>
 
-            <div class="input-group {{#if error.faults.password1}}has-error{{/if}}">
-                <span class="input-group-addon"><img src='/images/ico_password.png'></span>
-                <input type="password" name="password1" required="required" class="form-control" id="inputPassword1"  placeholder="{{i18n 'placeholder_password'}}"/>
-            </div>
+                <div class="input-group required {{#if error.faults.password1}}has-error{{/if}}">
+                    <span class="input-group-addon"><img src='/images/ico_password.png'></span>
+                    <input type="password" name="password1" required="required" class="form-control" id="inputPassword1" placeholder="{{i18n 'placeholder_password'}}"
+                    />
+                </div>
 
-            <div class="input-group {{#if error.faults.password2}}has-error{{/if}}">
-                <span class="input-group-addon"><img src='/images/ico_password.png'></span>
-                <input type="password" name="password2" required="required" class="form-control" id="inputPassword2"  placeholder="{{i18n 'placeholder_password_confirm'}}"/>
-            </div>
+                <div class="input-group required {{#if error.faults.password2}}has-error{{/if}}">
+                    <span class="input-group-addon"><img src='/images/ico_password.png'></span>
+                    <input type="password" name="password2" required="required" class="form-control" id="inputPassword2" placeholder="{{i18n 'placeholder_password_confirm'}}"
+                    />
+                </div>
 
-            <div class="input-group">
-                <span class="input-group-addon"><img src='/images/ico_etablissement.png'></span>
-                <input type="text" name="establishment"  class="form-control" id="inputEstablishment"  placeholder="{{i18n 'placeholder_establishment_confirm'}}"/>
-            </div>
-            
-            <div class="input-group {{#if error.faults.role}}has-error{{/if}}" id="chooseRole">
-                <!--span class="input-group-addon"><i class="glyphicon glyphicon-lock"></i></span-->
-                <select class="form-control" id="selectRole" name="role" required="required">
-                    {{#each roles}}
-                    <option {{#if selected}} selected="selected" {{/if}} value="{{id}}">{{name}}</option>
-                    {{/each}}
-                </select>
-            </div>
+                <div class="input-group">
+                    <span class="input-group-addon"><img src='/images/ico_etablissement.png'></span>
+                    <input type="text" name="establishment" class="form-control" id="inputEstablishment" value="{{error.form.establishment}}"
+                        placeholder="{{i18n 'placeholder_establishment_confirm'}}" />
+                </div>
 
-            <input type="submit" class="btn btn-primary pull-right margin-t-10px"/>
-        </form>
-    </div>
+                <div class="input-group required  margin-t-10px {{#if error.faults.role}}has-error{{/if}}" id="chooseRole">
+                    <label for="selectRole">{{i18n "select_role_label"}}</label>
+                    <select class="form-control" id="selectRole" name="role" required="required">
+                        {{#each roles}}
+                        <option {{#if selected}} selected="selected" {{/if}} value="{{id}}">{{name}}</option>
+                        {{/each}}
+                    </select>
+                </div>
+
+                <div class="clearfix">
+                    <input type="submit" class="btn btn-primary pull-right margin-t-10px" />
+                </div>
+
+                <i>{{i18n "form_required_fields"}}</i>
+            </form>
+        </div>
     </div>
 </div>
+<script>
+    $(document).ready(function () {
+        //var email = getUrlParameter('email');
+        var email = $.url().param('email') || '{{error.form.srcEmail}}';
+        if (email) {
+            $('#inputEmail').attr('value', email);
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'srcEmail',
+                value: email,
+            }).appendTo('#register-form');
+        }
 
+        var target = $.url().param('target') || '{{error.form.target}}';
+        if (target) {
+            $('<input>').attr({
+                type: 'hidden',
+                name: 'target',
+                value: target,
+            }).appendTo('#register-form');
+        }
+    });
+</script>
 {{/if}}

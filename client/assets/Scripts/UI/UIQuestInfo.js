@@ -86,7 +86,7 @@ var UIQuestInfo = cc.Class({
                 var parcel = game.farm.parcels[i];
                 var solution = parcel.solution;
                 var playerChoice = parcel.rotationPrevision[0];
-                var result = {parcelName: parcel.name, note: 4};
+                var result = {parcelName: parcel.name, note: 4, choice: playerChoice};
 
                 if(solution.perfects .indexOf(playerChoice.species) > -1) 
                 {

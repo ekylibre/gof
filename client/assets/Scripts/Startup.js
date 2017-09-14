@@ -106,23 +106,6 @@ cc.Class({
         //game.api.channelId = '59b170f05e8d9e38f0f399b8';
         game.pullDatabase();       
 
-        // client.getPlants({cultureMode: 'normal', __v:0}, 
-        //     (error, response, client) => {
-        //         console.log("client.getPlants response");
-        //         console.log(response);
-
-        //         console.log("client.getPlants ERROR");
-        //         console.log(error);
-        // });
-
-        // client.getPlant('598041ce31dc2c27ecfd7d2a', 
-        //     (error, response, client) => {
-        //         console.log("client.getPlant response");
-        //         console.log(response);
-
-        //         console.log("client.getPlant ERROR");
-        //         console.log(error);
-        // });
     }
     
     // called every frame, uncomment this function to activate update callback

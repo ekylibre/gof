@@ -64,7 +64,7 @@ DashboardController.prototype.dashboardPlayer = function(request, reply) {
             }
         }
 
-        var ctx = { channels: user.channels };
+        var ctx = { channels: user.channels.reverse() };
         return reply.view('views/dashboardplayer', ctx, {layoutPath:'./templates/layout/dashboard'});
     });
 }

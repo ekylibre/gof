@@ -1,12 +1,21 @@
 <div class="row">
     <div class="panel panel-info">
-        <div class="panel-heading">{{pageTitle}} {{date}}</div>
-        <div class="panel-body">
+        <div class="panel-heading">{{pageTitle}}</div>
+        <div class="panel-body panel-nesting">
             {{#if error}} {{#if error.global}}
             <div class="alert alert-danger" role="alert">
                 {{{error.global}}}
             </div>
-            {{/if}} {{/if}} {{#if success}}
+            {{/if}} {{/if}} {{#if wrongEmails}}
+            <div class="alert alert-danger" role="alert">
+                <strong>{{i18n "invitation_wrong_email_title"}}</strong>
+                <ul>
+                    {{#each wrongEmails}}
+                    <li>{{this}}</li>
+                    {{/each}}
+                </ul>
+            </div>
+            {{/if}} {{#if success}}
             <div class="alert alert-success" role="alert">
                 <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
                 <strong>{{i18n "invitation_sent_success_title"}}</strong>
@@ -40,7 +49,7 @@
                         <div class="panel-body">
                             <ul class="list-group">
                                 {{#each pendings}}
-                                <li class="list-group-item">{{email}}</li>
+                                <li class="list-group-item text-ellipsis">{{firstName}} {{lastName}} ({{email}})</li>
                                 {{/each}}
                             </ul>
                         </div>
@@ -53,7 +62,7 @@
                         <div class="panel-body">
                             <ul class="list-group">
                                 {{#each accepteds}}
-                                <li class="list-group-item">{{email}}</li>
+                                <li class="list-group-item text-ellipsis">{{firstName}} {{lastName}} ({{email}})</li>
                                 {{/each}}
                             </ul>
                         </div>
@@ -65,45 +74,50 @@
 </div>
 
 <script>
-
-    var recentEmails = "{{recentEmails}}".split(',');
-
-    function split( val ) {
-      return val.split(/[\s,]+/);
+    var jsonStr = "{{recentEmails}}";
+    
+    var recentEmails = null;
+    if(jsonStr) {
+        recentEmails = jsonStr.split(',');
     }
-    function extractLast( term ) {
-      return split( term ).pop();
+
+    function split(val) {
+        return val.split(/[\s,]+/);
     }
- 
-    $( "#inviteEmails" )
-      // don't navigate away from the field on tab when selecting an item
-      .on( "keydown", function( event ) {
-        if ( event.keyCode === $.ui.keyCode.TAB &&
-            $( this ).autocomplete( "instance" ).menu.active ) {
-          event.preventDefault();
-        }
-      })
-      .autocomplete({
-        minLength: 0,
-        source: function( request, response ) {
-          // delegate back to autocomplete, but extract the last term
-          response( $.ui.autocomplete.filter(
-            recentEmails, extractLast( request.term ) ) );
-        },
-        focus: function() {
-          // prevent value inserted on focus
-          return false;
-        },
-        select: function( event, ui ) {
-          var terms = split( this.value );
-          // remove the current input
-          terms.pop();
-          // add the selected item
-          terms.push( ui.item.value );
-          // add placeholder to get the comma-and-space at the end
-          terms.push( "" );
-          this.value = terms.join( "\n" );
-          return false;
-        }
-      });
+
+    function extractLast(term) {
+        return split(term).pop();
+    }
+
+    $("#inviteEmails")
+        // don't navigate away from the field on tab when selecting an item
+        .on("keydown", function (event) {
+            if (event.keyCode === $.ui.keyCode.TAB &&
+                $(this).autocomplete("instance").menu.active) {
+                event.preventDefault();
+            }
+        })
+        .autocomplete({
+            minLength: 0,
+            source: function (request, response) {
+                // delegate back to autocomplete, but extract the last term
+                response($.ui.autocomplete.filter(
+                    recentEmails, extractLast(request.term)));
+            },
+            focus: function () {
+                // prevent value inserted on focus
+                return false;
+            },
+            select: function (event, ui) {
+                var terms = split(this.value);
+                // remove the current input
+                terms.pop();
+                // add the selected item
+                terms.push(ui.item.value);
+                // add placeholder to get the comma-and-space at the end
+                terms.push("");
+                this.value = terms.join("\n");
+                return false;
+            }
+        });
 </script>

@@ -7,7 +7,7 @@ const Hoek = require('hoek');
 const Bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
-const Plant = require('../models/plant');
+const Activity = require('../models/activity');
 const User = require('../models/user');
 const Additive = require('../models/additive');
 const Equipment = require('../models/equipment');
@@ -49,8 +49,8 @@ var Auth = function(server) {
 
     server.route({
         method:'GET',
-        path: '/api/plants/{id?}',
-        handler: function(request, reply) { self.getPlants(request, reply); },
+        path: '/api/activities/{id?}',
+        handler: function(request, reply) { self.getActivities(request, reply); },
         config: {
             auth : 'bearer',
             cors : CORS
@@ -209,8 +209,8 @@ Auth.prototype.defaultGetModel = function(model, request, reply) {
     }
 }
 
-Auth.prototype.getPlants = function(request, reply) {
-    this.defaultGetModel(Plant, request, reply);
+Auth.prototype.getActivities = function(request, reply) {
+    this.defaultGetModel(Activity, request, reply);
 }
 
 Auth.prototype.getTools = function(request, reply) {

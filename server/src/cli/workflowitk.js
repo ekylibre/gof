@@ -7,6 +7,7 @@ const Constants = require('../../../common/constants');
 var fs = require('fs');
 var google = require('googleapis');
 var DOMParser = require('xmldom').DOMParser;
+var Activity = require('../models/activity');
 
 const XML_FOLDER_ID = '0BwdC1SOUI5qMcFNjN24yQTUtTlE';       // Google Drive folder id containing the xml files
 
@@ -46,6 +47,13 @@ function _dlFile(auth, index, callback) {
         if (file && file.name && file.id) {         
             console.log('DL file: ', file.name, file.id);            
             var dest=fs.createWriteStream(TMP_FOLDER+file.name);
+            dest.on('close', function ()
+            {
+                if (!CRITICAL_ERROR) {
+                    //_dlFile(auth, index+1, callback);
+                    _parseXML(file.name, function() {_dlFile(auth, index+1, callback);});                
+                }
+            });
             drive.files.get( {
                 auth: auth,
                 fileId: file.id,
@@ -54,13 +62,6 @@ function _dlFile(auth, index, callback) {
             .on('error', function (err) {
                 CRITICAL_ERROR = 'Error during download' + err;
                 //callback(CRITICAL_ERROR);
-            })          
-            .on('end', function ()
-            {
-                if (!CRITICAL_ERROR) {
-                    _dlFile(auth, index+1, callback);
-                    //_parseXML('./'+file.name, function() {_dlFile(auth, index+1, callback);});                
-                }
             })
             .pipe(dest); 
         }
@@ -108,6 +109,29 @@ function exportFiles(auth, callback) {
 
 }
 
+/**
+ * For debug purposes
+ * parses local xml files and export to json files
+ */
+function exportLocalFiles() {
+    _checkTmpFolder();
+    
+    var files = fs.readdirSync(TMP_FOLDER);
+    for (var i=0; i<files.length; i++) {
+        var filename = files[i];
+        if (filename.endsWith('.xml')) {
+            _parseXML(filename, function(){}, true);
+        }
+    }
+    console.log('workflowitk.exportLocalFiles done!');    
+}
+
+
+/**
+ * Parses an 'indicator' xml element (for tools, inputs, etc.)
+ * @param {Element} element - an 'indicator' xml element
+ * @return {Object}
+ */
 function _parseIndicator(element) {
     var ind = {};
     ind.name = element.getAttribute('name');
@@ -116,6 +140,11 @@ function _parseIndicator(element) {
     return ind;
 }
 
+/**
+ * Parses an 'input' or 'ouput' xml element
+ * @param {Element} element - an 'input' or 'output' xml element
+ * @return {Object}
+ */
 function _parseInputOutput(element) {
     var json = {};
     var errors = [];
@@ -174,7 +203,11 @@ function _parseInputOutput(element) {
     return json;
 }
 
-
+/**
+ * Parses a 'tool' xml element
+ * @param {Element} element - a 'tool' xml element
+ * @return {Object}
+ */
 function _parseTool(element) {
     var json = {};
     var errors = [];
@@ -227,6 +260,11 @@ function _parseTool(element) {
     return json;
 }
 
+/**
+ * Parses a working group xml element
+ * @param {Element} group - a working-group xml element
+ * @return {Object}
+ */
 function _parseWorkingGroup(group) {
     var json = {};
     var errors = [];
@@ -293,6 +331,12 @@ function _parseWorkingGroup(group) {
     return json;
 }
 
+
+/**
+ * Parses a procedure xml element
+ * @param {Element} procedure - a 'procedure' xml element
+ * @return {Object}
+ */
 function _parceProcedure(procedure) {
     var json = {};
     var errors = [];
@@ -348,9 +392,14 @@ function _parceProcedure(procedure) {
     return json;
 }
 
+/**
+ * Parses an itk xml element
+ * @param {String} filename - filename of xml containing the itk
+ * @param {Element} itk - an 'itk' xml element
+ * @return {Object}
+ */
 function _exportITK(filename, itk) {
 
-    var exportName='';
     var json = {};
    
     json.supportType = itk.getAttribute('support-type');
@@ -382,8 +431,6 @@ function _exportITK(filename, itk) {
             break;
         }     
 
-        exportName = json.culture.species+'.'+json.culture.mode;
-
     } else {
         PARSE_ERRORS.push('Unknown support mode: '+json.supportType);
     }
@@ -404,13 +451,16 @@ function _exportITK(filename, itk) {
         }
     }
 
-    if (exportName.length>0) {
-        console.log('Writing '+exportName+'.json');
-        fs.writeFileSync(TMP_FOLDER+exportName+'.json', JSON.stringify(json), 'utf8');
-    }
+    return json;
 }
 
-function _parseXML(filename, callback) {
+/**
+ * Parses a xml and stores the result in the 'Activity' database
+ * @param {String} filename - the filename of the xml to parse
+ * @param {Function} callback - called after parse is complete
+ * @param {Boolean} saveJSon - (debug) true to save the result to a file (instead of saving to database)
+ */
+function _parseXML(filename, callback, saveJSon) {
     var parser = new DOMParser();
 
     try {
@@ -421,7 +471,39 @@ function _parseXML(filename, callback) {
         var itks = xml.getElementsByTagName('itk');
         if (itks) {
             for (var i=0; i<itks.length; i++) {
-                _exportITK(filename, itks[i]);               
+                var json = _exportITK(filename, itks[i]);
+                var last = i === itks.length-1;
+                if (json.culture) {
+                    if (saveJSon) {
+                        // save to file (for debug purposes)
+                        var saveName = json.culture.species+'.'+json.culture.mode;
+                
+                        if (saveName.length>0) {
+                            console.log('Writing '+saveName+'.json');
+                            fs.writeFileSync(TMP_FOLDER+saveName+'.json', JSON.stringify(json), 'utf8');
+                        }
+                        
+                        if (last && callback) {
+                            callback();
+                        }                        
+                    } else {
+                        // Update database
+                        Activity.findOne({species: json.culture.species, cultureMode: json.culture.mode }, (err, res) => 
+                        {
+                            if (!err) {
+                                res.itk = json;
+                                res.markModified('itk');
+                                res.save();
+                            } else {
+                                console.log('Could not find activity: '+json.culture.species+' '+json.culture.mode);
+                            }
+
+                            if (last && callback) {
+                                callback();
+                            }                              
+                        });
+                    }
+                }
             }
         }
     
@@ -429,25 +511,12 @@ function _parseXML(filename, callback) {
     catch (_e) {
         CRITICAL_ERROR = filename+': Exception '+_e;
         console.error(filename+': Exception '+_e);
-    }
 
-    if (callback) {
-        callback();
-    }        
-}
-
-function exportLocalFiles() {
-    _checkTmpFolder();
-    
-    var files = fs.readdirSync(TMP_FOLDER);
-    for (var i=0; i<files.length; i++) {
-        var filename = files[i];
-        if (filename.endsWith('.xml')) {
-            _parseXML(filename);
-        }
+        if (callback) {
+            callback();
+        }        
     }
-    console.log('workflowitk.exportLocalFiles done!');
-    
+      
 }
 
 module.exports = { exportFiles: exportFiles, exportLocalFiles: exportLocalFiles };
