@@ -16,6 +16,21 @@ body {
     /*footer height*/
 }
 
+.navigation-menu {
+    background-color: #7C3337;
+    border-bottom-left-radius: 8px;
+    border-top-left-radius: 8px;
+    margin-top: 8px;
+}
+
+.navigation-menu>li>a:hover {
+    background-color: #8C4B4E;
+}
+
+.navigation-menu>li>a:not(.disabled) {
+    color: #FEEEC6;
+}
+
 video#bgvid {
     position: fixed;
     right: 0;

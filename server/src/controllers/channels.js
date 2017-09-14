@@ -195,7 +195,9 @@ ChannelsController.scores = function(request, reply) {
                 user: result.users[i].user,
                 phaseResult: result.users[i].phaseResult
             };
-            element.phaseResult.scoreStr = Math.round(element.phaseResult.score * 20) + " / 20";
+            if(element.phaseResult) {
+                element.phaseResult.scoreStr = Math.round(element.phaseResult.score * 20) + " / 20";
+            }
             channel.users.push(element);
         }
 
@@ -311,10 +313,6 @@ ChannelsController.monitorGet = function(request, reply) {
                 return reply.view('views/channelmonitor', ctx, {layoutPath:'./templates/layout/dashboard'});
             });
         });
-        
-        
-
-        
     });
 }
 
@@ -363,6 +361,7 @@ ChannelsController.monitorPost = function(request, reply) {
                             });
                             if(!already) {
                                 channel.invitesOfNonUsers.push({email:email});
+                                channel.state = Constants.ChannelStateEnum.OPENED;
                             }
                         } else {
 
@@ -376,6 +375,7 @@ ChannelsController.monitorPost = function(request, reply) {
                                     user: user.id,
                                     phaseResult: null 
                                 });
+                                channel.state = Constants.ChannelStateEnum.OPENED;
                             }
                         }
                         resolve();

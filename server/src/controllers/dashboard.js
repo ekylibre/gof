@@ -41,6 +41,9 @@ DashboardController.prototype.dashboardMaster = function(request, reply) {
             chan.createdStr = moment(chan.created).format('LLL');
             chan.phaseStr = request.i18n.__('scenario_' + chan.phase);
             chan.closed = chan.state == Constants.ChannelStateEnum.CLOSED;
+            chan.scoreAvailable = chan.users.find((x) => {
+                return x.phaseResult != null
+            });
         }
 
         var ctx = { channels: user.channels.reverse() };
@@ -58,9 +61,15 @@ DashboardController.prototype.dashboardPlayer = function(request, reply) {
             var chan = user.channels[i];
             chan.createdStr = moment(chan.created).format('LLL');
             chan.phaseStr = request.i18n.__('scenario_' + chan.phase);
-            chan.closed = chan.state == Constants.ChannelStateEnum.CLOSED;
-            if(chan.closed) {
-                chan.score = chan.users[0].phaseResult.score;
+
+            for(var j=0;j<chan.users.length;++j) {
+                if(chan.users[j].user.equals(user.id)) {
+                    chan.closed = chan.users[j].phaseResult != null;
+                    if(chan.closed) {
+                        chan.score = Math.round(chan.users[j].phaseResult.score * 20);
+                    }
+                    break;
+                }
             }
         }
 

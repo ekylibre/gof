@@ -33,7 +33,13 @@ function AuthController(server) {
     server.route({
         method: 'POST',
         path: '/auth/login',
-        handler: AuthController.loginpost
+        handler: AuthController.loginpost,
+        config: {
+            auth: {
+                strategy: 'token',
+                mode: 'optional'
+            }
+        }
     });
 
     server.route({
@@ -71,13 +77,25 @@ function AuthController(server) {
     server.route({
         method: 'POST',
         path: '/auth/register',
-        handler: AuthController.registerpost
+        handler: AuthController.registerpost,
+        config: {
+            auth: {
+                strategy: 'token',
+                mode: 'optional'
+            }
+        }
     });
 
     server.route({
         method: 'GET',
         path: '/auth/register/{role?}',
-        handler: AuthController.registerget
+        handler: AuthController.registerget,
+        config: {
+            auth: {
+                strategy: 'token',
+                mode: 'optional'
+            }
+        }
     });
 
     server.route({
@@ -116,6 +134,10 @@ AuthController.loginget = function(request, reply) {
 }
 
 AuthController.loginpost = function (request, reply) {
+    if(request.auth.isAuthenticated) {
+        //user is authenticated, redirect
+        return reply.redirect('/dashboard');
+    }
 
     const vResult = Validation.checkLogin(request.payload);
 
@@ -213,12 +235,19 @@ function buildRoleContext(predefinedRole, i18n) {
 }
 
 AuthController.registerget = function(request, reply) {
-
+    if(request.auth.isAuthenticated) {
+        //user is authenticated, redirect
+        return reply.redirect('/dashboard');
+    }
     var ctx = buildRoleContext(request.params.role, request.i18n);
     reply.view('views/register', ctx);
 }
 
 AuthController.registerpost = function(request, reply) {
+    if(request.auth.isAuthenticated) {
+        //user is authenticated, no way to register now
+        return reply.redirect('/dashboard');
+    }
 
     const vResult = Validation.checkRegister(request.payload);
     var roleContext = buildRoleContext(request.payload.role, request.i18n);
