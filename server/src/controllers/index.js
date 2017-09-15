@@ -31,10 +31,10 @@ function IndexController(server) {
 IndexController.root = function(request, reply) {
 
     if(request.auth.isAuthenticated) {
-        reply.redirect('/game/start');
+        reply.redirect('/dashboard');
         return;
     }
-    reply.redirect('/auth/login');
+    reply.view('views/home', null/*, {layout: false}*/);
 }
 
 module.exports = IndexController;

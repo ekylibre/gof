@@ -189,24 +189,31 @@ var MapCtrl = cc.Class({
         switch (game.state)
         {
             case CGame.State.READY:
-                // CGame is ready, lets load a phase
-                game.loadPhase('croprotation', 
-                (error) =>
+                if (game.isDebug && !game.api.channelId)
                 {
-                    if(error)
+                    // CGame is ready, lets load a phase
+                    game.loadPhase('croprotation', 
+                    (error) =>
                     {
-                        UIEnv.message.show(
-                            i18n.t('error_connection_failed')+'\n\n('+error+')',
-                            i18n.t('error'),
-                            {
-                                buttons: 'none'
-                            }
-                        );                         
-                        UIDebug.log(error);
-                        return;
-                    }
-                    UIDebug.log('Phase started: ' + game.phase.uid);
-                });
+                        if(error)
+                        {
+                            UIEnv.message.show(
+                                i18n.t('error_connection_failed')+'\n\n('+error+')',
+                                i18n.t('error'),
+                                {
+                                    buttons: 'none'
+                                }
+                            );                         
+                            UIDebug.log(error);
+                            return;
+                        }
+                        UIDebug.log('Local phase started: ' + game.phase.uid);
+                    });
+                }
+                else
+                {
+                    game.openChannel();
+                }
                 break;
 
             case CGame.State.PHASE_READY:

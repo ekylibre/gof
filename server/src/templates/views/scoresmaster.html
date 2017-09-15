@@ -1,0 +1,32 @@
+<div class="row margin-t-20px">
+    <div class="panel panel-info">
+        <div class="panel-heading">{{pageTitle}}</div>
+        <div class="panel-body">
+            <div class="clearfix">
+                <a class="btn btn-primary" href="/channels/exportscores/{{channel.id}}/csv"><span class="glyphicon glyphicon-export"></span> {{i18n "export_csv"}}</a>
+            </div>
+            <ul class="list-group margin-t-30px">
+                <li class="list-group-item list-group-header">
+                    <div class="row ">
+                        <div class="col-md-4 text-center">{{i18n "header_player"}}</div>
+                        <div class="col-md-5 text-center">{{i18n "header_email"}}</div>
+                        <div class="col-md-3 text-right">{{i18n "header_note"}}</div>
+                    </div>
+                </li>
+                {{#each channel.users}}
+                <li class="list-group-item">
+                    <div class="row vertical-align">
+                        <div class="col-md-4 text-ellipsis"><strong class="text-capitalize">{{user.firstName}} {{user.lastName}}</strong></div>
+                        <div class="col-md-5 text-center text-ellipsis">{{user.email}}</div>
+                        {{#if phaseResult}}
+                        <div class="col-md-3 text-right"><strong>{{phaseResult.scoreStr}}</strong></div>
+                        {{else}}
+                        <div class="col-md-3 text-right">{{i18n "channelstate_opened"}}</div>
+                        {{/if}}
+                    </div>
+                </li>
+                {{/each}}
+            </ul>
+        </div>
+    </div>
+</div>

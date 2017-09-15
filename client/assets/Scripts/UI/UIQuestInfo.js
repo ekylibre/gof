@@ -86,7 +86,7 @@ var UIQuestInfo = cc.Class({
                 var parcel = game.farm.parcels[i];
                 var solution = parcel.solution;
                 var playerChoice = parcel.rotationPrevision[0];
-                var result = {parcelName: parcel.name, note: 4};
+                var result = {parcelName: parcel.name, note: 4, choice: playerChoice};
 
                 if(solution.perfects .indexOf(playerChoice.species) > -1) 
                 {
@@ -120,6 +120,8 @@ var UIQuestInfo = cc.Class({
             UIEnv.score_croprotation.setResults(results);
             UIEnv.score_croprotation.setScoreText(Math.round(normalizedScore * 20) + " / 20");
             UIEnv.score_croprotation.show();
+
+            game.phaseFinish(normalizedScore, results);
         }
     },
 

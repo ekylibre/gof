@@ -10,6 +10,7 @@ const Mailer = require('../utils/mailer');
 const Validation = require('../utils/validation')
 const config = require('config');
 const Hoek = require('hoek');
+const Channel = require('../models/channel');
 
 var cookie_options = {
     ttl: 12 * 3600 * 1000, // expires in 12h
@@ -32,13 +33,25 @@ function AuthController(server) {
     server.route({
         method: 'POST',
         path: '/auth/login',
-        handler: AuthController.loginpost
+        handler: AuthController.loginpost,
+        config: {
+            auth: {
+                strategy: 'token',
+                mode: 'optional'
+            }
+        }
     });
 
     server.route({
         method: 'GET',
         path: '/auth/login',
-        handler: AuthController.loginget
+        handler: AuthController.loginget,
+        config: {
+            auth: {
+                strategy: 'token',
+                mode: 'optional'
+            }
+        }
     });
 
     server.route({
@@ -64,13 +77,25 @@ function AuthController(server) {
     server.route({
         method: 'POST',
         path: '/auth/register',
-        handler: AuthController.registerpost
+        handler: AuthController.registerpost,
+        config: {
+            auth: {
+                strategy: 'token',
+                mode: 'optional'
+            }
+        }
     });
 
     server.route({
         method: 'GET',
-        path: '/auth/register',
-        handler: AuthController.registerget
+        path: '/auth/register/{role?}',
+        handler: AuthController.registerget,
+        config: {
+            auth: {
+                strategy: 'token',
+                mode: 'optional'
+            }
+        }
     });
 
     server.route({
@@ -99,10 +124,20 @@ function AuthController(server) {
 }
 
 AuthController.loginget = function(request, reply) {
+    if(request.auth.isAuthenticated) {
+        if(request.query.target) {
+            return reply.redirect(request.query.target);
+        }
+        return reply.redirect('/dashboard');
+    }
     reply.view('views/login');
 }
 
 AuthController.loginpost = function (request, reply) {
+    if(request.auth.isAuthenticated) {
+        //user is authenticated, redirect
+        return reply.redirect('/dashboard');
+    }
 
     const vResult = Validation.checkLogin(request.payload);
 
@@ -126,8 +161,7 @@ AuthController.loginpost = function (request, reply) {
             //here the user had successfully entered credentials
             //let create a token
             const token = jwt.sign({
-                    email: user.email,
-                    firstname: user.firstName
+                    user: user
                 }, 
                 config.get('Jwt.key'),
                 {
@@ -140,14 +174,19 @@ AuthController.loginpost = function (request, reply) {
                 if(err) {
                     return reply(Boom.internal());
                 }
-                reply().state('access_token', token, cookie_options).redirect('/game/start');
+
+                var target = '/dashboard';
+                if(request.payload.target) {
+                    target = request.payload.target;
+                }
+                reply().state('access_token', token, cookie_options).redirect(target);
             });
         });
     });
 }
 
 AuthController.logout = function(request, reply) {
-    var email = request.auth.credentials.email;
+    var email = request.auth.credentials.user.email;
     User.findOne( {email: email}, (error, user) => {
         if(error) {
             reply(Boom.unauthorized());
@@ -169,76 +208,98 @@ AuthController.logout = function(request, reply) {
     });
 }
 
-/*
-AuthController.check = function (request, reply) {
+function buildRoleContext(predefinedRole, i18n) {
+    var ctx = {roles: []};
 
-    var email = request.auth.credentials.email;
+    var roleKeys = Object.keys(Constants.UserRoleEnum);
+    for(var i=0; i<roleKeys.length; ++i) {
+        var role = Constants.UserRoleEnum[roleKeys[i]];
+        ctx.roles.push(
+            {id: role, name: i18n.__(role)}
+        );
+    };
 
-    User.findOne( {email: email},
-        (error, user) => {
-            if(error) {
-                reply(Boom.unauthorized());
-                return;
-            }
-            
-            if(!user) {
-                reply(Boom.notFound());
-                return;
-            }
-
-            reply({user:user});
+    var match = false;
+    for(var i=0; i<ctx.roles.length;++i) {
+        match = ctx.roles[i].id == predefinedRole;
+        ctx.roles[i].selected = match;
+        if(match) {
+            break;
         }
-    );
+    }
+    if(!match && ctx.roles.length > 1) {
+        ctx.roles[1].selected = true;
+    }
+
+    return ctx;
 }
-*/
 
 AuthController.registerget = function(request, reply) {
-    reply.view('views/register');
+    if(request.auth.isAuthenticated) {
+        //user is authenticated, redirect
+        return reply.redirect('/dashboard');
+    }
+    var ctx = buildRoleContext(request.params.role, request.i18n);
+    reply.view('views/register', ctx);
 }
 
 AuthController.registerpost = function(request, reply) {
-
-    const vResult = Validation.checkRegister(request.payload);
-
-    if(vResult.error) {
-        return reply.view('views/register', {
-            error: Validation.buildContext(request, "register_failed", vResult.error)
-        });
+    if(request.auth.isAuthenticated) {
+        //user is authenticated, no way to register now
+        return reply.redirect('/dashboard');
     }
 
-    var first = request.payload.firstName;
-    var last = request.payload.lastName;
+    const vResult = Validation.checkRegister(request.payload);
+    var roleContext = buildRoleContext(request.payload.role, request.i18n);
+    
+    if(vResult.error) {
+        return reply.view('views/register', Validation.buildContext(request, "register_failed", vResult.error, roleContext));
+    }
+
+    var first = request.payload.firstname;
+    var last = request.payload.lastname;
     
     var email = request.payload.email;
     var p1 = request.payload.password1;
     var p2 = request.payload.password2;
+
+    var role = request.payload.role;
  
+    var establishment = request.payload.establishment;
+
     User.findOne({email: email}, 
         (error, result) => {
             if(result && result.email == email) {
-                return reply.view('views/register', Validation.buildContext(request, "register_failed_already_exists"));
+                return reply.view('views/register', Validation.buildContext(request, "register_failed_already_exists", null, roleContext));
             }
 
             Bcrypt.hash(p1, 10,
                 (err, encrypted) => {
                     if(err) {
-                        return reply.view('views/register', Validation.buildContext(request, "generic_error"));
+                        return reply.view('views/register', Validation.buildContext(request, "generic_error", null, roleContext));
                     }
                     var u = new User();
                     u.firstName = first;
                     u.lastName = last;
                     u.email = email;
                     u.password = encrypted;
+                    u.establishment = establishment;
+                    u.role = role;
                     u.save(
                         (error, user) => {
                             if(error) {
-                                return reply.view('views/register', Validation.buildContext(request, "generic_error"));
+                                return reply.view('views/register', Validation.buildContext(request, "generic_error", null, roleContext));
                             }
                             
                             var mailer = new Mailer();
                             var ctx = request.i18n;
                             ctx.user = u;
-                            ctx.url = getUrl(request, "/auth/login");
+                            var path = '/auth/login?email='+encodeURIComponent(u.email);
+                            if(request.payload.target) {
+                                path += '&target=' + encodeURIComponent(request.payload.target);
+                            }
+
+                            ctx.url = getUrl(request, path);
                             
                             request.server.render('mails/welcome', ctx, { layoutPath: './templates/mails/layout', }, 
                                 (error, html, config) => {
@@ -251,7 +312,46 @@ AuthController.registerpost = function(request, reply) {
                                         mailer.sendMail(u.email, subject, text, html);
                                         mailer.destroy();
                                     }
-                                    reply.view('views/register', {user: u});
+                                    
+                                    if(request.payload.target) {
+                                        //maybe the user was invited to join a game?
+                                        if(request.payload.target.startsWith('/game/start/')) {
+                                            //get channel id
+                                            var splitted = request.payload.target.split('/');
+                                            var chanId = splitted[3];
+                                            Channel.findById(chanId).populate('users.user invitesOfNonUsers').exec((error, channel) => {
+                                                if(error) {
+                                                    return reply(Boom.internal());
+                                                }
+                                                if(!channel) {
+                                                    return reply(Boom.badRequest());
+                                                }
+
+                                                channel.users.push({
+                                                    user: u.id,
+                                                    phaseResult: null 
+                                                });
+
+                                                //find associated invite to remove it
+                                                for(var i=0;i<channel.invitesOfNonUsers.length;++i) {
+                                                    var iEmail = channel.invitesOfNonUsers[i].email;
+                                                    if(iEmail == u.email || iEmail == request.payload.srcEmail) {
+                                                        channel.invitesOfNonUsers.splice(i, 1);
+                                                        break;
+                                                    }
+                                                }
+
+                                                channel.save((error, saveResult) => {
+                                                    if(error) {
+                                                        return reply(Boom.internal());
+                                                    }
+                                                    return reply.redirect(path);
+                                                });
+                                            });
+                                        }
+                                    } else {
+                                        return reply.redirect(path);
+                                    }
                                 }
                             );
                     });

@@ -1,0 +1,123 @@
+<div class="row">
+    <div class="panel panel-info">
+        <div class="panel-heading">{{pageTitle}}</div>
+        <div class="panel-body panel-nesting">
+            {{#if error}} {{#if error.global}}
+            <div class="alert alert-danger" role="alert">
+                {{{error.global}}}
+            </div>
+            {{/if}} {{/if}} {{#if wrongEmails}}
+            <div class="alert alert-danger" role="alert">
+                <strong>{{i18n "invitation_wrong_email_title"}}</strong>
+                <ul>
+                    {{#each wrongEmails}}
+                    <li>{{this}}</li>
+                    {{/each}}
+                </ul>
+            </div>
+            {{/if}} {{#if success}}
+            <div class="alert alert-success" role="alert">
+                <a href="#" class="close" data-dismiss="alert" aria-label="close">&times;</a>
+                <strong>{{i18n "invitation_sent_success_title"}}</strong>
+                <ul>
+                    {{#each success}}
+                    <li>{{this}}</li>
+                    {{/each}}
+                </ul>
+            </div>
+            {{/if}}
+
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="panel panel-info">
+                        <div class="panel-heading">{{i18n "invite_panel_title"}}</div>
+                        <div class="panel-body">
+                            <form method="POST" action="/channels/{{channel._id}}/monitor" class="form-horizontal">
+                                <div class="input-group ui-widget">
+                                    <label for="inviteEmails">{{i18n "invite_email_area_label"}}</label>
+                                    <textarea class="form-control ui-autocomplete-input" id="inviteEmails" name="emails" rows="10" autocomplete="off"></textarea>
+                                </div>
+                                <input type="submit" class="btn btn-primary pull-right" style="margin-top: 10px;" value='{{i18n "send_invites"}}' />
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="panel panel-info">
+                        <div class="panel-heading">{{i18n "monitor_panel_pendings_title"}}</div>
+                        <div class="panel-body">
+                            <ul class="list-group">
+                                {{#each pendings}}
+                                <li class="list-group-item text-ellipsis"><strong><span class="text-capitalize">{{firstName}} {{lastName}}</span></strong> ({{email}})</li>
+                                {{/each}}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="panel panel-info">
+                        <div class="panel-heading">{{i18n "monitor_panel_accepted_title"}}</div>
+                        <div class="panel-body">
+                            <ul class="list-group">
+                                {{#each accepteds}}
+                                <li class="list-group-item text-ellipsis"><strong><span class="text-capitalize">{{firstName}} {{lastName}}</span></strong> ({{email}})</li>
+                                {{/each}}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    var jsonStr = "{{recentEmails}}";
+    
+    var recentEmails = null;
+    if(jsonStr) {
+        recentEmails = jsonStr.split(',');
+    }
+
+    function split(val) {
+        return val.split(/[\s,]+/);
+    }
+
+    function extractLast(term) {
+        return split(term).pop();
+    }
+
+    $("#inviteEmails")
+        // don't navigate away from the field on tab when selecting an item
+        .on("keydown", function (event) {
+            if (event.keyCode === $.ui.keyCode.TAB &&
+                $(this).autocomplete("instance").menu.active) {
+                event.preventDefault();
+            }
+        })
+        .autocomplete({
+            minLength: 0,
+            source: function (request, response) {
+                // delegate back to autocomplete, but extract the last term
+                response($.ui.autocomplete.filter(
+                    recentEmails, extractLast(request.term)));
+            },
+            focus: function () {
+                // prevent value inserted on focus
+                return false;
+            },
+            select: function (event, ui) {
+                var terms = split(this.value);
+                // remove the current input
+                terms.pop();
+                // add the selected item
+                terms.push(ui.item.value);
+                // add placeholder to get the comma-and-space at the end
+                terms.push("");
+                this.value = terms.join("\n");
+                return false;
+            }
+        });
+</script>

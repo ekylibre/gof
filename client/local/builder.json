@@ -4,6 +4,7 @@
   "appABIs": [],
   "buildPath": "..\\server\\src\\public",
   "debug": false,
+  "includeEruda": false,
   "keystoreAlias": "",
   "keystoreAliasPassword": "",
   "keystorePassword": "",

@@ -7,17 +7,19 @@ var google = require('googleapis');
 var googleAuth = require('google-auth-library');
 var mongoose = require('mongoose');
 var program = require('commander');
-var Plant = require('../models/plant');
+var Activity = require('../models/activity');
 var Tool = require('../models/tool');
 var Additive = require('../models/additive');
 var Equipment = require('../models/equipment');
 var Rotation = require('../models/rotation');
 
+var workflowitk = require('./workflowitk');
+
 // If modifying these scopes, delete your previously saved credentials
 // at ~/.credentials/sheets.googleapis.com-nodejs.json
-var SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly'];
+var SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly', 'https://www.googleapis.com/auth/drive.readonly' ];
 var TOKEN_DIR = './cli/.credentials/';
-var TOKEN_PATH = TOKEN_DIR + 'sheets.googleapis.com-nodejs.json';
+var TOKEN_FILE = '.googleapis.com-nodejs.json';
 
 function deleteDocument(model, conditions, callback) {
     model.remove(conditions, (err) => {
@@ -109,8 +111,8 @@ function parseData(model, data, callback) {
 
 var parser = {
     
-    Plants : function parsePlants(data, callback) {
-        parseData(Plant, data, function(err) {
+    Plants : function parseActivities(data, callback) {
+        parseData(Activity, data, function(err) {
             console.log('Done parsing plants');
             callback(err);
         });
@@ -250,10 +252,11 @@ function readSpreadSheet(auth, callback) {
  * Create an OAuth2 client with the given credentials, and then execute the
  * given callback function.
  *
+ * @param {String} type The type of authorization (sheets, drive)
  * @param {Object} credentials The authorization client credentials.
  * @param {function} callback The callback to call with the authorized client.
  */
-function authorize(credentials, callback) {
+function authorize(type, credentials, callback) {
   var clientSecret = credentials.installed.client_secret;
   var clientId = credentials.installed.client_id;
   var redirectUrl = credentials.installed.redirect_uris[0];
@@ -261,9 +264,9 @@ function authorize(credentials, callback) {
   var oauth2Client = new auth.OAuth2(clientId, clientSecret, redirectUrl);
 
   // Check if we have previously stored a token.
-  fs.readFile(TOKEN_PATH, function(err, token) {
+  fs.readFile(TOKEN_DIR+type+TOKEN_FILE, function(err, token) {
     if (err) {
-      getNewToken(oauth2Client, callback);
+      getNewToken(type, oauth2Client, callback);
     } else {
       oauth2Client.credentials = JSON.parse(token);
       callback(oauth2Client);
@@ -279,7 +282,7 @@ function authorize(credentials, callback) {
  * @param {getEventsCallback} callback The callback to call with the authorized
  *     client.
  */
-function getNewToken(oauth2Client, callback) {
+function getNewToken(type, oauth2Client, callback) {
   var authUrl = oauth2Client.generateAuthUrl({
     access_type: 'offline',
     scope: SCOPES
@@ -297,7 +300,7 @@ function getNewToken(oauth2Client, callback) {
         return;
       }
       oauth2Client.credentials = token;
-      storeToken(token);
+      storeToken(type, token);
       callback(oauth2Client);
     });
   });
@@ -308,7 +311,7 @@ function getNewToken(oauth2Client, callback) {
  *
  * @param {Object} token The token to store to disk.
  */
-function storeToken(token) {
+function storeToken(type, token) {
   try {
     fs.mkdirSync(TOKEN_DIR);
   } catch (err) {
@@ -316,17 +319,17 @@ function storeToken(token) {
       throw err;
     }
   }
-  fs.writeFile(TOKEN_PATH, JSON.stringify(token));
-  console.log('Token stored to ' + TOKEN_PATH);
+  fs.writeFile(TOKEN_DIR+type+TOKEN_FILE, JSON.stringify(token));
+  console.log('Token stored to ' + TOKEN_DIR+type+TOKEN_FILE);
 }
 
 function populateComplete(err) {
-    console.log('Good bye');
     if(err) {
         console.error(err);
         process.exit(-1);
         return;
     }
+    console.log('Good bye');
     process.exit(0);
 }
 
@@ -334,14 +337,39 @@ function exportLocComplete(err) {
     var a = 0;
 }
 
+function exportITK(err) {
+    if (err) {
+        populateComplete(err);
+        return;
+    }
+
+    if (!program.xml) {
+        populateComplete();
+        return;
+    }
+
+    fs.readFile('./cli/client_secret_drive.json', function processClientSecrets(err, content) {
+        if (err) {
+            console.error(err);
+            return;
+        }
+        // Authorize a client with the loaded credentials, then call the
+        // Google Drive API.
+        authorize('drive', JSON.parse(content), function onAuthorized(auth) {
+            workflowitk.exportFiles(auth, populateComplete);
+            });
+    });
+}
+
 function main() {
 
     program
-    .version('0.0.1')
+    .version('0.0.2')
     .usage('[options]')
     .option('-c, --connection <connection>', 'The mongoDB connection string https://docs.mongodb.com/manual/reference/connection-string/')
     .option('-p, --populate', 'Populate the database with initial data')
     .option('-l, --localisation', 'Build the client localisation file')
+    .option('-x, --xml', 'Exports itk xml files')
     .parse(process.argv);
 
     if(program.populate) {
@@ -361,8 +389,8 @@ function main() {
                         }
                         // Authorize a client with the loaded credentials, then call the
                         // Google Sheets API.
-                        authorize(JSON.parse(content), function onAuthorized(auth) {
-                            readSpreadSheet(auth, populateComplete);
+                        authorize('sheets', JSON.parse(content), function onAuthorized(auth) {
+                            readSpreadSheet(auth, exportITK);
                         });
                     });
             });
@@ -378,11 +406,20 @@ function main() {
             }
             // Authorize a client with the loaded credentials, then call the
             // Google Sheets API.
-            authorize(JSON.parse(content), function onAuthorized(auth) {
+            authorize('sheets', JSON.parse(content), function onAuthorized(auth) {
                 exportClientLocalisation(auth, exportLocComplete);
             });
         });
     }
+
+    if(!program.populate && program.xml) {
+        exportITK();
+    }
+
+    // if (program.localxml) {
+    //     workflowitk.exportLocalFiles();
+    //     process.exit(0);
+    // }
 }
 
 main();

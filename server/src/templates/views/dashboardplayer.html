@@ -1,0 +1,54 @@
+<div class="row margin-t-20px">
+    <div class="panel panel-info">
+        <div class="panel-heading">{{i18n "dashboard"}}</div>
+        <div class="panel-body">
+            <div class="clearfix">
+                <a href="/channels/scenarioselection" class="btn btn-primary"><span class="glyphicon glyphicon-plus"></span> {{i18n "create_new_channel"}}</a>
+            </div>
+
+            <ul class="list-group margin-t-30px">
+                <li class="list-group-item list-group-header">
+                    <div class="row ">
+                        <div class="col-md-3 text-center">{{i18n "header_date"}}</div>
+                        <div class="col-md-3 text-center">{{i18n "header_scenario"}}</div>
+                        <div class="col-md-1 text-center">{{i18n "header_channel_state"}}</div>
+                        <div class="col-md-5"></div>
+                    </div>
+                </li>
+                {{#each channels}}
+                <li class="list-group-item">
+                    <div class="row">
+                        <div class="col-md-3"><span class="glyphicon glyphicon-calendar"></span> {{createdStr}}</div>
+                        <div class="col-md-3 scenario-thumbnail" style="background-image: url(/images/{{phase}}.jpg);">
+                            <strong class="text-center scenario-title-thumnail">{{phaseStr}}</strong>
+                        </div>
+                        <div class="col-md-1">
+                            {{#if closed}} {{i18n "state_done"}} {{else}} {{i18n "state_running"}} {{/if}}
+                        </div>
+                        <div class="col-md-2">
+                            {{#if closed}} {{score}} / 20 {{/if}}
+                        </div>
+                        {{#if closed}}
+                        <div class="col-md-3">
+                            <a class="btn btn-primary pull-right" href='/channels/exportscores/{{_id}}/csv'><span class="glyphicon glyphicon-export"></span> {{i18n "export_csv"}}</a>
+                        </div>
+                        {{else}}
+                        <div class="col-md-3">
+                            <a class="btn btn-primary pull-right" href='/game/start/{{_id}}'>{{i18n "resume_game"}}</a>
+                        </div>
+                        {{/if}}
+                    </div>
+                </li>
+                {{/each}} {{#unless channels}}
+                <li class="list-group-item">
+                    <div class="row text-center">
+                        <div class="col-md-12">
+                            {{i18n "channels_empty"}}
+                        </div>
+                    </div>
+                </li>
+                {{/unless}}
+            </ul>
+        </div>
+    </div>
+</div>

@@ -11,8 +11,13 @@ const i18n = require('i18n');
 const Constants = require('../../common/constants');
 const IndexController = require('./controllers/index')
 const AuthController = require('./controllers/auth');
-const PlantsController = require('./controllers/plants');
+const ActivitiesController = require('./controllers/activities');
 const GameController = require('./controllers/game');
+const ChannelsController = require('./controllers/channels');
+const DashboardController = require('./controllers/dashboard');
+
+var moment = require('moment');
+
 const Api = require('./api/api');
 //const DbManager = require('./dbmanager');
 
@@ -70,8 +75,6 @@ function register_plugins(server)
             }
         });
 
-        
-
         //setup view templates
         server.views({
             engines: {
@@ -92,8 +95,10 @@ function register_plugins(server)
 function setup_routes(server) {
     new IndexController(server);
     new AuthController(server);
-    new PlantsController(server);
+    new ActivitiesController(server);
     new GameController(server);
+    new ChannelsController(server);
+    new DashboardController(server);
     new Api(server);
 }
 
@@ -113,12 +118,11 @@ function preResponseHandler(request, reply) {
     if (!response.isBoom && response.variety === 'view' && request.auth.isAuthenticated) {
         response.source.context = response.source.context || {};
         var ctx = request.i18n;
-        ctx.user = {};
-        ctx.user.firstname = request.auth.credentials.firstname;
+        ctx.user = request.auth.credentials.user;
         
-        var component = request.server.render('views/userblock', ctx, {layout: false},
+        var component = request.server.render('views/navbar', ctx, {layout: false},
             (err, rendered, config) => {
-                response.source.context['user_block'] = rendered;
+                response.source.context['navigation_bar'] = rendered;
                 return reply.continue();
             });
         
@@ -130,6 +134,9 @@ function preResponseHandler(request, reply) {
 
 //entry point
 function main() {
+
+    moment.locale('fr');
+    
     const server = new Hapi.Server();
 
     var dbUrl = Config.get('Database.connectionUrl');

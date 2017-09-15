@@ -1,0 +1,26 @@
+BG_Window
+ffe8b3
+
+Border Window
+71242c
+
+BG zone text (saisie texte)
+FEEEC6
+
+Bg Title
+7C3337
+
+Text color1 
+7C3337
+
+Text color2
+000000	
+
+Text color3
+ffffff
+
+Buttons
+5eb290
+
+Border Buttons
+481d22

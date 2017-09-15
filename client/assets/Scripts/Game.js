@@ -7,14 +7,15 @@
 // TODO: check language provided by the environment
 
 const CGamePhase = require('./GamePhase');
-const CGameParcel = require('./GameParcel');
+const CParcelSetup = require('./ParcelSetup');
 const CFarm = require('./Farm');
 const CPlant = require('./Plant');
 const i18n = require('LanguageData');
-const SharedConsts = require('../../../common/constants');
+const SharedConsts = require('./common/constants');
 const ApiClient = require('./ApiClient');
 const UIDebug = require('./UI/UIDebug');
 const UIEnv = require('./UI/UIEnv');
+const CUsableItem = require('./UsableItem');
 
 const DEBUG = false;
 
@@ -36,6 +37,44 @@ var ConfigMaster=
 
 let instance = null;
 
+var criticalError = function(error, details)
+{
+    if (!error)
+    {
+        return;
+    }
+
+    if (DEBUG)
+    {
+        var message = error.message;
+        if (details)
+        {
+            message += '\n'+details;
+        }
+        UIEnv.message.show(
+            message,
+            i18n.t('error'),
+            {
+                buttons: 'none'
+            }
+        );
+        // if (details)
+        // {
+        //     UIDebug.log('Error: '+error.message+' '+details);
+        // }    
+    }
+    else
+    {
+        UIEnv.message.show(
+            error.message,
+            i18n.t('error'),
+            {
+                buttons: 'none'
+            }
+        );
+    }
+}
+
 /**
  * The Game singleton
  * @class
@@ -44,6 +83,7 @@ let instance = null;
  * @property {CFarm}        farm: the farm
  * @property {CGamePhase}   phase: active game 'phase'
  * @property {Array:CPlant}        plants: list of known plants
+ * @property {Array:CUsableItem}   usableItems: list of usable items
  * @property {ApiClient}    api
  */
 export default class CGame
@@ -56,11 +96,13 @@ export default class CGame
     {
         INVALID:        -1,
         READY:          0,
-        PHASE_SELECT:   10,
+        
+        CHANNEL_OPEN:   10,
         PHASE_LOAD:     11,
         PHASE_READY:    12,
         PHASE_RUN:      13,
-        PHASE_SCORE:    14
+        PHASE_SCORE:    14,
+        PHASE_DONE:     15
     };
 
     /**
@@ -80,6 +122,12 @@ export default class CGame
      */
     _startYear = 0;
 
+    /**
+     * @private
+     * @type {Boolean}
+     */
+    _saving = false;
+
     constructor()
     {
         if (instance)
@@ -89,58 +137,59 @@ export default class CGame
 
         instance = this;
 
-        this.isDebug=DEBUG;
-        this.constants = SharedConsts;
+        instance.isDebug=DEBUG;
+        instance.constants = SharedConsts;
 
         if (DEBUG)
         {
-            this.config = ConfigDebug;
+            instance.config = ConfigDebug;
         }
         else
         {
-            this.config = ConfigMaster;
+            instance.config = ConfigMaster;
         }
 
-        i18n.init(this.config.LANGUAGE_DEFAULT);
+        i18n.init(instance.config.LANGUAGE_DEFAULT);
 
-        this.farm = new CFarm();
+        instance.farm = new CFarm();
 
         var now = new Date(Date.now());
-        this.farm.year =now.getFullYear();
+        instance.farm.year =now.getFullYear();
         
-        this.plants = [];
+        instance.plants = [];
+        instance.usableItems = [];
     }
 
     get phase()
     {
-        return this._currPhase;
+        return instance._currPhase;
     }
 
     set phase(_Phase)
     {
         if (_Phase !== undefined && _Phase !== null)
         {
-            if (this._currPhase !== null && this._currPhase.uid == _Phase.uid)
+            if (instance._currPhase !== null && instance._currPhase.uid == _Phase.uid)
             {
                 // same phase
                 return;
             }
 
-            this.farm.month = _Phase.startMonth;
-            this.farm.week = _Phase.startWeek;
+            instance.farm.month = _Phase.startMonth;
+            instance.farm.week = _Phase.startWeek;
 
-            if (this._currPhase === null)
+            if (instance._currPhase === null)
             {
                 // First phase
                 // Give money
-                this.farm.money = _Phase.startMoney;
-                this.farm.plantExcludes = _Phase.plantExcludes;
+                instance.farm.money = _Phase.startMoney;
+                instance.farm.plantExcludes = _Phase.plantExcludes;
 
                 // Setup parcels history
                 for (var i=0; i<_Phase.parcels.length; i++)
                 {
                     var setup = _Phase.parcels[i];
-                    var parcel = this.farm.findParcelUID(setup.uid);
+                    var parcel = instance.farm.findParcelUID(setup.uid);
                     if (parcel != null)
                     {
                         parcel.rotationHistory = setup.history;
@@ -158,19 +207,19 @@ export default class CGame
                 /**
                  * @todo also change parcels history
                  */
-                this.farm.year += _Phase.startYearDiff;
+                instance.farm.year += _Phase.startYearDiff;
             }
 
-            this._currPhase = _Phase;
-            this.state = CGame.State.PHASE_READY;
+            instance._currPhase = _Phase;
+            instance.state = CGame.State.PHASE_READY;
             
         }
         else
         {
-            this._currPhase = null;
-            if (this.state != CGame.State.INVALID)
+            instance._currPhase = null;
+            if (instance.state != CGame.State.INVALID)
             {
-                this.state = CGame.State.READY;
+                instance.state = CGame.State.READY;
             }
         }
     }
@@ -182,9 +231,9 @@ export default class CGame
      */
     findPlant(_Species)
     {        
-        if (_Species !== undefined && _Species != null)
+        if (_Species)
         {
-            var plant = this.plants.find((el) => {return el.species == _Species});
+            var plant = instance.plants.find((el) => {return el.species == _Species});
             if (plant !== undefined)
             {
                 return plant;
@@ -192,6 +241,59 @@ export default class CGame
         }
 
         return null;
+    }
+
+    findUsableItem(_Name)
+    {
+        if (_Name)
+        {
+            return instance.usableItems.find( (el) => {return el.name == _Name;} );
+        }
+        return null;
+    }
+
+    _pullUsableItems(fromList, index, callback)
+    {
+        if (index < fromList.length)
+        {
+            instance.api.getItems(fromList[index], null, (error, json, c) =>
+            {
+                if (error)
+                {
+                    callback(error);
+                    return;
+                }
+
+                if (json && Array.isArray(json))
+                {
+                    UIDebug.log('Pulled '+fromList[index]+': '+json.length);
+                    for (var i=0; i<json.length; i++)
+                    {
+                        var jsonItem = json[i];
+                        var item = instance.findUsableItem(jsonItem.name)
+                        if (!item)
+                        {
+                            item = new CUsableItem(jsonItem);
+                            if (item._valid)
+                            {
+                                instance.usableItems.push(item);
+                            }
+                        }
+                        else
+                        {
+                            cc.warn('Found duplicate usableItem: '+item.name);
+                        }
+                    }
+                }
+
+                instance._pullUsableItems(fromList, index+1, callback);
+
+            });
+        }
+        else
+        {
+            callback();
+        }
     }
 
     /**
@@ -202,42 +304,30 @@ export default class CGame
      */
     pullDatabase()
     {
-        if (!this.api)
+        if (!instance.api)
         {
             cc.error('Please setup CGame.api');
             return;
         }
 
-        this.api.getPlants(null,
+        instance.api.getActivities(null,
             (error, json, c) =>
             {
                 if (error)
                 {
-                    UIEnv.message.show(
-                        i18n.t('error_connection_failed') + '\n\n('+error+')',
-                        i18n.t('error'),
-                        {
-                            buttons: 'none'
-                        }
-                    );                    
-                    UIDebug.log('Error: Failed to get plants:'+error);
-                    return;
+                    return criticalError(error);
                 }
 
                 if (json && Array.isArray(json))
                 {
-                    UIDebug.log('Pulled plants: '+json.length);
+                    UIDebug.log('Pulled activities: '+json.length);
                     for (var i=0; i<json.length; i++)
                     {
                         var jsonPlant = json[i];
-                        /*if (jsonPlant.species == 'pasture')
-                        {
-                            jsonPlant.species = 'fallow';
-                        }*/
                         var plant = instance.findPlant(jsonPlant.species);
                         if (plant != null)
                         {
-                            plant.updatePrices(jsonPlant);
+                            plant.update(jsonPlant);
                         }
                         else
                         {
@@ -249,7 +339,18 @@ export default class CGame
                         }
                     }
 
-                    instance.state = CGame.State.READY;
+                    instance._pullUsableItems(['tools', 'equipments', 'additives'], 0, function(err) {
+                        if (err)
+                        {
+                            criticalError(err);
+                        }
+                        else
+                        {
+                            // Everything ready, compute costs and let the game starts
+                            instance._processActivities();
+                            instance.state = CGame.State.READY;                           
+                        }
+                    });
                 }
                 else
                 {
@@ -260,9 +361,147 @@ export default class CGame
                             buttons: 'none'
                         }
                     ); 
-                    UIDebug.log('Error: Invalid response for getPlants: '+json);
+                    UIDebug.log('Error: Invalid response for getActivities: '+json);
                 }
             });
+    }
+
+    /**
+     * @method saveChannel Save game state in channel
+     */
+    saveChannel(callback)
+    {
+        if (!instance.api || !instance.api.channelId)
+        {
+            return;
+        }
+
+        if (instance._saving)
+        {
+            if (callback)
+            {
+                callback();
+            }
+            return;
+        }
+
+        if (instance.state >= CGame.State.PHASE_READY && instance.state <= CGame.State.PHASE_SCORE)
+        {
+            instance._saving = true;
+
+            var save = {};
+            save.date = Date.now();
+            //save.phaseId = instance.phase.uid;
+            save.phaseState = instance.state;
+            save.farm = instance.farm.serialize();
+
+            var self = instance;
+            instance.api.setGameData(
+                JSON.stringify(save),
+                (err, res, c)=>
+            {
+                self._saving = false;
+                if (callback)
+                {
+                    callback();
+                }
+                if (err)
+                {
+                    UIEnv.message.show(
+                        err.message,
+                        i18n.t('error')
+                    );
+                }                       
+            });
+        }
+    }
+
+    /**
+     * @method openChannel Starts (or restores) game from channel
+     */
+    openChannel()
+    {
+        if (!instance.api)
+        {
+            cc.error('Please setup CGame.api');
+            return;
+        }
+        
+        instance.state = CGame.State.CHANNEL_OPEN;
+        var self = instance;
+        instance.api.getGameData((err, res, c) =>
+        {
+            if (err)
+            {
+                return criticalError(err);
+            }
+                
+            if (!res.payload.phase)
+            {
+                return criticalError(new Error('invalid getgamedata result', res.payload));
+            }
+
+            var phaseId = res.payload.phase;
+
+            if (res.payload.gameData && Object.keys(res.payload.gameData).length != 0)
+            {
+                // Restore existing game
+                UIDebug.log('Restoring existing game from channel');
+
+                var save = res.payload.gameData;
+                try
+                {
+                    if (typeof save == 'string')
+                    {
+                        save = JSON.parse(res.payload.gameData);
+                    }
+                    if (!save || !save.farm || !save.phaseState)
+                    {
+                        return criticalError(new Error('Invalid gameData'), res.payload.gameData);
+                    }
+    
+                    self.farm.deserialize(save.farm);
+                }
+                catch (_e)
+                {
+                    return criticalError(new Error('Exception restoring gameData'), _e);
+                }
+
+                self.loadPhase(phaseId, (err) =>
+                {
+                    if (!err)
+                    {
+                        self.state = save.phaseState;
+                        UIDebug.log('Restoration succeeded - going to state '+self.state);
+
+                        if (self.state == CGame.State.PHASE_SCORE) {
+                            UIEnv.questInfo.onBtValidate();
+                        }
+                    }
+                    else
+                    {
+                        criticalError(err);
+                    }
+                });
+
+            }
+            else
+            {
+                //// DEBUG
+                // if (self.isDebug && phaseId != 'croprotation')
+                // {
+                //     phaseId = 'croprotation';
+                // }
+                //////
+                    
+                // Starts from the beginning
+                UIDebug.log('Starting phase from channel: '+phaseId);
+                
+                self.loadPhase(phaseId, criticalError);
+            }
+
+        });
+        
     }
 
     /**
@@ -270,22 +509,34 @@ export default class CGame
      */
     phaseStart()
     {
-        if (this.state == CGame.State.PHASE_READY)
+        if (instance.state == CGame.State.PHASE_READY)
         {
-            this.state = CGame.State.PHASE_RUN;
+            instance.state = CGame.State.PHASE_RUN;
         }
         else
         {
-            cc.error('Invalid state to start a phase: '+Object.keys()[this.state+1]);
+            cc.error('Invalid state to start a phase: '+Object.keys()[instance.state+1]);
         }
     }
-
+    
     /**
      * Ends current phase
      */
-    phaseFinish()
+    phaseFinish(_Score, _Results)
     {
-        //TODO
+        if (instance.state <= CGame.State.PHASE_SCORE)
+        {
+            var self = instance;
+            instance.state = CGame.State.PHASE_SCORE;
+            var resultString = JSON.stringify(_Results);
+            instance.saveChannel(() =>
+            {
+                instance.api.setScore(_Score, resultString, (err, res, c)=>
+                {
+                    instance.state = CGame.State.PHASE_DONE;
+                });
+            });
+        }
     }
 
     /**
@@ -294,7 +545,7 @@ export default class CGame
      */
     phaseCanFinish()
     {
-        return eval(this._currPhase.endCondition) === true ? true : false;
+        return eval(instance._currPhase.endCondition) === true ? true : false;
     }
 
     /**
@@ -303,7 +554,7 @@ export default class CGame
      */
     phaseGetCompletionStr()
     {
-        return eval(this._currPhase.completionStr);
+        return eval(instance._currPhase.completionStr);
     }
 
     /**
@@ -312,7 +563,7 @@ export default class CGame
      */
     phaseGetIntroText()
     {
-        return i18n.t(this._currPhase.introTextId);
+        return i18n.t(instance._currPhase.introTextId);
     }
 
     /**
@@ -321,7 +572,7 @@ export default class CGame
      */
     phaseGetObjectiveText()
     {
-        return i18n.t(this._currPhase.objectiveTextId);
+        return i18n.t(instance._currPhase.objectiveTextId);
     }
 
     /**
@@ -332,18 +583,18 @@ export default class CGame
      */
     loadPhase(uid, callback) 
     {
-        this.state = CGame.State.PHASE_LOAD;
+        instance.state = CGame.State.PHASE_LOAD;
 
-        this.api.getScenarios(uid, 
+        instance.api.getScenarios(uid, 
             (error, json) => 
             {
                 if(error)
                 {
-                    callback(new Error('Error: Failed to get scenario with uid:'+uid+' '+ error));
+                    callback(new Error('Error: Failed to get scenario with uid:'+uid+'\n'+ error.message));
                     return;
                 }
 
-                if(json.scenario.start.farm.parcels.length > this.farm.parcels.length)
+                if(json.scenario.start.farm.parcels.length > instance.farm.parcels.length)
                 {
                     callback(new Error('Error: the scenario '+uid+' contains more parcels than the current gfx farm'));
                     return;
@@ -376,7 +627,7 @@ export default class CGame
                 {
                     var sParcel = json.scenario.start.farm.parcels[i];
                     //TODO get parcel from name ?
-                    var parcel = new CGameParcel();
+                    var parcel = new CParcelSetup();
                     parcel.uid = sParcel.uid;
                     parcel.solution = sParcel.data.solution;
 
@@ -388,7 +639,7 @@ export default class CGame
                     phase.parcels.push(parcel);
                 }
 
-                this.phase = phase;
+                instance.phase = phase;
                 callback(null);
             }
         );
@@ -397,17 +648,17 @@ export default class CGame
     // DEBUG: creates random rotation history
     createRandomPhase()
     {
-        this.phase = new CGamePhase();
+        instance.phase = new CGamePhase();
 
-        for (var p = 0; p<this.farm.parcels.length; p++)
+        for (var p = 0; p<instance.farm.parcels.length; p++)
         {
-            var parcel = this.farm.parcels[p];
+            var parcel = instance.farm.parcels[p];
             parcel.rotationHistory = [];
             for (var h = 0; h<5; h++)
             {
-                var id = Math.floor(cc.random0To1() * this.plants.length);
-                if (id == this.plants.length) id--;
-                var plant = this.plants[id];
+                var id = Math.floor(cc.random0To1() * instance.plants.length);
+                if (id == instance.plants.length) id--;
+                var plant = instance.plants[id];
 
                 var culture = SharedConsts.CultureModeEnum.NORMAL;
                 id = Math.floor(cc.random0To1()*3);
@@ -417,7 +668,7 @@ export default class CGame
                 }
                 if (id == 2)
                 {
-                    culture = SharedConsts.CultureModeEnum.PERMACULTURE;
+                    culture = SharedConsts.CultureModeEnum.REASONED;
                 }
                 
                 parcel.rotationHistory.push(
@@ -430,5 +681,179 @@ export default class CGame
 
     }
 
+    /**
+     * Called at the end of pullDatabase to compute some costs
+     */
+    _processActivities()
+    {
+        for (var plantIndex=0; plantIndex<instance.plants.length; plantIndex++)
+        {
+            var plant = instance.plants[plantIndex];
+            var itkKeys = Object.keys(plant.itks);
+            if (itkKeys && itkKeys.length>0)
+            {
+                for (var itkId=0; itkId<itkKeys.length; itkId++)
+                {
+                    var itk = plant.itks[itkKeys[itkId]];
+
+                    if (!itk)
+                    {
+                        continue;
+                    }
+                    
+                    // TODO: take units into account
+                    if (itk.sizeUnitName != 'hectare')
+                    {
+                        UIDebug.log('Unsupported ITK size unit: '+itk.sizeUnitName);
+                    }
+
+                    itk.unitCosts = 
+                    {
+                        money: 0,
+                        time: 0
+                    };
+                    itk.unitResults = 
+                    {
+                        money: 0
+                    };
+    
+                    for (var procId=0; procId<itk.procedures.length; procId++)
+                    {
+                        var procedure = itk.procedures[procId];
+                        procedure.unitCosts=
+                        {
+                            money: 0,
+                            time: 0   
+                        };
+                
+                        if (procedure.workingGroups)
+                        {
+                            for (var wgId=0; wgId<procedure.workingGroups.length; wgId++)
+                            {
+                                var wg = procedure.workingGroups[wgId];
+                                var time = 1;
+                                if (wg.workingTimePerSizeUnit)
+                                {
+                                    time = Number(wg.workingTimePerSizeUnit);
+                                    procedure.unitCosts.time += time;
+                                }
+
+                                // ignoring tools at the moment: do they have a cost per hour?
+                                // if (wg.tools)
+                                // {
+                                //     for (var i=0; i<wg.tools.length; i++)
+                                //     {
+                                //         var usable = instance.findUsableItem(wg.tools[i].name);
+                                //         if (usable)
+                                //         {
+                                //             procedure.unitCosts.money += time * usable.pricePerUnit;
+                                //         }
+                                //         else
+                                //         {
+                                //             cc.warn('Missing tool datas: '+wg.tools[i].name);
+                                //         }
+                                //     }
+                                // }
+                                if (wg.doers)
+                                {
+                                    for (var i=0; i<wg.doers.length; i++)
+                                    {
+                                        var usable = instance.findUsableItem(wg.doers[i]);
+                                        if (usable)
+                                        {
+                                            procedure.unitCosts.money += time * usable.pricePerUnit;
+                                        }
+                                        else
+                                        {
+                                            if (wg.doers[i].indexOf('driver')>=0)
+                                            {
+                                                procedure.unitCosts.money += time * 100;
+                                            }
+                                            else
+                                            {
+                                                cc.warn('Missing doers datas: '+wg.doers[i]);
+                                            }
+                                        }
+                                    }                    
+                                }
+                            }
+                        }
+                
+                        if (procedure.inputs)
+                        {
+                            for (var inputId=0; inputId<procedure.inputs.length; inputId++)
+                            {
+                                var input = procedure.inputs[inputId];
+                                var quantity = Number(input.quantityPerSizeUnit);
+                                if (!quantity)
+                                {
+                                    quantity = 1;
+                                }
+                                var usable = instance.findUsableItem(input.name.trim());
+                                if (usable)
+                                {
+                                    if (!input.unitPerSizeUnit)
+                                    {
+                                        cc.warn('Missing unitPerSizeUnit in itk input: '+input.name);
+                                    }
+                                    else
+                                    if (usable.unit && usable.unit != input.unitPerSizeUnit)
+                                    {
+                                        cc.warn('Units not corresponding: input '+input.name+'='+input.unitPerSizeUnit+' / database='+usable.unit);
+                                    }
+                                    procedure.unitCosts.money += usable.pricePerUnit * quantity;
+                                }
+                                else
+                                {
+                                    // check if its a seed, and get price from CPlant
+                                    if (input.name.indexOf('_seed')>0 || input.name.indexOf('_grain')>0)
+                                    {
+                                        procedure.unitCosts.money += plant.getBuyPrice(itk.culture.mode) * quantity;
+                                    }
+                
+                                    cc.warn('Missing itk input datas: '+input.name);
+                                }
+                            }
+                        }
+
+                        if (procedure.outputs)
+                        {
+                            for (var outputId = 0; outputId<procedure.outputs.length; outputId++)
+                            {
+                                var output = procedure.outputs[outputId];
+                                var quantity = Number(output.quantityPerSizeUnit);
+                                if (!quantity)
+                                {
+                                    quantity = 1;
+                                }
+
+                                var usable = instance.findUsableItem(output.name);
+                                if (usable)
+                                {
+                                    if (!output.unitPerSizeUnit || output.unitPerSizeUnit != 'qt')
+                                    {
+                                        cc.warn('Missing or unsupported unitPerSizeUnit: '+output.unitPerSizeUnit+' in itk output: '+output.name);
+                                    }
+
+                                    itk.unitResults.money += usable.pricePerUnit * quantity;
+                                }
+                                else
+                                {
+                                    itk.unitResults.money += plant.getSellPrice(itk.culture.mode) * quantity;
+                
+                                    cc.warn('Missing itk output datas: '+output.name);
+                                }
+
+                            }
+                        }
+
+                        itk.unitCosts.money += procedure.unitCosts.money;
+                        itk.unitCosts.time += procedure.unitCosts.time;                            
+                    }
+    
+                }
+            }
+        }
+    }
 }
 

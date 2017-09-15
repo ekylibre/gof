@@ -1,0 +1,37 @@
+<div class="row">
+    <div class="panel panel-info">
+        <div class="panel-heading">{{i18n "scenario_selection_title"}}</div>
+        <div class="panel-body panel-nesting">
+            <div class="row">
+                {{#each scenarios}}
+                <div class="col-md-4 gof-scenario-item">
+                    <div class="thumbnail" style="background-image: url('/images/{{id}}.jpg'); background-size:cover;">
+                        <div class="caption">
+                            <strong>{{name}}</strong>
+                            <p>{{desc}}</p>
+                            <br/>
+
+                            <a href="#" class="btn btn-primary pull-right {{#if available}}{{else}}disabled{{/if}}" onclick="startScenario('{{id}}');">{{../okButton}}</a>
+                        </div>
+                    </div>
+                </div>
+                {{/each}}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function startScenario(id) {
+        $.ajax({
+            type: 'POST',
+            url: '/channels/create',
+            data: {
+                scenario: id
+            },
+            success: function (data) {
+                window.location.replace(data.target);
+            }
+        });
+    }
+</script>

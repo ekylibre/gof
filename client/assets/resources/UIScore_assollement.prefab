@@ -89,7 +89,7 @@
       }
     ],
     "_tag": -1,
-    "_active": false,
+    "_active": true,
     "_components": [],
     "_prefab": {
       "__id__": 57
@@ -313,7 +313,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 231.52,
+      "width": 211.05,
       "height": 57
     },
     "_rotationX": 0,
@@ -345,8 +345,10 @@
     "_fontSize": 59.500000000000206,
     "_lineHeight": 57.80000000000011,
     "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
+    "_N$file": {
+      "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
     "_N$string": "256 PTS",
     "_N$horizontalAlign": 1,
@@ -568,7 +570,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 106.68,
+      "width": 93.33,
       "height": 34
     },
     "_rotationX": 0,
@@ -600,8 +602,10 @@
     "_fontSize": 30,
     "_lineHeight": 34.20000000000006,
     "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
+    "_N$file": {
+      "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
     "_N$string": "SCORE",
     "_N$horizontalAlign": 1,
@@ -1091,7 +1095,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 76.57,
+      "width": 119.94,
       "height": 34
     },
     "_rotationX": 0,
@@ -1123,10 +1127,12 @@
     "_fontSize": 26,
     "_lineHeight": 34.20000000000006,
     "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
+    "_N$file": {
+      "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
-    "_N$string": "SUITE",
+    "_N$string": "TERMINER",
     "_N$horizontalAlign": 1,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",

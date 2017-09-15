@@ -1,7 +1,9 @@
 {
   "appKey": "",
   "appSecret": "",
-  "excludeScenes": [],
+  "excludeScenes": [
+    "7ff5e769-d672-4b0c-88e7-70ad397476f1"
+  ],
   "includeAnySDK": false,
   "includeSDKBox": false,
   "includeSdk": [
@@ -9,6 +11,7 @@
   ],
   "inlineSpriteFrames": true,
   "inlineSpriteFrames_native": true,
+  "md5Cache": false,
   "mergeStartScene": false,
   "oauthLoginServer": "",
   "optimizeHotUpdate": false,

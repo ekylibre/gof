@@ -12,6 +12,7 @@ const CGamePhase = require('GamePhase');
  * @property {number}               surfacePerTile: surface per tile (for parcels)
  * @property {Array:strings}        possibleSpecies: list of possible plant species
  * @property {number}               money: current money
+ * @property {number}               workTime: current work hours remaining
  * @property {number}               year: current year delta [0, ?]
  * @property {number}               month: current month [0, 11]
  * @property {number}               week: current week in month [0,3]
@@ -41,6 +42,7 @@ export default class CFarm
         this.parcels = [];
         this.possibleSpecies = [];
         this.money = 0;
+        this.workTime = 0;
 
         this.year = 0;
         this.month = 0;
@@ -121,5 +123,44 @@ export default class CFarm
         }
 
         return null;
+    }
+
+    serialize()
+    {
+        var json=
+        {
+            parcels: [],
+            money: this.money,
+            workTime: this.workTime
+        };
+
+        for (var i=0; i<this.parcels.length; i++)
+        {
+            var parcel = this.parcels[i];
+            json.parcels.push(parcel.serialize());
+        }        
+        
+        //cc.log(JSON.stringify(json));
+        return json;
+    }
+
+    deserialize(_JSon)
+    {
+        this.money = _JSon.money;
+        this.workTime = _JSon.workTime;
+
+        for (var i=0; i<_JSon.parcels.length; i++)
+        {
+            var parcelJson = _JSon.parcels[i];
+            var parcel = this.findParcelUID(parcelJson.uid);
+            if (parcel != null)
+            {
+                parcel.deserialize(parcelJson);
+            }
+            else
+            {
+                cc.error("Can't find parcel UID: "+parcelJson.uid);
+            }
+        }
     }
 }

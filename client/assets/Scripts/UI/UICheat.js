@@ -1,7 +1,7 @@
 
 const CGame = require('../Game');
 const UIDebug = require('./UIDebug');
-const SharedConsts = require('../../../../common/constants');
+const SharedConsts = require('../common/constants');
 
 var game = new CGame();
 
@@ -70,7 +70,7 @@ cc.Class({
                     }
                     if (id == 2)
                     {
-                        culture = SharedConsts.CultureModeEnum.PERMACULTURE;
+                        culture = SharedConsts.CultureModeEnum.REASONED;
                     }
                     
                     parcel.rotationPrevision.push(

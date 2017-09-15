@@ -11,7 +11,7 @@
  * @property {number} perfectScore: score received for doing a perfect phase
  * @property {number} maxPrevisions: maximum number of rotation previsions per parcel
  * @property {array:string} plantExcludes: array of uid of plants to exclude during this phase
- * @property {array:CGameParcel}  parcels: parcels setup data
+ * @property {array:CParcelSetup}  parcels: parcels setup data
  */
 export default class CGamePhase {
     constructor() {

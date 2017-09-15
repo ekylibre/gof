@@ -2,7 +2,8 @@
 const i18n = require('LanguageData');
 const CPlant = require('Plant');
 const RscPreload = require('RscPreload');
-const SharedConsts = require('../../../../common/constants')
+const SharedConsts = require('../common/constants');
+const UIEnv = require('./UIEnv');
 
 var UISpeciesSelItem = cc.Class({
     extends: cc.Component,
@@ -95,27 +96,27 @@ var UISpeciesSelItem = cc.Class({
         },
         
         /**
-         * 'permaculture' buy price label
+         * 'reasoned' buy price label
          */
-        buyPricePerma:
+        buyPriceReasoned:
         {
             default: null,
             type: cc.Label,
         },
 
         /**
-         * 'permaculture' sell price label
+         * 'reasoned' sell price label
          */
-        sellPricePerma:
+        sellPriceReasoned:
         {
             default: null,
             type: cc.Label,
         },
 
         /**
-         * The 'permaculture' culture button
+         * The 'reasoned' culture button
          */
-        btPerma:
+        btReasoned:
         {
             default: null,
             type: cc.Button
@@ -125,6 +126,15 @@ var UISpeciesSelItem = cc.Class({
          * Add button (aka validate button)
          */
         btAdd:
+        {
+            default: null,
+            type: cc.Button
+        },
+
+        /**
+         * Plant info button
+         */
+        btInfo:
         {
             default: null,
             type: cc.Button
@@ -275,29 +285,67 @@ var UISpeciesSelItem = cc.Class({
                 {
                     this.buyPriceNormal.string = '';
                     this.buyPriceBio.string = '';
-                    this.buyPricePerma.string = '';
+                    this.buyPriceReasoned.string = '';
                     this.sellPriceNormal.string = '';
                     this.sellPriceBio.string = '';
-                    this.sellPricePerma.string = '';
+                    this.sellPriceReasoned.string = '';
 
                     this.btNormal.node.active = false;
                     this.btBio.node.active = false;
-                    this.btPerma.node.active = false;
+                    this.btReasoned.node.active = false;
                 }
                 else
                 {
-                    this.buyPriceNormal.string = this._plant.getBuyPrice(SharedConsts.CultureModeEnum.NORMAL).toString();
-                    this.buyPriceBio.string = this._plant.getBuyPrice(SharedConsts.CultureModeEnum.BIO).toString();
-                    this.buyPricePerma.string = this._plant.getBuyPrice(SharedConsts.CultureModeEnum.PERMACULTURE).toString();
-                    this.sellPriceNormal.string = this._plant.getSellPrice(SharedConsts.CultureModeEnum.NORMAL).toString();
-                    this.sellPriceBio.string = this._plant.getSellPrice(SharedConsts.CultureModeEnum.BIO).toString();
-                    this.sellPricePerma.string = this._plant.getSellPrice(SharedConsts.CultureModeEnum.PERMACULTURE).toString();
+                    var itkNormal = this._plant.getItk(SharedConsts.CultureModeEnum.NORMAL);
+                    if (itkNormal && itkNormal.unitCosts)
+                    {
+                        this.buyPriceNormal.string = i18n.t('price_per_hectare',{ val: itkNormal.unitCosts.money.toLocaleString(undefined, {maximumFractionDigits:2}) });
+                        this.sellPriceNormal.string = i18n.t('sell_per_qt',{ val: itkNormal.unitResults.money.toLocaleString(undefined, {maximumFractionDigits:2}) });
+                    }
+                    else
+                    {
+                        this.buyPriceNormal.string =  i18n.t('price_per_hectare',{ val: this._plant.getBuyPrice(SharedConsts.CultureModeEnum.NORMAL).toLocaleString(undefined, {maximumFractionDigits:2}) });
+                        this.sellPriceNormal.string = i18n.t('sell_per_qt',{ val: this._plant.getSellPrice(SharedConsts.CultureModeEnum.NORMAL).toLocaleString(undefined, {maximumFractionDigits:2}) });
+                    }
+
+                    var itkBio = this._plant.getItk(SharedConsts.CultureModeEnum.BIO);
+                    if (itkBio && itkBio.unitCosts)
+                    {
+                        this.buyPriceBio.string = i18n.t('price_per_hectare',{ val: itkBio.unitCosts.money.toLocaleString(undefined, {maximumFractionDigits:2}) });
+                        this.sellPriceBio.string = i18n.t('sell_per_qt',{ val: itkBio.unitResults.money.toLocaleString(undefined, {maximumFractionDigits:2}) });
+                    }
+                    else
+                    {
+                        this.buyPriceBio.string =  i18n.t('price_per_hectare',{ val: this._plant.getBuyPrice(SharedConsts.CultureModeEnum.BIO).toLocaleString(undefined, {maximumFractionDigits:2}) });
+                        this.sellPriceBio.string = i18n.t('sell_per_qt',{ val: this._plant.getSellPrice(SharedConsts.CultureModeEnum.BIO).toLocaleString(undefined, {maximumFractionDigits:2}) });
+                    }
+
+                    var itkReasoned = this._plant.getItk(SharedConsts.CultureModeEnum.REASONED);
+                    if (itkReasoned && itkReasoned.unitCosts)
+                    {
+                        this.buyPriceReasoned.string = i18n.t('price_per_hectare',{ val: itkReasoned.unitCosts.money.toLocaleString(undefined, {maximumFractionDigits:2}) });
+                        this.sellPriceReasoned.string = i18n.t('sell_per_qt',{ val: itkReasoned.unitResults.money.toLocaleString(undefined, {maximumFractionDigits:2}) });
+                    }
+                    else
+                    {
+                        this.buyPriceReasoned.string =  i18n.t('price_per_hectare',{ val: this._plant.getBuyPrice(SharedConsts.CultureModeEnum.REASONED).toLocaleString(undefined, {maximumFractionDigits:2}) });
+                        this.sellPriceReasoned.string = i18n.t('sell_per_qt',{ val: this._plant.getSellPrice(SharedConsts.CultureModeEnum.REASONED).toLocaleString(undefined, {maximumFractionDigits:2}) });
+                    }
 
                     this.btNormal.interactable = this.cultureMode != SharedConsts.CultureModeEnum.NORMAL;
                     this.btBio.interactable = this.cultureMode != SharedConsts.CultureModeEnum.BIO;
-                    this.btPerma.interactable = this.cultureMode != SharedConsts.CultureModeEnum.PERMACULTURE;
+                    this.btReasoned.interactable = this.cultureMode != SharedConsts.CultureModeEnum.REASONED;
                 }                
 
+            }
+
+            if (this._plant.getItk(SharedConsts.CultureModeEnum.NORMAL))
+            {
+                this.btInfo.interactable = true;              
+            }
+            else
+            {
+                this.btInfo.interactable = false;                
             }
 
             if (this._selectionChanged)
@@ -317,7 +365,6 @@ var UISpeciesSelItem = cc.Class({
     {
         if (this._plant != null && !this._plant.isFallow)
         {
-            //this.isSelected = true;
             this.cultureMode = SharedConsts.CultureModeEnum.NORMAL;
         }           
     },
@@ -326,16 +373,22 @@ var UISpeciesSelItem = cc.Class({
     {
         if (this._plant != null && !this._plant.isFallow)
         {
-            //this.isSelected = true;
             this.cultureMode = SharedConsts.CultureModeEnum.BIO;
         }           
     },
+
+    onBtCultureReasoned: function()
+    {
+        if (this._plant != null && !this._plant.isFallow)
+        {
+            this.cultureMode = SharedConsts.CultureModeEnum.REASONED;
+        }           
+    },    
 
     onBtCulturePerma: function()
     {
         if (this._plant != null && !this._plant.isFallow)
         {
-            //this.isSelected = true;
             this.cultureMode = SharedConsts.CultureModeEnum.PERMACULTURE;           
         }           
         
@@ -349,6 +402,13 @@ var UISpeciesSelItem = cc.Class({
         }
     },
 
+    onBtInfo: function()
+    {
+        if (this._plant != null)
+        {
+            UIEnv.speciesInfos.show(UIEnv.speciesSelect._parcel, this._plant, this._cultureMode);
+        }         
+    }
 });
 
 module.exports = UISpeciesSelItem;
