@@ -294,9 +294,9 @@ AuthController.registerpost = function(request, reply) {
                             var mailer = new Mailer();
                             var ctx = request.i18n;
                             ctx.user = u;
-                            var path = '/auth/login';
+                            var path = '/auth/login?email='+encodeURIComponent(u.email);
                             if(request.payload.target) {
-                                path = '/auth/login?email='+encodeURIComponent(u.email)+'&target=' + encodeURIComponent(request.payload.target);
+                                path += '&target=' + encodeURIComponent(request.payload.target);
                             }
 
                             ctx.url = getUrl(request, path);

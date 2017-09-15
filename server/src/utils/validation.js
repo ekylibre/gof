@@ -56,7 +56,7 @@ module.exports = {
                 Constants.UserRoleEnum.STUDENT, 
                 Constants.UserRoleEnum.PROFESSIONAL, 
                 Constants.UserRoleEnum.OTHER).required(),
-            establishment: Joi.string(),
+            establishment: Joi.string().allow('').optional(),
             target: Joi.string(),
             srcEmail: Joi.string().email(),
         });
