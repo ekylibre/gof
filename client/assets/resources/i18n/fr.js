@@ -80,10 +80,14 @@ window.i18n.languages.fr={
 	"error":"Erreur",
 	"error_auth_missing":"Une erreur d'autentification est survenue.\nVous devez vous re-connecter avec votre compte pour continuer.",
 	"error_connection_failed":"Impossible de se connecter !\nVous pouvez rafraîchir la page pour réessayer.",
+	"exit_confirmation":"Etes-vous sûr de vouloir quitter la partie ?",
 	"procedure_plowing":"Labourage",
 	"procedure_plant-care":"Soin des plantes",
 	"procedure_raking":"Ratissage",
 	"procedure_sowing":"Semis",
 	"procedure_fertilizing":"Fertilisation",
-	"procedure_harvesting":"Récolte"
+	"procedure_harvesting":"Récolte",
+	"output_corn_grain":"Grains de maïs",
+	"output_sunflower_grain":"Graines de tournesol",
+	"output_pea_grain":"Poïs"
 };

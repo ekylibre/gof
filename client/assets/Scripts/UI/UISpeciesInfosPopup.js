@@ -192,7 +192,7 @@ var UISpeciesInfosPopup = cc.Class({
             {
                 var output = outputs[oi];
                 var qt = Number(output.quantityPerSizeUnit) * this._parcel.surface;
-                this.totalResults.string += i18n.t(output.name)+' : '+qt.toLocaleString(undefined, {maximumFractionDigits:2})+' '+output.unitPerSizeUnit;
+                this.totalResults.string += i18n.t('output_'+output.name)+' : '+qt.toLocaleString(undefined, {maximumFractionDigits:2})+' '+output.unitPerSizeUnit;
                 if (oi != (outputs.length-1))
                 {
                     this.totalResults.string += '\n';
@@ -222,10 +222,10 @@ var UISpeciesInfosPopup = cc.Class({
         }
         else
         {
-            this.totalPrice.string = 'N/A';
-            this.totalDuration.string =  'N/A';
-            this.totalSell.string =  'N/A';
-            this.totalResults.string =  'N/A';
+            this.totalPrice.string = '';
+            this.totalDuration.string =  '';
+            this.totalSell.string =  '';
+            this.totalResults.string =  '';
         }
 
         this.btNormal.interactable = this._mode != SharedConsts.CultureModeEnum.NORMAL;

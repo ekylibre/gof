@@ -792,14 +792,14 @@ export default class CGame
                                 var usable = instance.findUsableItem(input.name.trim());
                                 if (usable)
                                 {
-                                    if (!input.unitPerSizeUnit ||
-                                        (input.unitPerSizeUnit != 'kg' &&  input.unitPerSizeUnit != 'l'))
+                                    if (!input.unitPerSizeUnit)
                                     {
-                                        cc.warn('Missing or unsupport unitPerSizeUnit: '+input.unitPerSizeUnit+' in itk input: '+input.name);
+                                        cc.warn('Missing unitPerSizeUnit in itk input: '+input.name);
                                     }
+                                    else
                                     if (usable.unit && usable.unit != input.unitPerSizeUnit)
                                     {
-                                        cc.warn('Units not corresponding: input '+input.name+'='+input.unitPerSizeUnit+' / additive='+usable.unit);
+                                        cc.warn('Units not corresponding: input '+input.name+'='+input.unitPerSizeUnit+' / database='+usable.unit);
                                     }
                                     procedure.unitCosts.money += usable.pricePerUnit * quantity;
                                 }

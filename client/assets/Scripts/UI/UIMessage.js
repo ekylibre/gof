@@ -122,6 +122,18 @@ var UIMessage = cc.Class({
             _Title = i18n.t('message').toUpperCase();
         }
 
+        var lines = _Text.split('\n');
+        if (lines.length>4)
+        {
+            this.lbMessage.fontSize = 20;
+            this.lbMessage.lineHeigth = 22;
+        }
+        else
+        {
+            this.lbMessage.fontSize = 30;
+            this.lbMessage.lineHeigth = 36;     
+        }
+
         this.lbMessage.string = _Text;
         this.lbTitle.string = _Title;
 

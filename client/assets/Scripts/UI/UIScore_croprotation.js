@@ -102,6 +102,7 @@ var UIScore_croprotation = cc.Class({
 
     onBtNext: function()
     {
+        location.pathname = '/dashboard';        
         this.hide();
     }
 
