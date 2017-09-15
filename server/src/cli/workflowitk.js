@@ -493,14 +493,15 @@ function _parseXML(filename, callback, saveJSon) {
                             if (!err) {
                                 res.itk = json;
                                 res.markModified('itk');
-                                res.save();
+                                res.save(()=>{
+                                    if (last && callback) {
+                                        callback();
+                                    } 
+                                });
                             } else {
                                 console.log('Could not find activity: '+json.culture.species+' '+json.culture.mode);
                             }
-
-                            if (last && callback) {
-                                callback();
-                            }                              
+                             
                         });
                     }
                 }
