@@ -17,7 +17,7 @@ const UIDebug = require('./UI/UIDebug');
 const UIEnv = require('./UI/UIEnv');
 const CUsableItem = require('./UsableItem');
 
-const DEBUG = true;
+const DEBUG = false;
 
 // Game configuration when DEBUG is true
 var ConfigDebug =
