@@ -32,7 +32,15 @@
                         </div>
                     </div>
                 </li>
-                {{/each}}
+                {{/each}} {{#unless channels}}
+                <li class="list-group-item">
+                    <div class="row text-center">
+                        <div class="col-md-12">
+                            {{i18n "channels_empty"}}
+                        </div>
+                    </div>
+                </li>
+                {{/unless}}
             </ul>
         </div>
     </div>

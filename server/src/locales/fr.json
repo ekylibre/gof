@@ -110,6 +110,7 @@
 	"header_channel_state" : "Etat",
 	"header_player": "Participant",
 	"header_email": "E-mail",
-	"header_note": "Note obtenue"
+	"header_note": "Note obtenue",
+	"channels_empty": "Aucune partie"
 
 }
