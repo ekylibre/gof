@@ -110,20 +110,29 @@ function exportFiles(auth, callback) {
 }
 
 /**
- * For debug purposes
- * parses local xml files and export to json files
+ * parses local xml files and export to json files or database
+ * @param {Function} callback - callback(err) to call after all files are downloaded
+ * @param {Boolean} debug if true; the datas won't be stored in database but in files
  */
-function exportLocalFiles() {
+function exportLocalFiles(callback, debug) {
     _checkTmpFolder();
     
     var files = fs.readdirSync(TMP_FOLDER);
     for (var i=0; i<files.length; i++) {
         var filename = files[i];
+        var last = i === files.length-1;
+        
         if (filename.endsWith('.xml')) {
-            _parseXML(filename, function(){}, true);
+            _parseXML(filename, function(err) {
+                if (last && callback) {
+                    callback(err);
+                }
+            }, debug);
+        } else if (last && callback) {
+            callback();
         }
     }
-    console.log('workflowitk.exportLocalFiles done!');    
+
 }
 
 
@@ -220,7 +229,7 @@ function _parseTool(element) {
                     json.name = node.nodeValue;
                     break;
                 default:
-                    errors.push('Unknown attribute of tool: '+node.nodeName);
+                    errors.push('Unknown tool attribute: '+node.nodeName);
                     break;
             }
         }
@@ -282,7 +291,7 @@ function _parseWorkingGroup(group) {
                     label.fr = node.nodeValue;
                     break;
                 default:
-                    errors.push('Unknown attribute of working group: '+node.nodeName);
+                    errors.push('Unknown working group attribute: '+node.nodeName);
                     break;
             }
         }
@@ -309,7 +318,7 @@ function _parseWorkingGroup(group) {
                         doers.push(node.getAttribute('name'));
                         break;
                     default:
-                        errors.push('Unknown element in working group: '+node.nodeName);
+                        errors.push('Unknown working group element: '+node.nodeName);
                         break;
                 }
             }
@@ -341,7 +350,23 @@ function _parceProcedure(procedure) {
     var json = {};
     var errors = [];
 
-    json.name = procedure.getAttribute('name');
+    // read attributes
+    if (procedure.hasAttributes()) {
+        for (var i=0; i<procedure.attributes.length; i++) {
+            var node = procedure.attributes[i];
+            switch (node.nodeName) {
+                case 'name':
+                    json.name = node.nodeValue;
+                    break;
+                case 'actions':
+                    json.actions = node.nodeValue;
+                    break;
+                default:
+                    errors.push('Unknown procedure attribute: '+node.nodeName);
+                    break;
+            }
+        }
+    }
 
     // get parameters
     var xparams = procedure.getElementsByTagName('parameters');

@@ -370,6 +370,7 @@ function main() {
     .option('-p, --populate', 'Populate the database with initial data')
     .option('-l, --localisation', 'Build the client localisation file')
     .option('-x, --xml', 'Exports itk xml files')
+    .option('-y, --localxml', 'Exports itk xml local files')
     .parse(process.argv);
 
     if(program.populate) {
@@ -413,13 +414,28 @@ function main() {
     }
 
     if(!program.populate && program.xml) {
+        // this will download the xml files, but won't export them to database (no connection)
+        // use -px to also save to database
         exportITK();
     }
 
-    // if (program.localxml) {
-    //     workflowitk.exportLocalFiles();
-    //     process.exit(0);
-    // }
+    if (program.localxml) {
+        if(program.connection) {
+            mongoose.Promise = global.Promise;
+            mongoose.connect(program.connection, {useMongoClient: true},
+                (err) => {
+                    if(err) {
+                        console.error(err);
+                        return;
+                    }
+
+                    workflowitk.exportLocalFiles(populateComplete, false);                    
+            });
+        }
+        else {
+            workflowitk.exportLocalFiles(populateComplete, true);
+        }
+    }
 }
 
 main();
