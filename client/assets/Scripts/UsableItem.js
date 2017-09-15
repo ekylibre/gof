@@ -21,7 +21,7 @@ export default class CUsableItem
          * depending on item type, can represent a cost per hour, per kg...
          * @type {Number}
          */
-        this.pricePerUnit = _JSON.price;
+        this.pricePerUnit = Number(_JSON.price);
 
         /**
          * Unit

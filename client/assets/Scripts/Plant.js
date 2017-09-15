@@ -54,9 +54,9 @@ export default class CPlant
 
             this.dbId[mode] = _JSON._id;
 
-            this.buyPrices[mode] = _JSON.pricePerHectare;
+            this.buyPrices[mode] = Number(_JSON.pricePerHectare);
 
-            this.sellPrices[mode] = _JSON.pricePerHectare * 10;
+            this.sellPrices[mode] = Number(_JSON.pricePerHectare) * 20;
 
             this.itks[mode] = _JSON.itk;
         }        
@@ -100,6 +100,24 @@ export default class CPlant
     getItk(_Mode)
     {
         return this.itks[this._CultureMode(_Mode)];
+    }
+
+    getOutputs(_Mode)
+    {
+        var outputs = [];
+        var itk= this.getItk(_Mode);
+        if (itk && itk.procedures)
+        {
+            for (var i=0; i<itk.procedures.length; i++)
+            {
+                if (itk.procedures[i].outputs)
+                {
+                    outputs = outputs.concat(itk.procedures[i].outputs);
+                }
+            }
+        }
+
+        return outputs;
     }
 
     get isFallow()

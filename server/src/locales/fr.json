@@ -60,10 +60,10 @@
 	"send_invites": "Envoyer",
 	"resume_game": "Reprendre la partie",
 	"monitor_channel": "Invitations",
-	"monitor_panel_title": "Partie du {{date}}, {{phase}}, {{state}}",
+	"monitor_panel_title": "Partie du  {{date}}, {{phase}}, {{state}}",
 	"monitor_panel_pendings_title": "Invitations en attente",
 	"monitor_panel_accepted_title": "Invitations acceptées",
-	"dashboard": "Tableau de bord",
+	"dashboard": "Parties",
 	"export_csv": "Export CSV",
 	"export_player_header": "Email",
 	"export_score_header": "Score",
@@ -104,5 +104,12 @@
 	"culturereasoned": "culturereasoned",
 	"culturenormal": "culturenormal",
 	"form_required_fields": "* Mentions obligatoires",
-	"select_role_label": "Je suis: "
+	"select_role_label": "Je suis: ",
+	"header_date": "Date",
+	"header_scenario": "Scénario",
+	"header_channel_state" : "Etat",
+	"header_player": "Participant",
+	"header_email": "E-mail",
+	"header_note": "Note obtenue"
+
 }

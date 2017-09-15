@@ -271,7 +271,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 703,
-      "height": 268
+      "height": 276
     },
     "_rotationX": 0,
     "_rotationY": 0,
@@ -334,7 +334,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 134.03,
+      "width": 134,
       "height": 42
     },
     "_rotationX": 0,
@@ -344,7 +344,7 @@
     "_position": {
       "__type__": "cc.Vec2",
       "x": 0,
-      "y": 75.95999999999998
+      "y": 79.63999999999999
     },
     "_skewX": 0,
     "_skewY": 0,
@@ -634,7 +634,7 @@
     "_enabled": true,
     "_layoutSize": {
       "__type__": "cc.Size",
-      "width": 134.03,
+      "width": 134,
       "height": 42
     },
     "_resize": 1,
@@ -709,7 +709,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 639,
-      "height": 36
+      "height": 44
     },
     "_rotationX": 0,
     "_rotationY": 0,
@@ -718,7 +718,7 @@
     "_position": {
       "__type__": "cc.Vec2",
       "x": 0,
-      "y": 37.27999999999998
+      "y": 40.95999999999999
     },
     "_skewX": 0,
     "_skewY": 0,
@@ -763,7 +763,7 @@
     "_contentSize": {
       "__type__": "cc.Size",
       "width": 613,
-      "height": 24
+      "height": 32
     },
     "_rotationX": 0,
     "_rotationY": 0,
@@ -790,9 +790,9 @@
     },
     "_enabled": true,
     "_useOriginalSize": false,
-    "_actualFontSize": 20,
-    "_fontSize": 20,
-    "_lineHeight": 24,
+    "_actualFontSize": 30,
+    "_fontSize": 30,
+    "_lineHeight": 32,
     "_enableWrapText": true,
     "_N$file": {
       "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
@@ -853,7 +853,7 @@
     "_layoutSize": {
       "__type__": "cc.Size",
       "width": 639,
-      "height": 36
+      "height": 44
     },
     "_resize": 1,
     "_N$layoutType": 2,
@@ -925,7 +925,7 @@
     "_position": {
       "__type__": "cc.Vec2",
       "x": 0,
-      "y": -25.72000000000002
+      "y": -30.040000000000013
     },
     "_skewX": 0,
     "_skewY": 0,
@@ -1000,7 +1000,7 @@
     "_position": {
       "__type__": "cc.Vec2",
       "x": 0,
-      "y": -84.72000000000003
+      "y": -89.04000000000002
     },
     "_skewX": 0,
     "_skewY": 0,
@@ -1836,7 +1836,7 @@
     "_layoutSize": {
       "__type__": "cc.Size",
       "width": 703,
-      "height": 268
+      "height": 276
     },
     "_resize": 1,
     "_N$layoutType": 2,

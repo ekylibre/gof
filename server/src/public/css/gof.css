@@ -4,8 +4,10 @@ html {
 }
 
 body {
-    margin-bottom: 180px;
     /*footer height*/
+    margin-bottom: 180px;
+
+    min-width: 600px;
 }
 
 .footer {
@@ -37,6 +39,22 @@ body {
     outline: 0;
     -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(124, 51, 55, .6);
     box-shadow: inset 0 1px 1px rgba(0, 0, 0, .075), 0 0 8px rgba(124, 51, 55, .6);
+}
+.scenario-thumbnail {
+    height:100px; 
+    background-size: cover; 
+    border-radius: 8px;
+    min-width: 143px;
+}
+.scenario-title-thumnail {
+    color: #FEEEC6;
+    background-color: #7C3337; 
+    position:absolute; 
+    left:0; 
+    right: 0; 
+    bottom:0; 
+    border-bottom-right-radius:8px; 
+    border-bottom-left-radius:8px;
 }
 
 video#bgvid {
@@ -133,17 +151,19 @@ a.disabled {
     color: #a0a0a0;
 }
 
-.gof-center {
-    text-align: center;
-}
-
-.gof-top-spacer {
-    margin-top: 20px;
-}
-
 .vertical-align {
     display: flex;
     align-items: center;
+}
+
+li.list-group-header {
+    background-color: #71242c;
+}
+.list-group-header>.row {
+    background-color: #71242c;
+    color: #FEEEC6;
+    font-size: 14px;
+    font-weight: bold;
 }
 
 .list-group-item {
@@ -160,10 +180,6 @@ a.disabled {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
-
-.gof-right {
-    text-align: right;
 }
 
 .btn {
@@ -216,6 +232,7 @@ a.disabled {
     background-color: #7C3337;
     color: #FEEEC6;
     font-size: 18px;
+    font-weight: bold;
 }
 
 .panel-info>.panel-body {
@@ -287,10 +304,13 @@ textarea[name=emails] {
     margin-top: 10px;
 }
 
+.margin-t-20px {
+    margin-top: 20px;
+}
+
 .margin-t-30px {
     margin-top: 30px;
 }
-
 
 /* GAME CANVAS RELATED*/
 

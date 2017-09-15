@@ -3,7 +3,7 @@ const CGame = require('../Game');
 const UISpeciesSelItem = require('./UISpeciesSelItem');
 const UIEnv = require('./UIEnv');
 
-var game = new CGame();    
+var game = new CGame();
 
 /**
  * UI controller for UISpeciesSelPopup popup
@@ -37,7 +37,6 @@ var UISpeciesSelPopup = cc.Class({
         },
 
         /**
-         * @private
          * @property {CParcel} _parcel: Currently modified parcel
          */
         _parcel:

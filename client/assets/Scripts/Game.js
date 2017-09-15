@@ -700,6 +700,12 @@ export default class CGame
                     {
                         continue;
                     }
+                    
+                    // TODO: take units into account
+                    if (itk.sizeUnitName != 'hectare')
+                    {
+                        UIDebug.log('Unsupported ITK size unit: '+itk.sizeUnitName);
+                    }
 
                     itk.unitCosts = 
                     {
@@ -728,7 +734,7 @@ export default class CGame
                                 var time = 1;
                                 if (wg.workingTimePerSizeUnit)
                                 {
-                                    time = wg.workingTimePerSizeUnit;
+                                    time = Number(wg.workingTimePerSizeUnit);
                                     procedure.unitCosts.time += time;
                                 }
 
@@ -778,26 +784,31 @@ export default class CGame
                             for (var inputId=0; inputId<procedure.inputs.length; inputId++)
                             {
                                 var input = procedure.inputs[inputId];
+                                var quantity = Number(input.quantityPerSizeUnit);
+                                if (!quantity)
+                                {
+                                    quantity = 1;
+                                }
                                 var usable = instance.findUsableItem(input.name.trim());
                                 if (usable)
                                 {
-                                    if (!input.unitPerSizeUnit ||
-                                        (input.unitPerSizeUnit != 'kg' &&  input.unitPerSizeUnit != 'l'))
+                                    if (!input.unitPerSizeUnit)
                                     {
-                                        cc.warn('Missing or unsupport unitPerSizeUnit: '+input.unitPerSizeUnit+' in itk input: '+input.name);
+                                        cc.warn('Missing unitPerSizeUnit in itk input: '+input.name);
                                     }
+                                    else
                                     if (usable.unit && usable.unit != input.unitPerSizeUnit)
                                     {
-                                        cc.warn('Units not corresponding: input '+input.name+'='+input.unitPerSizeUnit+' / additive='+usable.unit);
+                                        cc.warn('Units not corresponding: input '+input.name+'='+input.unitPerSizeUnit+' / database='+usable.unit);
                                     }
-                                    procedure.unitCosts.money += usable.pricePerUnit;
+                                    procedure.unitCosts.money += usable.pricePerUnit * quantity;
                                 }
                                 else
                                 {
                                     // check if its a seed, and get price from CPlant
                                     if (input.name.indexOf('_seed')>0 || input.name.indexOf('_grain')>0)
                                     {
-                                        procedure.unitCosts.money += plant.getBuyPrice(itk.culture.mode);
+                                        procedure.unitCosts.money += plant.getBuyPrice(itk.culture.mode) * quantity;
                                     }
                 
                                     cc.warn('Missing itk input datas: '+input.name);
@@ -810,6 +821,12 @@ export default class CGame
                             for (var outputId = 0; outputId<procedure.outputs.length; outputId++)
                             {
                                 var output = procedure.outputs[outputId];
+                                var quantity = Number(output.quantityPerSizeUnit);
+                                if (!quantity)
+                                {
+                                    quantity = 1;
+                                }
+
                                 var usable = instance.findUsableItem(output.name);
                                 if (usable)
                                 {
@@ -818,11 +835,11 @@ export default class CGame
                                         cc.warn('Missing or unsupported unitPerSizeUnit: '+output.unitPerSizeUnit+' in itk output: '+output.name);
                                     }
 
-                                    itk.unitResults.money += usable.pricePerUnit;
+                                    itk.unitResults.money += usable.pricePerUnit * quantity;
                                 }
                                 else
                                 {
-                                    itk.unitResults.money += plant.getSellPrice(itk.culture.mode);
+                                    itk.unitResults.money += plant.getSellPrice(itk.culture.mode) * quantity;
                 
                                     cc.warn('Missing itk output datas: '+output.name);
                                 }
