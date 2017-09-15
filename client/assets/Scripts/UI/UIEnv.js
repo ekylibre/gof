@@ -6,47 +6,52 @@
 var UIEnv=
 {
     /**
-     * @property {UIMessage} message: UIMessage instance
+     * @property {UIMessage} message UIMessage instance
      */
     message: null,
 
     /**
-     * @property {UIOffice} office: UIOffice instance
+     * @property {UIOffice} office UIOffice instance
      */
     office: null,
 
     /**
-     * @property {UIParcel} parcel: UIParcel instance
+     * @property {UIParcel} parcel UIParcel instance
      */
     parcel: null,
 
     /**
-     * @property {UISpeciesSelPopup} parcel: UISpeciesSelPopup instance
+     * @property {UISpeciesSelPopup} speciesSelect UISpeciesSelPopup instance
      */
     speciesSelect: null,
 
     /**
-     * @property {UIQuestInfo} questInfo: UIQuestInfo instance
+     * @property {UISpeciesInfosPopup} speciesInfos UISpeciesSelPopup instance
+     */
+    speciesInfos: null,
+
+    /**
+     * @property {UIQuestInfo} questInfo UIQuestInfo instance
      */
     questInfo: null,
 
     /**
-     * @property {UIQuestMenu} questMenu: UIQuestMenu instance
+     * @property {UIQuestMenu} questMenu UIQuestMenu instance
      */
     questMenu: null,
 
     /**
-     * @property {UIScore} score: UIScore instance
+     * @property {UIScore} score UIScore instance
      */
     score: null,
 
     /**
-     * @property {UIScore_assolement} score_croprotation: UIScore_assolement instance
+     * @property {UIScore_assolement} score_croprotation UIScore_assolement instance
      */
     score_croprotation: null,
 
         /**
-     * @property {UIQuestIntro} questintro: UIQuestIntro instance
+     * @property {UIQuestIntro} questintro UIQuestIntro instance
      */
     questIntro: null,
 
