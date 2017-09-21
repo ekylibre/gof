@@ -26,9 +26,9 @@ Pre-requisites:
 
 First things you need to do to get ready:
 * Clone the project
+* cd to server/src/
 * Install needed packages: ```npm install```
 * Edit the config files in server/src/config to setup your project
-* cd to server/src/
 * populate your db (you need to have granted access to google sheets & drive): ```nodejs cli/workflow.js -c "mongodb://localhost:27017/gof" -px```
 * start server: ```NODE_ENV=[development|production] nodejs server.js```
 * alternatively you could use pm2 to start the server with: ```pm2 start gof.json --env=[development|production]```
