@@ -8,6 +8,12 @@ var UISpeciesInfosItem = cc.Class({
     },    
 
     properties: {
+        procedureIndex:
+        {
+            default: null,
+            type: cc.Label
+        },
+
         procedureName: {
             default: null,
             type: cc.Label
@@ -22,17 +28,6 @@ var UISpeciesInfosItem = cc.Class({
             default: null,
             type: cc.Label
         },
-
-        procedureParcelPrice: {
-            default: null,
-            type: cc.Label
-        },
-
-        procedureParcelDuration: {
-            default: null,
-            type: cc.Label
-        },
-
     },
 
     // use this for initialization
@@ -47,20 +42,21 @@ var UISpeciesInfosItem = cc.Class({
 
     init: function(parcel, procedure, index)
     {
-        var s = this;
-        var moneyUnit = i18n.t('money_unit');
-        var timeUnit = i18n.t('duration_unit');
-
-        s.procedureName.string = i18n.t('procedure_'+procedure.name).toUpperCase();
-        if (index)
+        this.procedureIndex.string = index.toString();
+        this.procedureName.string = i18n.t('procedure_'+procedure.name).toUpperCase();
+        if (procedure.unitCosts.money != 0)
         {
-            s.procedureName.string += ' ' + index.toString();
+            this.procedureUnitPrice.string = i18n.t('money_unit',{ val: procedure.unitCosts.money.toLocaleString(undefined, {maximumFractionDigits:2}) });           
         }
-        s.procedureUnitPrice.string = i18n.t('price_per_hectare',{ val: procedure.unitCosts.money.toLocaleString(undefined, {maximumFractionDigits:2}) });
-        s.procedureUnitDuration.string = i18n.t('duration_per_hectare',{ val: procedure.unitCosts.time.toLocaleString(undefined, {maximumFractionDigits:2}) });
+        else
+        {
+            this.procedureUnitPrice.string = '--'            
+        }
+
+        this.procedureUnitDuration.string = i18n.t('duration_unit',{ val: procedure.unitCosts.time.toLocaleString(undefined, {maximumFractionDigits:2}) });
         
-        s.procedureParcelPrice.string = (procedure.unitCosts.money * parcel.surface).toLocaleString(undefined, {maximumFractionDigits:2})+' '+moneyUnit;
-        s.procedureParcelDuration.string = (procedure.unitCosts.time * parcel.surface).toLocaleString(undefined, {maximumFractionDigits:2})+ ' '+timeUnit;        
+        // this.procedureParcelPrice.string = (procedure.unitCosts.money * parcel.surface).toLocaleString(undefined, {maximumFractionDigits:2})+' '+moneyUnit;
+        // this.procedureParcelDuration.string = (procedure.unitCosts.time * parcel.surface).toLocaleString(undefined, {maximumFractionDigits:2})+ ' '+timeUnit;        
 
     }
 });

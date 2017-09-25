@@ -738,7 +738,7 @@ export default class CGame
                                     procedure.unitCosts.time += time;
                                 }
 
-                                // ignoring tools at the moment: do they have a cost per hour?
+                                // ignoring tools & doers at the moment: do they have a cost per hour?
                                 // if (wg.tools)
                                 // {
                                 //     for (var i=0; i<wg.tools.length; i++)
@@ -754,28 +754,21 @@ export default class CGame
                                 //         }
                                 //     }
                                 // }
-                                if (wg.doers)
-                                {
-                                    for (var i=0; i<wg.doers.length; i++)
-                                    {
-                                        var usable = instance.findUsableItem(wg.doers[i]);
-                                        if (usable)
-                                        {
-                                            procedure.unitCosts.money += time * usable.pricePerUnit;
-                                        }
-                                        else
-                                        {
-                                            if (wg.doers[i].indexOf('driver')>=0)
-                                            {
-                                                procedure.unitCosts.money += time * 100;
-                                            }
-                                            else
-                                            {
-                                                cc.warn('Missing doers datas: '+wg.doers[i]);
-                                            }
-                                        }
-                                    }                    
-                                }
+                                // if (wg.doers)
+                                // {
+                                //     for (var i=0; i<wg.doers.length; i++)
+                                //     {
+                                //         var usable = instance.findUsableItem(wg.doers[i]);
+                                //         if (usable)
+                                //         {
+                                //             procedure.unitCosts.money += time * usable.pricePerUnit;
+                                //         }
+                                //         else
+                                //         {
+                                //             cc.warn('Missing doers datas: '+wg.doers[i]);
+                                //         }
+                                //     }                    
+                                // }
                             }
                         }
                 
