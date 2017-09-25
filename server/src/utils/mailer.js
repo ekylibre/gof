@@ -7,7 +7,7 @@ function Mailer() {
     this.transport = nodemailer.createTransport(config.get('Nodemailer.transport'));
 }
 
-Mailer.prototype.sendMail = function (recipient, subject, text, html) {
+Mailer.prototype.sendMail = function (recipient, subject, text, html, callback) {
     var message = {
         from: 'no-reply@game-of-farms.ekylibre.com',
         to: recipient,
@@ -16,7 +16,7 @@ Mailer.prototype.sendMail = function (recipient, subject, text, html) {
         html: html
     };
 
-    this.transport.sendMail(message);
+    this.transport.sendMail(message, callback);
 }
 
 Mailer.prototype.destroy = function() {
