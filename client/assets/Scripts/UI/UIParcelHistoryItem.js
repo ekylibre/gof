@@ -134,13 +134,13 @@ var UIParcelHistoryItem = cc.Class({
             this.btEdit.node.active = false;
             this.btInfo.node.active = false;
         }
-        else if (_Data.species === 'fallow' || _Data.species === 'pasture')
+        else if (_Data.species.indexOf('fallow')>=0 || _Data.species === 'pasture')
         {
             // Fallow
-            this.lbSpecies.string = i18n.t('fallow').toUpperCase();
+            this.lbSpecies.string = i18n.t('plant_'+_Data.species).toUpperCase();
             this.lbCulture.string = '';
             this.iconSpecies.node.active = true;
-            this.iconSpecies.spriteFrame = RscPreload.getPlantIcon('fallow');
+            this.iconSpecies.spriteFrame = RscPreload.getPlantIcon(_Data.species);
             this.btAdd.node.active = false;
             this.btEdit.node.active = _CanEdit;
             this.btInfo.node.active = false;

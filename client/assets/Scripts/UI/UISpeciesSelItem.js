@@ -260,17 +260,9 @@ var UISpeciesSelItem = cc.Class({
         {
             if (this._plantChanged)
             {
-                if (this._plant.isFallow)
-                {
-                    this.speciesName.string = i18n.t('fallow').toUpperCase();
-                    this.speciesIcon.spriteFrame = RscPreload.instance.plantIconsAtlas.getSpriteFrame('ico_prairies');              
-                }
-                else
-                {
-                    // Existing plant
-                    this.speciesName.string = i18n.t('plant_'+this._plant.species).toUpperCase();
-                    this.speciesIcon.spriteFrame = RscPreload.getPlantIcon(this._plant.species);
-                }
+                // Existing plant
+                this.speciesName.string = i18n.t('plant_'+this._plant.species).toUpperCase();
+                this.speciesIcon.spriteFrame = RscPreload.getPlantIcon(this._plant.species);
 
                 this._plantChanged = false;
 

@@ -111,10 +111,10 @@
 	"select_role_label": "Je suis: ",
 	"header_date": "Date",
 	"header_scenario": "Scénario",
-	"header_channel_state" : "Etat",
+	"header_channel_state": "Etat",
 	"header_player": "Participant",
 	"header_email": "E-mail",
 	"header_note": "Note obtenue",
-	"channels_empty": "Aucune partie"
-
+	"channels_empty": "Aucune partie",
+	"scenario_scenarioselection": "scenario_scenarioselection"
 }

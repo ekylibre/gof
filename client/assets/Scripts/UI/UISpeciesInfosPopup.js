@@ -198,17 +198,8 @@ var UISpeciesInfosPopup = cc.Class({
         this._plant = _Plant;
         this._mode = _Mode;
 
-        if (this._plant.isFallow)
-        {
-            this.speciesName.string = i18n.t('fallow').toUpperCase();
-            this.speciesIcon.spriteFrame = RscPreload.instance.plantIconsAtlas.getSpriteFrame('ico_prairies');              
-        }
-        else
-        {
-            // Existing plant
-            this.speciesName.string = i18n.t('plant_'+this._plant.species).toUpperCase();
-            this.speciesIcon.spriteFrame = RscPreload.getPlantIcon(this._plant.species);
-        }
+        this.speciesName.string = i18n.t('plant_'+this._plant.species).toUpperCase();
+        this.speciesIcon.spriteFrame = RscPreload.getPlantIcon(this._plant.species);
 
         this.title.string = i18n.t('activity_infos_title')+'\n'+this._parcel.name+' ('+i18n.t('surface_hectare', {val: this._parcel.surface.toLocaleString(undefined, {maximumFractionDigits:2})})+')';
 
