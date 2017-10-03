@@ -45,6 +45,8 @@ var RscPreload = cc.Class({
     {
         instance: null,
 
+        _defaultPlantIcon: 'ico_generique',
+        
         _plantIconId:
         {
             'corn': 'mais',
@@ -62,8 +64,9 @@ var RscPreload = cc.Class({
             'field_bean': 'feverole',
             'soy': 'soja',
 
-            'pasture': 'prairies',
-            'fallow': 'prairies'
+            'pasture': 'prairie',
+            'flower_fallow': 'jachere_fleurie',
+            'fallow': 'jachere'
         },
 
         getPlantIcon: function(_species, _disabled)
@@ -80,14 +83,31 @@ var RscPreload = cc.Class({
                 id = _species;            
             }
             
+            var spr = null;
             if (_disabled)
             {
-                return RscPreload.instance.plantDisIconsAtlas.getSpriteFrame('ico_'+id);
+                spr = RscPreload.instance.plantDisIconsAtlas.getSpriteFrame('ico_'+id);
             }
             else
             {
-                return RscPreload.instance.plantIconsAtlas.getSpriteFrame('ico_'+id);
+                spr = RscPreload.instance.plantIconsAtlas.getSpriteFrame('ico_'+id);
             }
+
+            if (!spr)
+            {
+                // use default icon
+                cc.warn('Icon not found for species: '+_species);
+                if (_disabled)
+                {
+                    spr = RscPreload.instance.plantDisIconsAtlas.getSpriteFrame(this._defaultPlantIcon);
+                }
+                else
+                {
+                    spr = RscPreload.instance.plantIconsAtlas.getSpriteFrame(this._defaultPlantIcon);
+                }
+            }
+
+            return spr;
         }
     },
 
