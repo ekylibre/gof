@@ -98,5 +98,7 @@ window.i18n.languages.fr={
 	"output_corn_grain":"Grains de maïs",
 	"output_sunflower_grain":"Graines de tournesol",
 	"output_pea_grain":"Pois",
-	"output_oilrape_grain":"Graines de colza"
+	"output_oilrape_grain":"Graines de colza",
+	"output_bulk_wheat_straw":"Paille",
+	"output_wheat_grain":"Grains de blé"
 };
