@@ -141,7 +141,13 @@ Auth.prototype.login = function(request, reply) {
                 return reply(Boom.unauthorized());
             }
             const token = jwt.sign({
-                    user: user
+                    user: {
+                        _id : user._id,
+                        email : user.email,
+                        role : user.role,
+                        firstName : user.firstName,
+                        lastName : user.lastName
+                    }
                 }, 
                 config.get('Jwt.key'),
                 {

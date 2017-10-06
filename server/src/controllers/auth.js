@@ -161,7 +161,13 @@ AuthController.loginpost = function (request, reply) {
             //here the user had successfully entered credentials
             //let create a token
             const token = jwt.sign({
-                    user: user
+                    user: {
+                        _id : user._id,
+                        email : user.email,
+                        role : user.role,
+                        firstName : user.firstName,
+                        lastName : user.lastName
+                    }
                 }, 
                 config.get('Jwt.key'),
                 {
