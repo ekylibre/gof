@@ -522,7 +522,7 @@ function _parseXML(filename, callback, saveJSon) {
                         // Update database
                         Activity.findOne({species: json.culture.species, cultureMode: json.culture.mode }, (err, res) => 
                         {
-                            if (!err) {
+                            if (!err && res) {
                                 res.itk = json;
                                 res.markModified('itk');
                                 res.save(()=>{
@@ -531,7 +531,10 @@ function _parseXML(filename, callback, saveJSon) {
                                     } 
                                 });
                             } else {
-                                console.log('Could not find activity: '+json.culture.species+' '+json.culture.mode);
+                                console.log('** Error: could not find activity: '+json.culture.species+' '+json.culture.mode);
+                                if (last && callback) {
+                                    callback();
+                                }                                
                             }
                              
                         });
