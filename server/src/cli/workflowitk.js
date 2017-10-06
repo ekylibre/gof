@@ -432,17 +432,24 @@ function _exportITK(filename, itk) {
         json.sizeIndicatorName= itk.getAttribute('size-indicator-name');
         json.sizeUnitName = itk.getAttribute('size-unit-name');
 
-        var ids = itk.getAttribute('name').split('_');
+        var mode = 'conventionnal';
+        var speciesName = itk.getAttribute('name');
+        var speciesId = speciesName.indexOf('_');
+        if (speciesId>0)
+        {
+            mode = speciesName.substr(0, speciesId);
+            speciesName = speciesName.substr(speciesId+1);
+        }
 
         json.culture = {
             variety: itk.getAttribute('varieties'),
-            species: ids[1]
+            species: speciesName
         };
-        switch (ids[0]) {
+        switch (mode) {
             case 'conventionnal':
             json.culture.mode = Constants.CultureModeEnum.NORMAL;
             break;
-            case 'bio':
+            case 'organic':
             json.culture.mode = Constants.CultureModeEnum.BIO;
             break;
             case 'reasoned':
