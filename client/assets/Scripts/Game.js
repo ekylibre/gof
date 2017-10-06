@@ -738,37 +738,36 @@ export default class CGame
                                     procedure.unitCosts.time += time;
                                 }
 
-                                // ignoring tools & doers at the moment: do they have a cost per hour?
-                                // if (wg.tools)
-                                // {
-                                //     for (var i=0; i<wg.tools.length; i++)
-                                //     {
-                                //         var usable = instance.findUsableItem(wg.tools[i].name);
-                                //         if (usable)
-                                //         {
-                                //             procedure.unitCosts.money += time * usable.pricePerUnit;
-                                //         }
-                                //         else
-                                //         {
-                                //             cc.warn('Missing tool datas: '+wg.tools[i].name);
-                                //         }
-                                //     }
-                                // }
-                                // if (wg.doers)
-                                // {
-                                //     for (var i=0; i<wg.doers.length; i++)
-                                //     {
-                                //         var usable = instance.findUsableItem(wg.doers[i]);
-                                //         if (usable)
-                                //         {
-                                //             procedure.unitCosts.money += time * usable.pricePerUnit;
-                                //         }
-                                //         else
-                                //         {
-                                //             cc.warn('Missing doers datas: '+wg.doers[i]);
-                                //         }
-                                //     }                    
-                                // }
+                                if (wg.tools)
+                                {
+                                    for (var i=0; i<wg.tools.length; i++)
+                                    {
+                                        var usable = instance.findUsableItem(wg.tools[i].name);
+                                        if (usable)
+                                        {
+                                            procedure.unitCosts.money += time * usable.pricePerUnit;
+                                        }
+                                        else
+                                        {
+                                            cc.warn('Missing tool datas: '+wg.tools[i].name);
+                                        }
+                                    }
+                                }
+                                if (wg.doers)
+                                {
+                                    for (var i=0; i<wg.doers.length; i++)
+                                    {
+                                        var usable = instance.findUsableItem(wg.doers[i]);
+                                        if (usable)
+                                        {
+                                            procedure.unitCosts.money += time * usable.pricePerUnit;
+                                        }
+                                        else
+                                        {
+                                            cc.warn('Missing doers datas: '+wg.doers[i]);
+                                        }
+                                    }                    
+                                }
                             }
                         }
                 
