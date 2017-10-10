@@ -74,8 +74,12 @@
 	"channels_scores_title": "Partie du {{channel.created}}, {{channel.phase}}, {{channel.state}}",
 	"scenario_budgetplan": "Budget prévisionnel",
 	"scenario_itk": "Itinéraire technique",
+	"scenario_sowing": "Préparation du sol et semis",
+	"scenario_harvest": "Récolte",
 	"scenario_desc_budgetplan": "Prochainement",
 	"scenario_desc_itk": "Prochainement",
+	"scenario_desc_sowing": "Prochainement",
+	"scenario_desc_harvest": "Prochainement",
 	"scenario_desc_locked": "Prochainement",
 	"activity_pasture": "Prairie",
 	"activity_oat": "Avoine",
@@ -107,10 +111,10 @@
 	"select_role_label": "Je suis: ",
 	"header_date": "Date",
 	"header_scenario": "Scénario",
-	"header_channel_state" : "Etat",
+	"header_channel_state": "Etat",
 	"header_player": "Participant",
 	"header_email": "E-mail",
 	"header_note": "Note obtenue",
-	"channels_empty": "Aucune partie"
-
+	"channels_empty": "Aucune partie",
+	"scenario_scenarioselection": "scenario_scenarioselection"
 }

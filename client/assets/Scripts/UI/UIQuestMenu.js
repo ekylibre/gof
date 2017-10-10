@@ -65,6 +65,29 @@ var UIQuestMenu = cc.Class({
         {
             default: false,
             visible: false
+        },
+
+        /**
+         * Objective progress bar
+         */
+        progressBar:
+        {
+            default: null,
+            type: cc.ProgressBar
+        },
+
+        /**
+         * Objective progress percentage label
+         */
+        progressLabel:
+        {
+            default: null,
+            type: cc.Label
+        },
+
+        _completion:
+        {
+            default: ''
         }
     },
 
@@ -76,6 +99,8 @@ var UIQuestMenu = cc.Class({
         this.fxParticles.stopSystem();
         this._isAnimated = false;
         this.btOpen.interactable = false;
+        this.progressBar.progress = 0;
+        this.progressLabel.string = '0%';
     },
 
     // called every frame, uncomment this function to activate update callback
@@ -106,6 +131,48 @@ var UIQuestMenu = cc.Class({
             }
 
             this._isAnimated = animate;
+        }
+
+        var completion = game.phaseGetCompletionStr();
+        if (completion != this._completion)
+        {
+            this._completion = completion;
+            try
+            {
+                var compType = completion.indexOf('%');
+                if (compType>0)
+                {
+                    // already a percentage
+                    this.progressLabel.string = completion;
+                    completion = completion.substring(0, compType);
+                    this.progressBar.progress = Number(completion) / 100;
+                }
+                else
+                {
+                    compType = completion.indexOf('/');
+                    if (compType>0)
+                    {
+                        // quotient
+                        var numberPattern = /\d+/g;
+                        
+                        var compParts = completion.match( numberPattern );                        
+                        this.progressBar.progress = Number(compParts[0]) / Number(compParts[1]);
+                        this.progressLabel.string = (this.progressBar.progress * 100).toLocaleString(undefined, {maximumFractionDigits: 0}) + '%';
+                    }
+                    else
+                    {
+                        // suppose its a unit percent
+                        this.progressBar.progress = Number(completion);                                
+                        this.progressLabel.string = (this.progressBar.progress * 100).toLocaleString(undefined, {maximumFractionDigits: 0}) + '%';
+                    }
+                }
+            }
+            catch (_e)
+            {
+                this.progressLabel.string = completion;
+                this.progressBar.progress = 0;
+            }
+    
         }
     },
 

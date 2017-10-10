@@ -716,6 +716,8 @@ export default class CGame
                     {
                         money: 0
                     };
+
+                    var logName = '['+itk.culture.species+' '+itk.culture.mode+'] ';
     
                     for (var procId=0; procId<itk.procedures.length; procId++)
                     {
@@ -738,22 +740,21 @@ export default class CGame
                                     procedure.unitCosts.time += time;
                                 }
 
-                                // ignoring tools at the moment: do they have a cost per hour?
-                                // if (wg.tools)
-                                // {
-                                //     for (var i=0; i<wg.tools.length; i++)
-                                //     {
-                                //         var usable = instance.findUsableItem(wg.tools[i].name);
-                                //         if (usable)
-                                //         {
-                                //             procedure.unitCosts.money += time * usable.pricePerUnit;
-                                //         }
-                                //         else
-                                //         {
-                                //             cc.warn('Missing tool datas: '+wg.tools[i].name);
-                                //         }
-                                //     }
-                                // }
+                                if (wg.tools)
+                                {
+                                    for (var i=0; i<wg.tools.length; i++)
+                                    {
+                                        var usable = instance.findUsableItem(wg.tools[i].name);
+                                        if (usable)
+                                        {
+                                            procedure.unitCosts.money += time * usable.pricePerUnit;
+                                        }
+                                        else
+                                        {
+                                            cc.warn(logName+'Missing tool datas: '+wg.tools[i].name);
+                                        }
+                                    }
+                                }
                                 if (wg.doers)
                                 {
                                     for (var i=0; i<wg.doers.length; i++)
@@ -765,14 +766,7 @@ export default class CGame
                                         }
                                         else
                                         {
-                                            if (wg.doers[i].indexOf('driver')>=0)
-                                            {
-                                                procedure.unitCosts.money += time * 100;
-                                            }
-                                            else
-                                            {
-                                                cc.warn('Missing doers datas: '+wg.doers[i]);
-                                            }
+                                            cc.warn(logName+'Missing doers datas: '+wg.doers[i]);
                                         }
                                     }                    
                                 }
@@ -794,12 +788,12 @@ export default class CGame
                                 {
                                     if (!input.unitPerSizeUnit)
                                     {
-                                        cc.warn('Missing unitPerSizeUnit in itk input: '+input.name);
+                                        cc.warn(logName+'Missing unitPerSizeUnit in itk input: '+input.name);
                                     }
                                     else
                                     if (usable.unit && usable.unit != input.unitPerSizeUnit)
                                     {
-                                        cc.warn('Units not corresponding: input '+input.name+'='+input.unitPerSizeUnit+' / database='+usable.unit);
+                                        cc.warn(logName+'Units not corresponding: input '+input.name+'='+input.unitPerSizeUnit+' / database='+usable.unit);
                                     }
                                     procedure.unitCosts.money += usable.pricePerUnit * quantity;
                                 }
@@ -811,7 +805,7 @@ export default class CGame
                                         procedure.unitCosts.money += plant.getBuyPrice(itk.culture.mode) * quantity;
                                     }
                 
-                                    cc.warn('Missing itk input datas: '+input.name);
+                                    cc.warn(logName+'Missing itk input datas: '+input.name);
                                 }
                             }
                         }
@@ -830,9 +824,9 @@ export default class CGame
                                 var usable = instance.findUsableItem(output.name);
                                 if (usable)
                                 {
-                                    if (!output.unitPerSizeUnit || output.unitPerSizeUnit != 'qt')
+                                    if (!output.unitPerSizeUnit || (output.unitPerSizeUnit != 'qt' &&  output.unitPerSizeUnit != 't'))
                                     {
-                                        cc.warn('Missing or unsupported unitPerSizeUnit: '+output.unitPerSizeUnit+' in itk output: '+output.name);
+                                        cc.warn(logName+'Missing or unsupported unitPerSizeUnit: '+output.unitPerSizeUnit+' in itk output: '+output.name);
                                     }
 
                                     itk.unitResults.money += usable.pricePerUnit * quantity;
@@ -841,7 +835,7 @@ export default class CGame
                                 {
                                     itk.unitResults.money += plant.getSellPrice(itk.culture.mode) * quantity;
                 
-                                    cc.warn('Missing itk output datas: '+output.name);
+                                    cc.warn(logName+'Missing itk output datas: '+output.name);
                                 }
 
                             }

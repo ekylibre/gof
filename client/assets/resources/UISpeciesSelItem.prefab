@@ -377,8 +377,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 50,
-      "height": 30
+      "width": 250,
+      "height": 25
     },
     "_rotationX": 0,
     "_rotationY": 0,
@@ -386,7 +386,7 @@
     "_scaleY": 1,
     "_position": {
       "__type__": "cc.Vec2",
-      "x": -258,
+      "x": -256,
       "y": 41
     },
     "_skewX": 0,
@@ -407,16 +407,18 @@
     "_useOriginalSize": false,
     "_actualFontSize": 14,
     "_fontSize": 14,
-    "_lineHeight": 30,
-    "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
+    "_lineHeight": 25,
+    "_enableWrapText": false,
+    "_N$file": {
+      "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
     "_N$string": "Species",
     "_N$horizontalAlign": 0,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
-    "_N$overflow": 0
+    "_N$overflow": 2
   },
   {
     "__type__": "cc.PrefabInfo",
@@ -1294,8 +1296,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 87,
-      "height": 30
+      "width": 100,
+      "height": 25
     },
     "_rotationX": 0,
     "_rotationY": 0,
@@ -1303,8 +1305,8 @@
     "_scaleY": 1,
     "_position": {
       "__type__": "cc.Vec2",
-      "x": 0.2,
-      "y": 32.5
+      "x": 0,
+      "y": 35
     },
     "_skewX": 0,
     "_skewY": 0,
@@ -1322,18 +1324,20 @@
     },
     "_enabled": true,
     "_useOriginalSize": false,
-    "_actualFontSize": 10,
-    "_fontSize": 10,
-    "_lineHeight": 30,
+    "_actualFontSize": 11,
+    "_fontSize": 11,
+    "_lineHeight": 25,
     "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
+    "_N$file": {
+      "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
     "_N$string": "CONVENTIONNEL",
     "_N$horizontalAlign": 1,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
-    "_N$overflow": 0
+    "_N$overflow": 2
   },
   {
     "__type__": "7eb01WD8EJDeZNKJNi9e5fa",
@@ -1392,7 +1396,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 67,
+      "width": 70.28,
       "height": 30
     },
     "_rotationX": 0,
@@ -1424,8 +1428,10 @@
     "_fontSize": 13,
     "_lineHeight": 30,
     "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
+    "_N$file": {
+      "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
     "_N$string": "9999 € / Ha",
     "_N$horizontalAlign": 2,
@@ -1482,8 +1488,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 32,
-      "height": 30
+      "width": 90,
+      "height": 16
     },
     "_rotationX": 0,
     "_rotationY": 0,
@@ -1512,16 +1518,18 @@
     "_useOriginalSize": false,
     "_actualFontSize": 11,
     "_fontSize": 11,
-    "_lineHeight": 30,
-    "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
+    "_lineHeight": 14,
+    "_enableWrapText": false,
+    "_N$file": {
+      "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
-    "_N$string": "COÛT",
+    "_N$string": "COÛT / HA",
     "_N$horizontalAlign": 0,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
-    "_N$overflow": 0
+    "_N$overflow": 2
   },
   {
     "__type__": "7eb01WD8EJDeZNKJNi9e5fa",
@@ -1531,7 +1539,7 @@
       "__id__": 45
     },
     "_enabled": true,
-    "_dataID": "cost_title",
+    "_dataID": "cost_per_hectare",
     "_forceUppercase": true
   },
   {
@@ -1671,7 +1679,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 73,
+      "width": 72.14,
       "height": 30
     },
     "_rotationX": 0,
@@ -1703,8 +1711,10 @@
     "_fontSize": 13,
     "_lineHeight": 30,
     "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
+    "_N$file": {
+      "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
     "_N$string": "9999 € / 1Tn",
     "_N$horizontalAlign": 2,
@@ -1761,8 +1771,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 36,
-      "height": 30
+      "width": 90,
+      "height": 16
     },
     "_rotationX": 0,
     "_rotationY": 0,
@@ -1789,18 +1799,20 @@
     },
     "_enabled": true,
     "_useOriginalSize": false,
-    "_actualFontSize": 11,
+    "_actualFontSize": 9,
     "_fontSize": 11,
-    "_lineHeight": 30,
-    "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
+    "_lineHeight": 14,
+    "_enableWrapText": false,
+    "_N$file": {
+      "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
-    "_N$string": "VENTE",
+    "_N$string": "SELL_PER_HECTARE",
     "_N$horizontalAlign": 0,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
-    "_N$overflow": 0
+    "_N$overflow": 2
   },
   {
     "__type__": "7eb01WD8EJDeZNKJNi9e5fa",
@@ -1810,7 +1822,7 @@
       "__id__": 55
     },
     "_enabled": true,
-    "_dataID": "sell_title",
+    "_dataID": "sell_per_hectare",
     "_forceUppercase": true
   },
   {
@@ -2001,7 +2013,7 @@
     "_scaleY": 1,
     "_position": {
       "__type__": "cc.Vec2",
-      "x": 35.8,
+      "x": 149,
       "y": -10.4
     },
     "_skewX": 0,
@@ -2140,8 +2152,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 19,
-      "height": 30
+      "width": 100,
+      "height": 25
     },
     "_rotationX": 0,
     "_rotationY": 0,
@@ -2149,8 +2161,8 @@
     "_scaleY": 1,
     "_position": {
       "__type__": "cc.Vec2",
-      "x": 0.8,
-      "y": 32.5
+      "x": 0,
+      "y": 34
     },
     "_skewX": 0,
     "_skewY": 0,
@@ -2170,16 +2182,18 @@
     "_useOriginalSize": false,
     "_actualFontSize": 11,
     "_fontSize": 11,
-    "_lineHeight": 30,
+    "_lineHeight": 25,
     "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
+    "_N$file": {
+      "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
     "_N$string": "BIO",
     "_N$horizontalAlign": 1,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
-    "_N$overflow": 0
+    "_N$overflow": 2
   },
   {
     "__type__": "7eb01WD8EJDeZNKJNi9e5fa",
@@ -2238,7 +2252,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 67,
+      "width": 70.28,
       "height": 30
     },
     "_rotationX": 0,
@@ -2270,8 +2284,10 @@
     "_fontSize": 13,
     "_lineHeight": 30,
     "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
+    "_N$file": {
+      "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
     "_N$string": "9999 € / Ha",
     "_N$horizontalAlign": 2,
@@ -2328,8 +2344,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 32,
-      "height": 30
+      "width": 90,
+      "height": 16
     },
     "_rotationX": 0,
     "_rotationY": 0,
@@ -2358,16 +2374,18 @@
     "_useOriginalSize": false,
     "_actualFontSize": 11,
     "_fontSize": 11,
-    "_lineHeight": 30,
-    "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
+    "_lineHeight": 14,
+    "_enableWrapText": false,
+    "_N$file": {
+      "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
-    "_N$string": "COÛT",
+    "_N$string": "COÛT / HA",
     "_N$horizontalAlign": 0,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
-    "_N$overflow": 0
+    "_N$overflow": 2
   },
   {
     "__type__": "7eb01WD8EJDeZNKJNi9e5fa",
@@ -2377,7 +2395,7 @@
       "__id__": 74
     },
     "_enabled": true,
-    "_dataID": "cost_title",
+    "_dataID": "cost_per_hectare",
     "_forceUppercase": true
   },
   {
@@ -2517,7 +2535,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 73,
+      "width": 72.14,
       "height": 30
     },
     "_rotationX": 0,
@@ -2549,8 +2567,10 @@
     "_fontSize": 13,
     "_lineHeight": 30,
     "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
+    "_N$file": {
+      "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
     "_N$string": "9999 € / 1Tn",
     "_N$horizontalAlign": 2,
@@ -2607,8 +2627,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 36,
-      "height": 30
+      "width": 90,
+      "height": 16
     },
     "_rotationX": 0,
     "_rotationY": 0,
@@ -2635,18 +2655,20 @@
     },
     "_enabled": true,
     "_useOriginalSize": false,
-    "_actualFontSize": 11,
+    "_actualFontSize": 9,
     "_fontSize": 11,
-    "_lineHeight": 30,
-    "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
+    "_lineHeight": 14,
+    "_enableWrapText": false,
+    "_N$file": {
+      "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
-    "_N$string": "VENTE",
+    "_N$string": "SELL_PER_HECTARE",
     "_N$horizontalAlign": 0,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
-    "_N$overflow": 0
+    "_N$overflow": 2
   },
   {
     "__type__": "7eb01WD8EJDeZNKJNi9e5fa",
@@ -2656,7 +2678,7 @@
       "__id__": 84
     },
     "_enabled": true,
-    "_dataID": "sell_title",
+    "_dataID": "sell_per_hectare",
     "_forceUppercase": true
   },
   {
@@ -2847,7 +2869,7 @@
     "_scaleY": 1,
     "_position": {
       "__type__": "cc.Vec2",
-      "x": 149.1,
+      "x": 35.8,
       "y": -10.4
     },
     "_skewX": 0,
@@ -2986,8 +3008,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 53,
-      "height": 30
+      "width": 100,
+      "height": 25
     },
     "_rotationX": 0,
     "_rotationY": 0,
@@ -2995,8 +3017,8 @@
     "_scaleY": 1,
     "_position": {
       "__type__": "cc.Vec2",
-      "x": 0.2,
-      "y": 32.5
+      "x": 0,
+      "y": 34
     },
     "_skewX": 0,
     "_skewY": 0,
@@ -3014,18 +3036,20 @@
     },
     "_enabled": true,
     "_useOriginalSize": false,
-    "_actualFontSize": 10,
-    "_fontSize": 10,
-    "_lineHeight": 30,
+    "_actualFontSize": 11,
+    "_fontSize": 11,
+    "_lineHeight": 25,
     "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
+    "_N$file": {
+      "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
     "_N$string": "RAISONNÉ",
     "_N$horizontalAlign": 1,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
-    "_N$overflow": 0
+    "_N$overflow": 2
   },
   {
     "__type__": "7eb01WD8EJDeZNKJNi9e5fa",
@@ -3084,7 +3108,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 67,
+      "width": 70.28,
       "height": 30
     },
     "_rotationX": 0,
@@ -3116,8 +3140,10 @@
     "_fontSize": 13,
     "_lineHeight": 30,
     "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
+    "_N$file": {
+      "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
     "_N$string": "9999 € / Ha",
     "_N$horizontalAlign": 2,
@@ -3174,8 +3200,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 32,
-      "height": 30
+      "width": 90,
+      "height": 16
     },
     "_rotationX": 0,
     "_rotationY": 0,
@@ -3204,16 +3230,18 @@
     "_useOriginalSize": false,
     "_actualFontSize": 11,
     "_fontSize": 11,
-    "_lineHeight": 30,
-    "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
+    "_lineHeight": 14,
+    "_enableWrapText": false,
+    "_N$file": {
+      "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
-    "_N$string": "COÛT",
+    "_N$string": "COÛT / HA",
     "_N$horizontalAlign": 0,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
-    "_N$overflow": 0
+    "_N$overflow": 2
   },
   {
     "__type__": "7eb01WD8EJDeZNKJNi9e5fa",
@@ -3223,7 +3251,7 @@
       "__id__": 103
     },
     "_enabled": true,
-    "_dataID": "cost_title",
+    "_dataID": "cost_per_hectare",
     "_forceUppercase": true
   },
   {
@@ -3363,7 +3391,7 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 73,
+      "width": 72.14,
       "height": 30
     },
     "_rotationX": 0,
@@ -3395,8 +3423,10 @@
     "_fontSize": 13,
     "_lineHeight": 30,
     "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
+    "_N$file": {
+      "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
     "_N$string": "9999 € / 1Tn",
     "_N$horizontalAlign": 2,
@@ -3453,8 +3483,8 @@
     },
     "_contentSize": {
       "__type__": "cc.Size",
-      "width": 36,
-      "height": 30
+      "width": 90,
+      "height": 16
     },
     "_rotationX": 0,
     "_rotationY": 0,
@@ -3481,18 +3511,20 @@
     },
     "_enabled": true,
     "_useOriginalSize": false,
-    "_actualFontSize": 11,
+    "_actualFontSize": 9,
     "_fontSize": 11,
-    "_lineHeight": 30,
-    "_enableWrapText": true,
-    "_N$file": null,
-    "_isSystemFontUsed": true,
+    "_lineHeight": 14,
+    "_enableWrapText": false,
+    "_N$file": {
+      "__uuid__": "46ba9fd5-753d-424f-bb9b-95331142b3b2"
+    },
+    "_isSystemFontUsed": false,
     "_spacingX": 0,
-    "_N$string": "VENTE",
+    "_N$string": "SELL_PER_HECTARE",
     "_N$horizontalAlign": 0,
     "_N$verticalAlign": 1,
     "_N$fontFamily": "Arial",
-    "_N$overflow": 0
+    "_N$overflow": 2
   },
   {
     "__type__": "7eb01WD8EJDeZNKJNi9e5fa",
@@ -3502,7 +3534,7 @@
       "__id__": 113
     },
     "_enabled": true,
-    "_dataID": "sell_title",
+    "_dataID": "sell_per_hectare",
     "_forceUppercase": true
   },
   {

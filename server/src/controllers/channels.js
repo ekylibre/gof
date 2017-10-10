@@ -229,7 +229,7 @@ ChannelsController.exportScores = function(request, reply) {
 
 ChannelsController.scenarioSelection = function(request, reply) {
 
-    var scenarios = ['croprotation', 'budgetplan', 'itk', 'locked', 'locked', 'locked'];
+    var scenarios = ['croprotation', 'budgetplan', 'itk', 'sowing', 'harvest', 'locked'];
     var ctx = {scenarios : []};
 
     for(var i=0;i<scenarios.length;++i) {

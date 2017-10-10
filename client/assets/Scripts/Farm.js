@@ -1,6 +1,5 @@
 
 const CParcel = require('Parcel');
-const CGamePhase = require('GamePhase');
 
 /**
  * The farm
