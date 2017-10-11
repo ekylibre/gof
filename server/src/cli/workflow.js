@@ -200,19 +200,26 @@ function exportClientLocalisation(auth, callback) {
         for(var c=2;c<header.length;++c) {
             var langCode = getLanguageCode(header[c]);
             var stream = fs.createWriteStream('../../client/assets/resources/i18n/' + langCode + '.js');
+            // var stream2 = fs.createWriteStream('public/web-desktop/src/assets/resources/i18n/' + langCode + '.js');           
             stream.write('if (!window.i18n) window.i18n = {};\n');
             stream.write('if (!window.i18n.languages) window.i18n.languages = {};\n');
             stream.write('window.i18n.languages.'+langCode+'={\n');
+            // stream2.write('window.i18n||(window.i18n={}),window.i18n.languages||(window.i18n.languages={}),');
+            // stream2.write('window.i18n.languages.'+langCode+'={');           
             for(var l=1;l<rows.length;++l){
                 if(l > 1) {
                     stream.write(',\n');
+                    // stream2.write(',');
                 }
                 var uid = rows[l][1];
                 var txt = rows[l][c];
                 stream.write('\t"' + uid.replace(/\n+$/, '') + '":"' + txt.replace(/\n+$/, '') + '"');
+                // stream2.write('"' + uid.replace(/\n+$/, '') + '":"' + txt.replace(/\n+$/, '') + '"');
             }
             stream.write('\n};');
             stream.end();
+            // stream2.write('};');
+            // stream2.end();
         }
     });
 }
