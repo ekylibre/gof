@@ -31,7 +31,7 @@ var UIDebug = cc.Class({
         log: function(line)
         {
             UIDebug._log.unshift(line);
-            if (UIDebug._log.length>5)
+            if (UIDebug._log.length>12)
             {
                 UIDebug._log.pop();
             }

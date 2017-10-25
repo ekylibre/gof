@@ -25,6 +25,16 @@ cc.Class({
     // use this for initialization
     onLoad: function ()
     {
+        // Cocos Creator 1.6.x issue:
+        // If you get Error 3300 and Error 3400, please check in CocosCreator folder:
+        // /resources/engine/misc.js
+        // Search for misc.imagePool.resize(0); and remove the test conditionning it
+        // Then rebuild the engine (type "npm install" in the command line if needed, then type "gulp")
+        // Note: a patch has been submitted to Cocos Creator github
+        
+        UIDebug.log('CC='+cc.ENGINE_VERSION+' Sys='+cc.sys.os+' Browser='+cc.sys.browserType)
+
+
         // Select REST API endpoint
         var endpoint = '/api';
         var isPreview = location.hostname == 'localhost' && location.port != 3000;

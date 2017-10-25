@@ -97,12 +97,20 @@ require = function e(t, n, r) {
             });
             req.send(p);
         };
-        ApiClient.prototype.getPlant = function(id, callback) {
-            var req = get(this, "/plants/" + encodeURIComponent(id), null, callback);
+        ApiClient.prototype.getItems = function(from, options, callback) {
+            var req = get(this, "/" + from, options, callback);
             req.send();
         };
-        ApiClient.prototype.getPlants = function(options, callback) {
-            var req = get(this, "/plants", options, callback);
+        ApiClient.prototype.getItem = function(from, id, callback) {
+            var req = get(this, "/" + from + "/" + encodeURIComponent(id), null, callback);
+            req.send();
+        };
+        ApiClient.prototype.getActivity = function(id, callback) {
+            var req = get(this, "/activities/" + encodeURIComponent(id), null, callback);
+            req.send();
+        };
+        ApiClient.prototype.getActivities = function(options, callback) {
+            var req = get(this, "/activities", options, callback);
             req.send();
         };
         ApiClient.prototype.getScenarios = function(uid, callback) {
@@ -178,7 +186,6 @@ require = function e(t, n, r) {
             }
         }
         var CParcel = require("Parcel");
-        var CGamePhase = require("GamePhase");
         var CFarm = function() {
             function CFarm(_Name, _Surface) {
                 _classCallCheck(this, CFarm);
@@ -265,7 +272,6 @@ require = function e(t, n, r) {
         module.exports = exports["default"];
         cc._RF.pop();
     }, {
-        GamePhase: "GamePhase",
         Parcel: "Parcel"
     } ],
     GamePhase: [ function(require, module, exports) {
@@ -343,11 +349,12 @@ require = function e(t, n, r) {
         var CFarm = require("./Farm");
         var CPlant = require("./Plant");
         var i18n = require("LanguageData");
-        var SharedConsts = require("./constants");
+        var SharedConsts = require("./common/constants");
         var ApiClient = require("./ApiClient");
         var UIDebug = require("./UI/UIDebug");
         var UIEnv = require("./UI/UIEnv");
-        var DEBUG = true;
+        var CUsableItem = require("./UsableItem");
+        var DEBUG = false;
         var ConfigDebug = {
             LANGUAGE_DEFAULT: "fr",
             MAP_ZOOM_MAX: 1.7,
@@ -386,20 +393,21 @@ require = function e(t, n, r) {
                     return instance;
                 }
                 instance = this;
-                this.isDebug = DEBUG;
-                this.constants = SharedConsts;
-                this.config = DEBUG ? ConfigDebug : ConfigMaster;
-                i18n.init(this.config.LANGUAGE_DEFAULT);
-                this.farm = new CFarm();
+                instance.isDebug = DEBUG;
+                instance.constants = SharedConsts;
+                instance.config = DEBUG ? ConfigDebug : ConfigMaster;
+                i18n.init(instance.config.LANGUAGE_DEFAULT);
+                instance.farm = new CFarm();
                 var now = new Date(Date.now());
-                this.farm.year = now.getFullYear();
-                this.plants = [];
+                instance.farm.year = now.getFullYear();
+                instance.plants = [];
+                instance.usableItems = [];
             }
             _createClass(CGame, [ {
                 key: "findPlant",
                 value: function findPlant(_Species) {
-                    if (void 0 !== _Species && null != _Species) {
-                        var plant = this.plants.find(function(el) {
+                    if (_Species) {
+                        var plant = instance.plants.find(function(el) {
                             return el.species == _Species;
                         });
                         if (void 0 !== plant) {
@@ -409,55 +417,96 @@ require = function e(t, n, r) {
                     return null;
                 }
             }, {
+                key: "findUsableItem",
+                value: function findUsableItem(_Name) {
+                    if (_Name) {
+                        return instance.usableItems.find(function(el) {
+                            return el.name == _Name;
+                        });
+                    }
+                    return null;
+                }
+            }, {
+                key: "_pullUsableItems",
+                value: function _pullUsableItems(fromList, index, callback) {
+                    index < fromList.length ? instance.api.getItems(fromList[index], null, function(error, json, c) {
+                        if (error) {
+                            callback(error);
+                            return;
+                        }
+                        if (json && Array.isArray(json)) {
+                            UIDebug.log("Pulled " + fromList[index] + ": " + json.length);
+                            for (var i = 0; i < json.length; i++) {
+                                var jsonItem = json[i];
+                                var item = instance.findUsableItem(jsonItem.name);
+                                if (item) {
+                                    cc.warn("Found duplicate usableItem: " + item.name);
+                                } else {
+                                    item = new CUsableItem(jsonItem);
+                                    item._valid && instance.usableItems.push(item);
+                                }
+                            }
+                        }
+                        instance._pullUsableItems(fromList, index + 1, callback);
+                    }) : callback();
+                }
+            }, {
                 key: "pullDatabase",
                 value: function pullDatabase() {
-                    if (!this.api) {
+                    if (!instance.api) {
                         cc.error("Please setup CGame.api");
                         return;
                     }
-                    this.api.getPlants(null, function(error, json, c) {
+                    instance.api.getActivities(null, function(error, json, c) {
                         if (error) {
                             return criticalError(error);
                         }
                         if (json && Array.isArray(json)) {
-                            UIDebug.log("Pulled plants: " + json.length);
+                            UIDebug.log("Pulled activities: " + json.length);
                             for (var i = 0; i < json.length; i++) {
                                 var jsonPlant = json[i];
                                 var plant = instance.findPlant(jsonPlant.species);
                                 if (null != plant) {
-                                    plant.updatePrices(jsonPlant);
+                                    plant.update(jsonPlant);
                                 } else {
                                     plant = new CPlant(jsonPlant);
                                     plant._valid && instance.plants.push(plant);
                                 }
                             }
-                            instance.state = CGame.State.READY;
+                            instance._pullUsableItems([ "tools", "equipments", "additives" ], 0, function(err) {
+                                if (err) {
+                                    criticalError(err);
+                                } else {
+                                    instance._processActivities();
+                                    instance.state = CGame.State.READY;
+                                }
+                            });
                         } else {
                             UIEnv.message.show(i18n.t("error_connection_failed"), i18n.t("error"), {
                                 buttons: "none"
                             });
-                            UIDebug.log("Error: Invalid response for getPlants: " + json);
+                            UIDebug.log("Error: Invalid response for getActivities: " + json);
                         }
                     });
                 }
             }, {
                 key: "saveChannel",
                 value: function saveChannel(callback) {
-                    if (!this.api || !this.api.channelId) {
+                    if (!instance.api || !instance.api.channelId) {
                         return;
                     }
-                    if (this._saving) {
+                    if (instance._saving) {
                         callback && callback();
                         return;
                     }
-                    if (this.state >= CGame.State.PHASE_READY && this.state <= CGame.State.PHASE_SCORE) {
-                        this._saving = true;
+                    if (instance.state >= CGame.State.PHASE_READY && instance.state <= CGame.State.PHASE_SCORE) {
+                        instance._saving = true;
                         var save = {};
                         save.date = Date.now();
-                        save.phaseState = this.state;
-                        save.farm = this.farm.serialize();
-                        var self = this;
-                        this.api.setGameData(JSON.stringify(save), function(err, res, c) {
+                        save.phaseState = instance.state;
+                        save.farm = instance.farm.serialize();
+                        var self = instance;
+                        instance.api.setGameData(JSON.stringify(save), function(err, res, c) {
                             self._saving = false;
                             callback && callback();
                             err && UIEnv.message.show(err.message, i18n.t("error"));
@@ -467,13 +516,13 @@ require = function e(t, n, r) {
             }, {
                 key: "openChannel",
                 value: function openChannel() {
-                    if (!this.api) {
+                    if (!instance.api) {
                         cc.error("Please setup CGame.api");
                         return;
                     }
-                    this.state = CGame.State.CHANNEL_OPEN;
-                    var self = this;
-                    this.api.getGameData(function(err, res, c) {
+                    instance.state = CGame.State.CHANNEL_OPEN;
+                    var self = instance;
+                    instance.api.getGameData(function(err, res, c) {
                         if (err) {
                             return criticalError(err);
                         }
@@ -503,7 +552,6 @@ require = function e(t, n, r) {
                                 }
                             });
                         } else {
-                            self.isDebug && "croprotation" != phaseId && (phaseId = "croprotation");
                             UIDebug.log("Starting phase from channel: " + phaseId);
                             self.loadPhase(phaseId, criticalError);
                         }
@@ -512,19 +560,18 @@ require = function e(t, n, r) {
             }, {
                 key: "phaseStart",
                 value: function phaseStart() {
-                    this.state == CGame.State.PHASE_READY ? this.state = CGame.State.PHASE_RUN : cc.error("Invalid state to start a phase: " + Object.keys()[this.state + 1]);
+                    instance.state == CGame.State.PHASE_READY ? instance.state = CGame.State.PHASE_RUN : cc.error("Invalid state to start a phase: " + Object.keys()[instance.state + 1]);
                 }
             }, {
                 key: "phaseFinish",
                 value: function phaseFinish(_Score, _Results) {
-                    var _this = this;
-                    if (this.state <= CGame.State.PHASE_SCORE) {
-                        var self = this;
-                        this.state = CGame.State.PHASE_SCORE;
+                    if (instance.state <= CGame.State.PHASE_SCORE) {
+                        var self = instance;
+                        instance.state = CGame.State.PHASE_SCORE;
                         var resultString = JSON.stringify(_Results);
-                        this.saveChannel(function() {
-                            _this.api.setScore(_Score, resultString, function(err, res, c) {
-                                _this.state = CGame.State.PHASE_DONE;
+                        instance.saveChannel(function() {
+                            instance.api.setScore(_Score, resultString, function(err, res, c) {
+                                instance.state = CGame.State.PHASE_DONE;
                             });
                         });
                     }
@@ -532,34 +579,33 @@ require = function e(t, n, r) {
             }, {
                 key: "phaseCanFinish",
                 value: function phaseCanFinish() {
-                    return true === eval(this._currPhase.endCondition);
+                    return true === eval(instance._currPhase.endCondition);
                 }
             }, {
                 key: "phaseGetCompletionStr",
                 value: function phaseGetCompletionStr() {
-                    return eval(this._currPhase.completionStr);
+                    return eval(instance._currPhase.completionStr);
                 }
             }, {
                 key: "phaseGetIntroText",
                 value: function phaseGetIntroText() {
-                    return i18n.t(this._currPhase.introTextId);
+                    return i18n.t(instance._currPhase.introTextId);
                 }
             }, {
                 key: "phaseGetObjectiveText",
                 value: function phaseGetObjectiveText() {
-                    return i18n.t(this._currPhase.objectiveTextId);
+                    return i18n.t(instance._currPhase.objectiveTextId);
                 }
             }, {
                 key: "loadPhase",
                 value: function loadPhase(uid, callback) {
-                    var _this2 = this;
-                    this.state = CGame.State.PHASE_LOAD;
-                    this.api.getScenarios(uid, function(error, json) {
+                    instance.state = CGame.State.PHASE_LOAD;
+                    instance.api.getScenarios(uid, function(error, json) {
                         if (error) {
                             callback(new Error("Error: Failed to get scenario with uid:" + uid + "\n" + error.message));
                             return;
                         }
-                        if (json.scenario.start.farm.parcels.length > _this2.farm.parcels.length) {
+                        if (json.scenario.start.farm.parcels.length > instance.farm.parcels.length) {
                             callback(new Error("Error: the scenario " + uid + " contains more parcels than the current gfx farm"));
                             return;
                         }
@@ -588,25 +634,25 @@ require = function e(t, n, r) {
                             }
                             phase.parcels.push(parcel);
                         }
-                        _this2.phase = phase;
+                        instance.phase = phase;
                         callback(null);
                     });
                 }
             }, {
                 key: "createRandomPhase",
                 value: function createRandomPhase() {
-                    this.phase = new CGamePhase();
-                    for (var p = 0; p < this.farm.parcels.length; p++) {
-                        var parcel = this.farm.parcels[p];
+                    instance.phase = new CGamePhase();
+                    for (var p = 0; p < instance.farm.parcels.length; p++) {
+                        var parcel = instance.farm.parcels[p];
                         parcel.rotationHistory = [];
                         for (var h = 0; h < 5; h++) {
-                            var id = Math.floor(cc.random0To1() * this.plants.length);
-                            id == this.plants.length && id--;
-                            var plant = this.plants[id];
+                            var id = Math.floor(cc.random0To1() * instance.plants.length);
+                            id == instance.plants.length && id--;
+                            var plant = instance.plants[id];
                             var culture = SharedConsts.CultureModeEnum.NORMAL;
                             id = Math.floor(3 * cc.random0To1());
                             1 == id && (culture = SharedConsts.CultureModeEnum.BIO);
-                            2 == id && (culture = SharedConsts.CultureModeEnum.PERMACULTURE);
+                            2 == id && (culture = SharedConsts.CultureModeEnum.REASONED);
                             parcel.rotationHistory.push({
                                 species: plant.species,
                                 culture: culture
@@ -615,23 +661,109 @@ require = function e(t, n, r) {
                     }
                 }
             }, {
+                key: "_processActivities",
+                value: function _processActivities() {
+                    for (var plantIndex = 0; plantIndex < instance.plants.length; plantIndex++) {
+                        var plant = instance.plants[plantIndex];
+                        var itkKeys = Object.keys(plant.itks);
+                        if (itkKeys && itkKeys.length > 0) {
+                            for (var itkId = 0; itkId < itkKeys.length; itkId++) {
+                                var itk = plant.itks[itkKeys[itkId]];
+                                if (!itk) {
+                                    continue;
+                                }
+                                "hectare" != itk.sizeUnitName && UIDebug.log("Unsupported ITK size unit: " + itk.sizeUnitName);
+                                itk.unitCosts = {
+                                    money: 0,
+                                    time: 0
+                                };
+                                itk.unitResults = {
+                                    money: 0
+                                };
+                                var logName = "[" + itk.culture.species + " " + itk.culture.mode + "] ";
+                                for (var procId = 0; procId < itk.procedures.length; procId++) {
+                                    var procedure = itk.procedures[procId];
+                                    procedure.unitCosts = {
+                                        money: 0,
+                                        time: 0
+                                    };
+                                    if (procedure.workingGroups) {
+                                        for (var wgId = 0; wgId < procedure.workingGroups.length; wgId++) {
+                                            var wg = procedure.workingGroups[wgId];
+                                            var time = 1;
+                                            if (wg.workingTimePerSizeUnit) {
+                                                time = Number(wg.workingTimePerSizeUnit);
+                                                procedure.unitCosts.time += time;
+                                            }
+                                            if (wg.tools) {
+                                                for (var i = 0; i < wg.tools.length; i++) {
+                                                    var usable = instance.findUsableItem(wg.tools[i].name);
+                                                    usable ? procedure.unitCosts.money += time * usable.pricePerUnit : cc.warn(logName + "Missing tool datas: " + wg.tools[i].name);
+                                                }
+                                            }
+                                            if (wg.doers) {
+                                                for (var i = 0; i < wg.doers.length; i++) {
+                                                    var usable = instance.findUsableItem(wg.doers[i]);
+                                                    usable ? procedure.unitCosts.money += time * usable.pricePerUnit : cc.warn(logName + "Missing doers datas: " + wg.doers[i]);
+                                                }
+                                            }
+                                        }
+                                    }
+                                    if (procedure.inputs) {
+                                        for (var inputId = 0; inputId < procedure.inputs.length; inputId++) {
+                                            var input = procedure.inputs[inputId];
+                                            var quantity = Number(input.quantityPerSizeUnit);
+                                            quantity || (quantity = 1);
+                                            var usable = instance.findUsableItem(input.name.trim());
+                                            if (usable) {
+                                                input.unitPerSizeUnit ? usable.unit && usable.unit != input.unitPerSizeUnit && cc.warn(logName + "Units not corresponding: input " + input.name + "=" + input.unitPerSizeUnit + " / database=" + usable.unit) : cc.warn(logName + "Missing unitPerSizeUnit in itk input: " + input.name);
+                                                procedure.unitCosts.money += usable.pricePerUnit * quantity;
+                                            } else {
+                                                (input.name.indexOf("_seed") > 0 || input.name.indexOf("_grain") > 0) && (procedure.unitCosts.money += plant.getBuyPrice(itk.culture.mode) * quantity);
+                                                cc.warn(logName + "Missing itk input datas: " + input.name);
+                                            }
+                                        }
+                                    }
+                                    if (procedure.outputs) {
+                                        for (var outputId = 0; outputId < procedure.outputs.length; outputId++) {
+                                            var output = procedure.outputs[outputId];
+                                            var quantity = Number(output.quantityPerSizeUnit);
+                                            quantity || (quantity = 1);
+                                            var usable = instance.findUsableItem(output.name);
+                                            if (usable) {
+                                                (!output.unitPerSizeUnit || "qt" != output.unitPerSizeUnit && "t" != output.unitPerSizeUnit) && cc.warn(logName + "Missing or unsupported unitPerSizeUnit: " + output.unitPerSizeUnit + " in itk output: " + output.name);
+                                                itk.unitResults.money += usable.pricePerUnit * quantity;
+                                            } else {
+                                                itk.unitResults.money += plant.getSellPrice(itk.culture.mode) * quantity;
+                                                cc.warn(logName + "Missing itk output datas: " + output.name);
+                                            }
+                                        }
+                                    }
+                                    itk.unitCosts.money += procedure.unitCosts.money;
+                                    itk.unitCosts.time += procedure.unitCosts.time;
+                                }
+                            }
+                        }
+                    }
+                }
+            }, {
                 key: "phase",
                 get: function get() {
-                    return this._currPhase;
+                    return instance._currPhase;
                 },
                 set: function set(_Phase) {
                     if (void 0 !== _Phase && null !== _Phase) {
-                        if (null !== this._currPhase && this._currPhase.uid == _Phase.uid) {
+                        if (null !== instance._currPhase && instance._currPhase.uid == _Phase.uid) {
                             return;
                         }
-                        this.farm.month = _Phase.startMonth;
-                        this.farm.week = _Phase.startWeek;
-                        if (null === this._currPhase) {
-                            this.farm.money = _Phase.startMoney;
-                            this.farm.plantExcludes = _Phase.plantExcludes;
+                        instance.farm.month = _Phase.startMonth;
+                        instance.farm.week = _Phase.startWeek;
+                        if (null === instance._currPhase) {
+                            instance.farm.money = _Phase.startMoney;
+                            instance.farm.plantExcludes = _Phase.plantExcludes;
                             for (var i = 0; i < _Phase.parcels.length; i++) {
                                 var setup = _Phase.parcels[i];
-                                var parcel = this.farm.findParcelUID(setup.uid);
+                                var parcel = instance.farm.findParcelUID(setup.uid);
                                 if (null != parcel) {
                                     parcel.rotationHistory = setup.history;
                                     parcel.solution = setup.solution;
@@ -640,13 +772,13 @@ require = function e(t, n, r) {
                                 }
                             }
                         } else {
-                            this.farm.year += _Phase.startYearDiff;
+                            instance.farm.year += _Phase.startYearDiff;
                         }
-                        this._currPhase = _Phase;
-                        this.state = CGame.State.PHASE_READY;
+                        instance._currPhase = _Phase;
+                        instance.state = CGame.State.PHASE_READY;
                     } else {
-                        this._currPhase = null;
-                        this.state != CGame.State.INVALID && (this.state = CGame.State.READY);
+                        instance._currPhase = null;
+                        instance.state != CGame.State.INVALID && (instance.state = CGame.State.READY);
                     }
                 }
             } ]);
@@ -672,7 +804,8 @@ require = function e(t, n, r) {
         "./Plant": "Plant",
         "./UI/UIDebug": "UIDebug",
         "./UI/UIEnv": "UIEnv",
-        "./constants": "constants",
+        "./UsableItem": "UsableItem",
+        "./common/constants": "constants",
         LanguageData: "LanguageData"
     } ],
     LanguageData: [ function(require, module, exports) {
@@ -941,7 +1074,6 @@ require = function e(t, n, r) {
         cc._RF.push(module, "e2e73B/wgFOW6TFModC0XXp", "MapCtrl");
         "use strict";
         var CGame = require("./Game");
-        var CGamePhase = require("./GamePhase");
         var CFarm = require("./Farm");
         var CParcel = require("./Parcel");
         var UIParcelButton = require("./UI/UIParcelButton");
@@ -1287,7 +1419,6 @@ require = function e(t, n, r) {
     }, {
         "./Farm": "Farm",
         "./Game": "Game",
-        "./GamePhase": "GamePhase",
         "./Parcel": "Parcel",
         "./UI/UIDebug": "UIDebug",
         "./UI/UIEnv": "UIEnv",
@@ -1459,7 +1590,7 @@ require = function e(t, n, r) {
                 throw new TypeError("Cannot call a class as a function");
             }
         }
-        var SharedConsts = require("./constants");
+        var SharedConsts = require("./common/constants");
         var CPlant = function() {
             function CPlant(_JSON) {
                 _classCallCheck(this, CPlant);
@@ -1467,36 +1598,47 @@ require = function e(t, n, r) {
                 this.dbId = {};
                 this.buyPrices = {};
                 this.sellPrices = {};
+                this.itks = {};
                 this.tiledGID = [];
                 if (void 0 !== _JSON) {
                     this.species = _JSON.species;
-                    this.updatePrices(_JSON);
+                    this.update(_JSON);
                 }
                 if (void 0 === this.species) {
-                    this.valid = false;
+                    this._valid = false;
                     cc.error("Invalid plant JSon: " + _JSON);
                 }
             }
             _createClass(CPlant, [ {
-                key: "updatePrices",
-                value: function updatePrices(_JSON) {
+                key: "update",
+                value: function update(_JSON) {
                     if (void 0 !== _JSON.cultureMode && void 0 !== _JSON.pricePerHectare) {
                         var mode = this._CultureMode(_JSON.cultureMode);
                         this.dbId[mode] && this.dbId[mode] != _JSON._id && cc.warn("Conflict on plant: " + this.species + " / mode: " + mode);
                         this.dbId[mode] = _JSON._id;
-                        this.buyPrices[mode] = _JSON.pricePerHectare;
-                        this.sellPrices[mode] = 10 * _JSON.pricePerHectare;
+                        this.buyPrices[mode] = Number(_JSON.pricePerHectare);
+                        this.sellPrices[mode] = 20 * Number(_JSON.pricePerHectare);
+                        this.itks[mode] = _JSON.itk;
                     }
                 }
             }, {
                 key: "_CultureMode",
                 value: function _CultureMode(_Mode) {
                     var mode = _Mode;
-                    if (mode != SharedConsts.CultureModeEnum.NORMAL && mode != SharedConsts.CultureModeEnum.BIO && mode != SharedConsts.CultureModeEnum.PERMACULTURE) {
+                    if (mode != SharedConsts.CultureModeEnum.NORMAL && mode != SharedConsts.CultureModeEnum.BIO && mode != SharedConsts.CultureModeEnum.REASONED) {
                         cc.error("Invalid culture mode: " + _Mode);
                         mode = SharedConsts.CultureModeEnum.NORMAL;
                     }
                     return mode;
+                }
+            }, {
+                key: "getUnitCosts",
+                value: function getUnitCosts(_Mode) {
+                    var itk = getItk(_Mode);
+                    if (itk) {
+                        return itk.unitCosts;
+                    }
+                    return null;
                 }
             }, {
                 key: "getBuyPrice",
@@ -1509,9 +1651,26 @@ require = function e(t, n, r) {
                     return this.sellPrices[this._CultureMode(_Mode)];
                 }
             }, {
+                key: "getItk",
+                value: function getItk(_Mode) {
+                    return this.itks[this._CultureMode(_Mode)];
+                }
+            }, {
+                key: "getOutputs",
+                value: function getOutputs(_Mode) {
+                    var outputs = [];
+                    var itk = this.getItk(_Mode);
+                    if (itk && itk.procedures) {
+                        for (var i = 0; i < itk.procedures.length; i++) {
+                            itk.procedures[i].outputs && (outputs = outputs.concat(itk.procedures[i].outputs));
+                        }
+                    }
+                    return outputs;
+                }
+            }, {
                 key: "isFallow",
                 get: function get() {
-                    return "fallow" === this.species || "pasture" === this.species;
+                    return this.species.indexOf("fallow") >= 0 || "pasture" === this.species;
                 }
             } ]);
             return CPlant;
@@ -1520,7 +1679,7 @@ require = function e(t, n, r) {
         module.exports = exports["default"];
         cc._RF.pop();
     }, {
-        "./constants": "constants"
+        "./common/constants": "constants"
     } ],
     RscPreload: [ function(require, module, exports) {
         "use strict";
@@ -1547,6 +1706,7 @@ require = function e(t, n, r) {
             },
             statics: {
                 instance: null,
+                _defaultPlantIcon: "ico_generique",
                 _plantIconId: {
                     corn: "mais",
                     wheat: "ble",
@@ -1562,8 +1722,9 @@ require = function e(t, n, r) {
                     beetroot: "betterave",
                     field_bean: "feverole",
                     soy: "soja",
-                    pasture: "prairies",
-                    fallow: "prairies"
+                    pasture: "prairie",
+                    flower_fallow: "jachere_fleurie",
+                    fallow: "jachere"
                 },
                 getPlantIcon: function getPlantIcon(_species, _disabled) {
                     if (null === RscPreload.instance) {
@@ -1572,7 +1733,13 @@ require = function e(t, n, r) {
                     }
                     var id = RscPreload._plantIconId[_species];
                     void 0 === id && (id = _species);
-                    return _disabled ? RscPreload.instance.plantDisIconsAtlas.getSpriteFrame("ico_" + id) : RscPreload.instance.plantIconsAtlas.getSpriteFrame("ico_" + id);
+                    var spr = null;
+                    spr = _disabled ? RscPreload.instance.plantDisIconsAtlas.getSpriteFrame("ico_" + id) : RscPreload.instance.plantIconsAtlas.getSpriteFrame("ico_" + id);
+                    if (!spr) {
+                        cc.warn("Icon not found for species: " + _species);
+                        spr = _disabled ? RscPreload.instance.plantDisIconsAtlas.getSpriteFrame(this._defaultPlantIcon) : RscPreload.instance.plantIconsAtlas.getSpriteFrame(this._defaultPlantIcon);
+                    }
+                    return spr;
                 }
             },
             onLoad: function onLoad() {
@@ -1614,9 +1781,10 @@ require = function e(t, n, r) {
             },
             properties: {},
             onLoad: function onLoad() {
+                UIDebug.log("CC=" + cc.ENGINE_VERSION + " Sys=" + cc.sys.os + " Browser=" + cc.sys.browserType);
                 var endpoint = "/api";
                 var isPreview = "localhost" == location.hostname && 3e3 != location.port;
-                isPreview && (endpoint = "http://localhost:3000/api");
+                isPreview && (endpoint = "http://gof.shinypix.dev:3000/api");
                 UIDebug.log("API endpoint: " + endpoint);
                 var self = this;
                 var client = new ApiClient(endpoint);
@@ -1668,13 +1836,42 @@ require = function e(t, n, r) {
         "./UI/UIEnv": "UIEnv",
         LanguageData: "LanguageData"
     } ],
+    UIBottom: [ function(require, module, exports) {
+        "use strict";
+        cc._RF.push(module, "de0fchZ+G5HMJdsv+K9r07U", "UIBottom");
+        "use strict";
+        var i18n = require("LanguageData");
+        var UIEnv = require("./UIEnv");
+        var UIMessage = require("./UIMessage");
+        var UIBottom = cc.Class({
+            extends: cc.Component,
+            editor: {
+                menu: "gof/UIBottom"
+            },
+            properties: {},
+            onLoad: function onLoad() {},
+            onBtQuit: function onBtQuit() {
+                UIEnv.message.show(i18n.t("exit_confirmation"), void 0, {
+                    buttons: "yes_no",
+                    onOk: function onOk() {
+                        location.pathname = "/dashboard";
+                    }
+                });
+            }
+        });
+        cc._RF.pop();
+    }, {
+        "./UIEnv": "UIEnv",
+        "./UIMessage": "UIMessage",
+        LanguageData: "LanguageData"
+    } ],
     UICheat: [ function(require, module, exports) {
         "use strict";
         cc._RF.push(module, "ee4e2PdBRtJFKhTZAymanIB", "UICheat");
         "use strict";
         var CGame = require("../Game");
         var UIDebug = require("./UIDebug");
-        var SharedConsts = require("../constants");
+        var SharedConsts = require("../common/constants");
         var game = new CGame();
         cc.Class({
             extends: cc.Component,
@@ -1712,7 +1909,7 @@ require = function e(t, n, r) {
                             var culture = SharedConsts.CultureModeEnum.NORMAL;
                             id = Math.floor(3 * cc.random0To1());
                             1 == id && (culture = SharedConsts.CultureModeEnum.BIO);
-                            2 == id && (culture = SharedConsts.CultureModeEnum.PERMACULTURE);
+                            2 == id && (culture = SharedConsts.CultureModeEnum.REASONED);
                             parcel.rotationPrevision.push({
                                 species: plant.species,
                                 culture: culture
@@ -1738,7 +1935,7 @@ require = function e(t, n, r) {
         cc._RF.pop();
     }, {
         "../Game": "Game",
-        "../constants": "constants",
+        "../common/constants": "constants",
         "./UIDebug": "UIDebug"
     } ],
     UIDebug: [ function(require, module, exports) {
@@ -1769,7 +1966,7 @@ require = function e(t, n, r) {
                 _log: [],
                 log: function log(line) {
                     UIDebug._log.unshift(line);
-                    UIDebug._log.length > 5 && UIDebug._log.pop();
+                    UIDebug._log.length > 12 && UIDebug._log.pop();
                 },
                 touchLog: ""
             },
@@ -1808,6 +2005,7 @@ require = function e(t, n, r) {
             office: null,
             parcel: null,
             speciesSelect: null,
+            speciesInfos: null,
             questInfo: null,
             questMenu: null,
             score: null,
@@ -1889,6 +2087,14 @@ require = function e(t, n, r) {
             },
             show: function show(_Text, _Title, _Options) {
                 void 0 !== _Title && null !== _Title && "" != _Title || (_Title = i18n.t("message").toUpperCase());
+                var lines = _Text.split("\n");
+                if (lines.length > 4) {
+                    this.lbMessage.fontSize = 20;
+                    this.lbMessage.lineHeigth = 22;
+                } else {
+                    this.lbMessage.fontSize = 30;
+                    this.lbMessage.lineHeigth = 36;
+                }
                 this.lbMessage.string = _Text;
                 this.lbTitle.string = _Title;
                 this._messagesOptions = void 0 != _Options ? _Options : null;
@@ -1991,6 +2197,54 @@ require = function e(t, n, r) {
         "./UIPopupBase": "UIPopupBase",
         LanguageData: "LanguageData"
     } ],
+    UIOutputInfoItem: [ function(require, module, exports) {
+        "use strict";
+        cc._RF.push(module, "025cdYdq1ZFiISVot7vqD8s", "UIOutputInfoItem");
+        "use strict";
+        var i18n = require("LanguageData");
+        var UIOutputInfoItem = cc.Class({
+            extends: cc.Component,
+            editor: {
+                menu: "gof/UIOutputInfoItem"
+            },
+            properties: {
+                Name: {
+                    default: null,
+                    type: cc.Label
+                },
+                UnitQuantity: {
+                    default: null,
+                    type: cc.Label
+                },
+                ParcelQuantity: {
+                    default: null,
+                    type: cc.Label
+                }
+            },
+            onLoad: function onLoad() {},
+            init: function init(parcel, output) {
+                this.Name.string = i18n.t("output_" + output.name).toUpperCase();
+                var unitQt = Number(output.quantityPerSizeUnit);
+                var parcelQt = unitQt * parcel.surface;
+                var tid = "quantity_quintal";
+                "t" == output.unitPerSizeUnit && (tid = "quantity_ton");
+                this.UnitQuantity.string = i18n.t(tid, {
+                    val: unitQt.toLocaleString(void 0, {
+                        maximumFractionDigits: 2
+                    })
+                });
+                this.ParcelQuantity.string = i18n.t(tid, {
+                    val: parcelQt.toLocaleString(void 0, {
+                        maximumFractionDigits: 2
+                    })
+                });
+            }
+        });
+        module.exports = UIOutputInfoItem;
+        cc._RF.pop();
+    }, {
+        LanguageData: "LanguageData"
+    } ],
     UIParcelButton: [ function(require, module, exports) {
         "use strict";
         cc._RF.push(module, "1eeb4QRRqVC67SdkLrVyELP", "UIParcelButton");
@@ -2059,11 +2313,14 @@ require = function e(t, n, r) {
         "use strict";
         cc._RF.push(module, "e26d4zHk5xHfoZ0d5p3J3O6", "UIParcelHistoryItem");
         "use strict";
+        var i18n = require("LanguageData");
+        var CGame = require("../Game");
         var CParcel = require("../Parcel");
         var CPlant = require("../Plant");
         var RscPreload = require("../RscPreload");
         var UIEnv = require("./UIEnv");
-        var i18n = require("LanguageData");
+        var SharedConsts = require("../common/constants");
+        var game = new CGame();
         var UIParcelHistoryItem = cc.Class({
             extends: cc.Component,
             editor: {
@@ -2094,6 +2351,10 @@ require = function e(t, n, r) {
                     default: null,
                     type: cc.Button
                 },
+                btInfo: {
+                    default: null,
+                    type: cc.Button
+                },
                 parcel: {
                     default: null,
                     visible: false,
@@ -2102,49 +2363,77 @@ require = function e(t, n, r) {
                 year: {
                     default: 0,
                     visible: false
+                },
+                plant: {
+                    default: null,
+                    visible: false,
+                    type: CPlant
+                },
+                cultureMode: {
+                    default: null,
+                    visible: false
                 }
             },
             onLoad: function onLoad() {},
             initCulture: function initCulture(_Parcel, _Year, _Data, _CanEdit) {
                 this.parcel = _Parcel;
                 this.year = _Year;
-                var y;
-                y = _Year < 0 ? _Year.toString() : "+" + _Year.toString();
-                this.lbYear.string = i18n.t("parcel_history_year", {
-                    val: y
-                });
+                this.plant = null;
+                this.cultureMode = null;
+                if (_Year) {
+                    var y;
+                    y = _Year < 0 ? _Year.toString() : "+" + _Year.toString();
+                    this.lbYear.string = y;
+                } else {
+                    this.lbYear.string = "";
+                }
                 if (void 0 === _Data || null === _Data) {
                     this.lbSpecies.string = i18n.t("new").toUpperCase();
                     this.lbCulture.string = "";
                     this.iconSpecies.node.active = false;
                     this.btAdd.node.active = true;
                     this.btEdit.node.active = false;
-                } else if ("fallow" === _Data.species || "pasture" === _Data.species) {
-                    this.lbSpecies.string = i18n.t("fallow").toUpperCase();
+                    this.btInfo.node.active = false;
+                } else if (_Data.species.indexOf("fallow") >= 0 || "pasture" === _Data.species) {
+                    this.lbSpecies.string = i18n.t("plant_" + _Data.species).toUpperCase();
                     this.lbCulture.string = "";
                     this.iconSpecies.node.active = true;
-                    this.iconSpecies.spriteFrame = RscPreload.getPlantIcon("fallow");
+                    this.iconSpecies.spriteFrame = RscPreload.getPlantIcon(_Data.species);
                     this.btAdd.node.active = false;
                     this.btEdit.node.active = _CanEdit;
+                    this.btInfo.node.active = false;
                 } else {
+                    this.cultureMode = _Data.culture;
+                    this.plant = game.findPlant(_Data.species);
                     this.lbSpecies.string = i18n.t("plant_" + _Data.species).toUpperCase();
                     void 0 !== _Data.culture ? this.lbCulture.string = i18n.t("culture_" + _Data.culture).toUpperCase() : this.lbCulture.string = i18n.t("culture_normal").toUpperCase();
                     this.iconSpecies.node.active = true;
                     this.iconSpecies.spriteFrame = RscPreload.getPlantIcon(_Data.species);
                     this.btAdd.node.active = false;
                     this.btEdit.node.active = _CanEdit;
+                    if (this.plant && _CanEdit) {
+                        this.btInfo.node.active = true;
+                        this.btInfo.interactable = void 0 !== this.plant.getItk(this.cultureMode);
+                    } else {
+                        this.btInfo.node.active = false;
+                    }
                 }
             },
             onBtAdd: function onBtAdd() {
                 UIEnv.speciesSelect.show(this.parcel, this.year);
+            },
+            onBtInfo: function onBtInfo() {
+                UIEnv.speciesInfos.show(this.parcel, this.plant, this.cultureMode);
             }
         });
         module.exports = UIParcelHistoryItem;
         cc._RF.pop();
     }, {
+        "../Game": "Game",
         "../Parcel": "Parcel",
         "../Plant": "Plant",
         "../RscPreload": "RscPreload",
+        "../common/constants": "constants",
         "./UIEnv": "UIEnv",
         LanguageData: "LanguageData"
     } ],
@@ -2421,7 +2710,8 @@ require = function e(t, n, r) {
                         var playerChoice = parcel.rotationPrevision[0];
                         var result = {
                             parcelName: parcel.name,
-                            note: 4
+                            note: 4,
+                            choice: playerChoice
                         };
                         if (solution.perfects.indexOf(playerChoice.species) > -1) {
                             result.note = 1;
@@ -2568,6 +2858,17 @@ require = function e(t, n, r) {
                 _isAnimated: {
                     default: false,
                     visible: false
+                },
+                progressBar: {
+                    default: null,
+                    type: cc.ProgressBar
+                },
+                progressLabel: {
+                    default: null,
+                    type: cc.Label
+                },
+                _completion: {
+                    default: ""
                 }
             },
             onLoad: function onLoad() {
@@ -2577,6 +2878,8 @@ require = function e(t, n, r) {
                 this.fxParticles.stopSystem();
                 this._isAnimated = false;
                 this.btOpen.interactable = false;
+                this.progressBar.progress = 0;
+                this.progressLabel.string = "0%";
             },
             update: function update(dt) {
                 if (game.state < CGame.State.PHASE_RUN) {
@@ -2595,6 +2898,36 @@ require = function e(t, n, r) {
                         this.highlight.active = false;
                     }
                     this._isAnimated = animate;
+                }
+                var completion = game.phaseGetCompletionStr();
+                if (completion != this._completion) {
+                    this._completion = completion;
+                    try {
+                        var compType = completion.indexOf("%");
+                        if (compType > 0) {
+                            this.progressLabel.string = completion;
+                            completion = completion.substring(0, compType);
+                            this.progressBar.progress = Number(completion) / 100;
+                        } else {
+                            compType = completion.indexOf("/");
+                            if (compType > 0) {
+                                var numberPattern = /\d+/g;
+                                var compParts = completion.match(numberPattern);
+                                this.progressBar.progress = Number(compParts[0]) / Number(compParts[1]);
+                                this.progressLabel.string = (100 * this.progressBar.progress).toLocaleString(void 0, {
+                                    maximumFractionDigits: 0
+                                }) + "%";
+                            } else {
+                                this.progressBar.progress = Number(completion);
+                                this.progressLabel.string = (100 * this.progressBar.progress).toLocaleString(void 0, {
+                                    maximumFractionDigits: 0
+                                }) + "%";
+                            }
+                        }
+                    } catch (_e) {
+                        this.progressLabel.string = completion;
+                        this.progressBar.progress = 0;
+                    }
                 }
             },
             onBtOpen: function onBtOpen() {
@@ -2669,6 +3002,7 @@ require = function e(t, n, r) {
             },
             update: function update(dt) {},
             onBtNext: function onBtNext() {
+                location.pathname = "/dashboard";
                 this.hide();
             }
         });
@@ -2762,6 +3096,269 @@ require = function e(t, n, r) {
         "./UIPopupBase": "UIPopupBase",
         LanguageData: "LanguageData"
     } ],
+    UISpeciesInfosItem: [ function(require, module, exports) {
+        "use strict";
+        cc._RF.push(module, "fa349e/AsdHB4Nusn32H6u7", "UISpeciesInfosItem");
+        "use strict";
+        var i18n = require("LanguageData");
+        var UISpeciesInfosItem = cc.Class({
+            extends: cc.Component,
+            editor: {
+                menu: "gof/UISpeciesInfosItem"
+            },
+            properties: {
+                procedureIndex: {
+                    default: null,
+                    type: cc.Label
+                },
+                procedureName: {
+                    default: null,
+                    type: cc.Label
+                },
+                procedureUnitPrice: {
+                    default: null,
+                    type: cc.Label
+                },
+                procedureUnitDuration: {
+                    default: null,
+                    type: cc.Label
+                }
+            },
+            onLoad: function onLoad() {},
+            init: function init(parcel, procedure, index) {
+                this.procedureIndex.string = index.toString();
+                this.procedureName.string = i18n.t("procedure_" + procedure.name).toUpperCase();
+                0 != procedure.unitCosts.money ? this.procedureUnitPrice.string = i18n.t("money_unit", {
+                    val: procedure.unitCosts.money.toLocaleString(void 0, {
+                        maximumFractionDigits: 2
+                    })
+                }) : this.procedureUnitPrice.string = "--";
+                this.procedureUnitDuration.string = i18n.t("duration_unit", {
+                    val: procedure.unitCosts.time.toLocaleString(void 0, {
+                        maximumFractionDigits: 2
+                    })
+                });
+            }
+        });
+        module.exports = UISpeciesInfosItem;
+        cc._RF.pop();
+    }, {
+        LanguageData: "LanguageData"
+    } ],
+    UISpeciesInfosPopup: [ function(require, module, exports) {
+        "use strict";
+        cc._RF.push(module, "ee618Ep861Jg7U/fhom6yXR", "UISpeciesInfosPopup");
+        "use strict";
+        var i18n = require("LanguageData");
+        var UIPopupBase = require("./UIPopupBase");
+        var CGame = require("../Game");
+        var UISpeciesInfosItem = require("./UISpeciesInfosItem");
+        var UIEnv = require("./UIEnv");
+        var SharedConsts = require("../common/constants");
+        var RscPreload = require("RscPreload");
+        var game = new CGame();
+        var UISpeciesInfosPopup = cc.Class({
+            extends: UIPopupBase,
+            editor: {
+                menu: "gof/UISpeciesInfosPopup"
+            },
+            properties: {
+                itemPrefab: {
+                    default: null,
+                    type: cc.Prefab
+                },
+                scrollView: {
+                    default: null,
+                    type: cc.ScrollView
+                },
+                title: {
+                    default: null,
+                    type: cc.Label
+                },
+                speciesIcon: {
+                    default: null,
+                    type: cc.Sprite
+                },
+                speciesName: {
+                    default: null,
+                    type: cc.Label
+                },
+                btNormal: {
+                    default: null,
+                    type: cc.Button
+                },
+                btBio: {
+                    default: null,
+                    type: cc.Button
+                },
+                btReasoned: {
+                    default: null,
+                    type: cc.Button
+                },
+                totalPrice: {
+                    default: null,
+                    type: cc.Label
+                },
+                totalSell: {
+                    default: null,
+                    type: cc.Label
+                },
+                totalProfit: {
+                    default: null,
+                    type: cc.Label
+                },
+                hectarePrice: {
+                    default: null,
+                    type: cc.Label
+                },
+                hectareSell: {
+                    default: null,
+                    type: cc.Label
+                },
+                hectareProfit: {
+                    default: null,
+                    type: cc.Label
+                },
+                outputPanel: {
+                    default: null,
+                    type: cc.Node
+                },
+                ouputPrefab: {
+                    default: null,
+                    type: cc.Prefab
+                },
+                ouputScrollView: {
+                    default: null,
+                    type: cc.ScrollView
+                },
+                _parcel: {
+                    default: null,
+                    visible: false
+                },
+                _plant: {
+                    default: null,
+                    visible: false
+                },
+                _mode: {
+                    default: null,
+                    visible: false
+                }
+            },
+            statics: {
+                instance: null
+            },
+            onLoad: function onLoad() {
+                null != UISpeciesInfosPopup.instance && cc.error("An instance of UISpeciesInfosPopup already exists");
+                UISpeciesInfosPopup.instance = this;
+                UIEnv.speciesInfos = this;
+                this.initPopup();
+            },
+            show: function show(_Parcel, _Plant, _Mode) {
+                this._parcel = _Parcel;
+                this._plant = _Plant;
+                this._mode = _Mode;
+                this.speciesName.string = i18n.t("plant_" + this._plant.species).toUpperCase();
+                this.speciesIcon.spriteFrame = RscPreload.getPlantIcon(this._plant.species);
+                this.title.string = i18n.t("activity_infos_title") + "\n" + this._parcel.name + " (" + i18n.t("surface_hectare", {
+                    val: this._parcel.surface.toLocaleString(void 0, {
+                        maximumFractionDigits: 2
+                    })
+                }) + ")";
+                this.outputPanel.active = false;
+                this.showPopup();
+            },
+            onShow: function onShow() {
+                var content = this.scrollView.content;
+                content.removeAllChildren(true);
+                var outputContent = this.ouputScrollView.content;
+                outputContent.removeAllChildren(true);
+                var itk = this._plant.getItk(this._mode);
+                if (itk && itk.procedures) {
+                    this.hectarePrice.string = i18n.t("money_unit", {
+                        val: itk.unitCosts.money.toLocaleString(void 0, {
+                            maximumFractionDigits: 2
+                        })
+                    });
+                    this.hectareSell.string = i18n.t("money_unit", {
+                        val: itk.unitResults.money.toLocaleString(void 0, {
+                            maximumFractionDigits: 2
+                        })
+                    });
+                    this.hectareProfit.string = i18n.t("money_unit", {
+                        val: (itk.unitResults.money - itk.unitCosts.money).toLocaleString(void 0, {
+                            maximumFractionDigits: 2
+                        })
+                    });
+                    this.totalPrice.string = i18n.t("money_unit", {
+                        val: (itk.unitCosts.money * this._parcel.surface).toLocaleString(void 0, {
+                            maximumFractionDigits: 2
+                        })
+                    });
+                    this.totalSell.string = i18n.t("money_unit", {
+                        val: (itk.unitResults.money * this._parcel.surface).toLocaleString(void 0, {
+                            maximumFractionDigits: 2
+                        })
+                    });
+                    this.totalProfit.string = i18n.t("money_unit", {
+                        val: ((itk.unitResults.money - itk.unitCosts.money) * this._parcel.surface).toLocaleString(void 0, {
+                            maximumFractionDigits: 2
+                        })
+                    });
+                    for (var procId = 0; procId < itk.procedures.length; procId++) {
+                        var procedure = itk.procedures[procId];
+                        var prefab = cc.instantiate(this.itemPrefab);
+                        prefab.setParent(content);
+                        var s = prefab.getComponent("UISpeciesInfosItem");
+                        s.init(this._parcel, procedure, procId + 1);
+                    }
+                    var outputs = this._plant.getOutputs(this._mode);
+                    for (var oi = 0; oi < outputs.length; oi++) {
+                        var output = outputs[oi];
+                        var prefab = cc.instantiate(this.ouputPrefab);
+                        prefab.setParent(outputContent);
+                        var s = prefab.getComponent("UIOutputInfoItem");
+                        s.init(this._parcel, output);
+                    }
+                } else {
+                    this.hectarePrice.string = "";
+                    this.hectareSell.string = "";
+                    this.hectareProfit.string = "";
+                    this.totalPrice.string = "";
+                    this.totalSell.string = "";
+                    this.totalProfit.string = "";
+                }
+                this.btNormal.interactable = this._mode != SharedConsts.CultureModeEnum.NORMAL;
+                this.btBio.interactable = this._mode != SharedConsts.CultureModeEnum.BIO;
+                this.btReasoned.interactable = this._mode != SharedConsts.CultureModeEnum.REASONED;
+                this.scrollView.scrollToTop();
+            },
+            onHide: function onHide() {},
+            onBtNormal: function onBtNormal() {
+                this._mode = SharedConsts.CultureModeEnum.NORMAL;
+                this.onShow();
+            },
+            onBtBio: function onBtBio() {
+                this._mode = SharedConsts.CultureModeEnum.BIO;
+                this.onShow();
+            },
+            onBtReasoned: function onBtReasoned() {
+                this._mode = SharedConsts.CultureModeEnum.REASONED;
+                this.onShow();
+            },
+            onBtDetails: function onBtDetails() {
+                this.outputPanel.active = !this.outputPanel.active;
+            }
+        });
+        cc._RF.pop();
+    }, {
+        "../Game": "Game",
+        "../common/constants": "constants",
+        "./UIEnv": "UIEnv",
+        "./UIPopupBase": "UIPopupBase",
+        "./UISpeciesInfosItem": "UISpeciesInfosItem",
+        LanguageData: "LanguageData",
+        RscPreload: "RscPreload"
+    } ],
     UISpeciesSelItem: [ function(require, module, exports) {
         "use strict";
         cc._RF.push(module, "aaef9bEqX5BcJFGX/hbg8UC", "UISpeciesSelItem");
@@ -2769,7 +3366,8 @@ require = function e(t, n, r) {
         var i18n = require("LanguageData");
         var CPlant = require("Plant");
         var RscPreload = require("RscPreload");
-        var SharedConsts = require("../constants");
+        var SharedConsts = require("../common/constants");
+        var UIEnv = require("./UIEnv");
         var UISpeciesSelItem = cc.Class({
             extends: cc.Component,
             editor: {
@@ -2812,19 +3410,23 @@ require = function e(t, n, r) {
                     default: null,
                     type: cc.Button
                 },
-                buyPricePerma: {
+                buyPriceReasoned: {
                     default: null,
                     type: cc.Label
                 },
-                sellPricePerma: {
+                sellPriceReasoned: {
                     default: null,
                     type: cc.Label
                 },
-                btPerma: {
+                btReasoned: {
                     default: null,
                     type: cc.Button
                 },
                 btAdd: {
+                    default: null,
+                    type: cc.Button
+                },
+                btInfo: {
                     default: null,
                     type: cc.Button
                 },
@@ -2892,13 +3494,8 @@ require = function e(t, n, r) {
             updateUI: function updateUI() {
                 if (null != this._plant) {
                     if (this._plantChanged) {
-                        if (this._plant.isFallow) {
-                            this.speciesName.string = i18n.t("fallow").toUpperCase();
-                            this.speciesIcon.spriteFrame = RscPreload.instance.plantIconsAtlas.getSpriteFrame("ico_prairies");
-                        } else {
-                            this.speciesName.string = i18n.t("plant_" + this._plant.species).toUpperCase();
-                            this.speciesIcon.spriteFrame = RscPreload.getPlantIcon(this._plant.species);
-                        }
+                        this.speciesName.string = i18n.t("plant_" + this._plant.species).toUpperCase();
+                        this.speciesIcon.spriteFrame = RscPreload.getPlantIcon(this._plant.species);
                         this._plantChanged = false;
                         this._selectionChanged = true;
                         this._cultureChanged = true;
@@ -2907,25 +3504,92 @@ require = function e(t, n, r) {
                         if (this._plant.isFallow) {
                             this.buyPriceNormal.string = "";
                             this.buyPriceBio.string = "";
-                            this.buyPricePerma.string = "";
+                            this.buyPriceReasoned.string = "";
                             this.sellPriceNormal.string = "";
                             this.sellPriceBio.string = "";
-                            this.sellPricePerma.string = "";
+                            this.sellPriceReasoned.string = "";
                             this.btNormal.node.active = false;
                             this.btBio.node.active = false;
-                            this.btPerma.node.active = false;
+                            this.btReasoned.node.active = false;
                         } else {
-                            this.buyPriceNormal.string = this._plant.getBuyPrice(SharedConsts.CultureModeEnum.NORMAL).toString();
-                            this.buyPriceBio.string = this._plant.getBuyPrice(SharedConsts.CultureModeEnum.BIO).toString();
-                            this.buyPricePerma.string = this._plant.getBuyPrice(SharedConsts.CultureModeEnum.PERMACULTURE).toString();
-                            this.sellPriceNormal.string = this._plant.getSellPrice(SharedConsts.CultureModeEnum.NORMAL).toString();
-                            this.sellPriceBio.string = this._plant.getSellPrice(SharedConsts.CultureModeEnum.BIO).toString();
-                            this.sellPricePerma.string = this._plant.getSellPrice(SharedConsts.CultureModeEnum.PERMACULTURE).toString();
+                            var itkNormal = this._plant.getItk(SharedConsts.CultureModeEnum.NORMAL);
+                            if (itkNormal && itkNormal.unitCosts) {
+                                this.buyPriceNormal.string = i18n.t("money_unit", {
+                                    val: itkNormal.unitCosts.money.toLocaleString(void 0, {
+                                        maximumFractionDigits: 2
+                                    })
+                                });
+                                this.sellPriceNormal.string = i18n.t("money_unit", {
+                                    val: itkNormal.unitResults.money.toLocaleString(void 0, {
+                                        maximumFractionDigits: 2
+                                    })
+                                });
+                            } else {
+                                this.buyPriceNormal.string = i18n.t("money_unit", {
+                                    val: this._plant.getBuyPrice(SharedConsts.CultureModeEnum.NORMAL).toLocaleString(void 0, {
+                                        maximumFractionDigits: 2
+                                    })
+                                });
+                                this.sellPriceNormal.string = i18n.t("money_unit", {
+                                    val: this._plant.getSellPrice(SharedConsts.CultureModeEnum.NORMAL).toLocaleString(void 0, {
+                                        maximumFractionDigits: 2
+                                    })
+                                });
+                            }
+                            var itkBio = this._plant.getItk(SharedConsts.CultureModeEnum.BIO);
+                            if (itkBio && itkBio.unitCosts) {
+                                this.buyPriceBio.string = i18n.t("money_unit", {
+                                    val: itkBio.unitCosts.money.toLocaleString(void 0, {
+                                        maximumFractionDigits: 2
+                                    })
+                                });
+                                this.sellPriceBio.string = i18n.t("money_unit", {
+                                    val: itkBio.unitResults.money.toLocaleString(void 0, {
+                                        maximumFractionDigits: 2
+                                    })
+                                });
+                            } else {
+                                this.buyPriceBio.string = i18n.t("money_unit", {
+                                    val: this._plant.getBuyPrice(SharedConsts.CultureModeEnum.BIO).toLocaleString(void 0, {
+                                        maximumFractionDigits: 2
+                                    })
+                                });
+                                this.sellPriceBio.string = i18n.t("money_unit", {
+                                    val: this._plant.getSellPrice(SharedConsts.CultureModeEnum.BIO).toLocaleString(void 0, {
+                                        maximumFractionDigits: 2
+                                    })
+                                });
+                            }
+                            var itkReasoned = this._plant.getItk(SharedConsts.CultureModeEnum.REASONED);
+                            if (itkReasoned && itkReasoned.unitCosts) {
+                                this.buyPriceReasoned.string = i18n.t("money_unit", {
+                                    val: itkReasoned.unitCosts.money.toLocaleString(void 0, {
+                                        maximumFractionDigits: 2
+                                    })
+                                });
+                                this.sellPriceReasoned.string = i18n.t("money_unit", {
+                                    val: itkReasoned.unitResults.money.toLocaleString(void 0, {
+                                        maximumFractionDigits: 2
+                                    })
+                                });
+                            } else {
+                                this.buyPriceReasoned.string = i18n.t("money_unit", {
+                                    val: this._plant.getBuyPrice(SharedConsts.CultureModeEnum.REASONED).toLocaleString(void 0, {
+                                        maximumFractionDigits: 2
+                                    })
+                                });
+                                this.sellPriceReasoned.string = i18n.t("money_unit", {
+                                    val: this._plant.getSellPrice(SharedConsts.CultureModeEnum.REASONED).toLocaleString(void 0, {
+                                        maximumFractionDigits: 2
+                                    })
+                                });
+                            }
                             this.btNormal.interactable = this.cultureMode != SharedConsts.CultureModeEnum.NORMAL;
                             this.btBio.interactable = this.cultureMode != SharedConsts.CultureModeEnum.BIO;
-                            this.btPerma.interactable = this.cultureMode != SharedConsts.CultureModeEnum.PERMACULTURE;
+                            this.btReasoned.interactable = this.cultureMode != SharedConsts.CultureModeEnum.REASONED;
                         }
                     }
+                    this._plant.getItk(SharedConsts.CultureModeEnum.NORMAL) ? this.btInfo.interactable = true : this.btInfo.interactable = false;
                     this._selectionChanged && (this.hlSelected.active = this._isSelected);
                 }
             },
@@ -2938,6 +3602,9 @@ require = function e(t, n, r) {
             onBtCultureBio: function onBtCultureBio() {
                 null == this._plant || this._plant.isFallow || (this.cultureMode = SharedConsts.CultureModeEnum.BIO);
             },
+            onBtCultureReasoned: function onBtCultureReasoned() {
+                null == this._plant || this._plant.isFallow || (this.cultureMode = SharedConsts.CultureModeEnum.REASONED);
+            },
             onBtCulturePerma: function onBtCulturePerma() {
                 null == this._plant || this._plant.isFallow || (this.cultureMode = SharedConsts.CultureModeEnum.PERMACULTURE);
             },
@@ -2946,12 +3613,16 @@ require = function e(t, n, r) {
                     species: this._plant.species,
                     culture: this._cultureMode
                 });
+            },
+            onBtInfo: function onBtInfo() {
+                null != this._plant && UIEnv.speciesInfos.show(UIEnv.speciesSelect._parcel, this._plant, this._cultureMode);
             }
         });
         module.exports = UISpeciesSelItem;
         cc._RF.pop();
     }, {
-        "../constants": "constants",
+        "../common/constants": "constants",
+        "./UIEnv": "UIEnv",
         LanguageData: "LanguageData",
         Plant: "Plant",
         RscPreload: "RscPreload"
@@ -3105,15 +3776,50 @@ require = function e(t, n, r) {
         Game: "Game",
         LanguageData: "LanguageData"
     } ],
+    UsableItem: [ function(require, module, exports) {
+        "use strict";
+        cc._RF.push(module, "cdffbW74nlJB4VaXT8j1d7G", "UsableItem");
+        "use strict";
+        Object.defineProperty(exports, "__esModule", {
+            value: true
+        });
+        function _classCallCheck(instance, Constructor) {
+            if (!(instance instanceof Constructor)) {
+                throw new TypeError("Cannot call a class as a function");
+            }
+        }
+        var CUsableItem = function CUsableItem(_JSON) {
+            _classCallCheck(this, CUsableItem);
+            this.dbId = _JSON._id;
+            this.name = _JSON.name;
+            this.pricePerUnit = Number(_JSON.price);
+            this.unit = _JSON.unit;
+            this._valid = this.dbId && this.name && this.pricePerUnit;
+        };
+        exports.default = CUsableItem;
+        module.exports = exports["default"];
+        cc._RF.pop();
+    }, {} ],
     constants: [ function(require, module, exports) {
         "use strict";
-        cc._RF.push(module, "3f532xpOP1DPambIAmHT9nl", "constants");
+        cc._RF.push(module, "a3409Ylha9I4Zk4lNHwejqQ", "constants");
         "use strict";
         module.exports = Object.freeze({
             CultureModeEnum: {
                 NORMAL: "normal",
                 BIO: "bio",
-                PERMACULTURE: "permaculture"
+                PERMACULTURE: "permaculture",
+                REASONED: "reasoned"
+            },
+            UserRoleEnum: {
+                MASTER: "master",
+                STUDENT: "student",
+                PROFESSIONAL: "professional",
+                OTHER: "other"
+            },
+            ChannelStateEnum: {
+                OPENED: "opened",
+                CLOSED: "closed"
             }
         });
         cc._RF.pop();
@@ -3236,4 +3942,4 @@ require = function e(t, n, r) {
         });
         cc._RF.pop();
     }, {} ]
-}, {}, [ "ApiClient", "Farm", "Game", "GamePhase", "MapCtrl", "Parcel", "ParcelSetup", "Plant", "RscPreload", "Startup", "LocalizedLabelExt", "UICheat", "UIDebug", "UIEnv", "UIMessage", "UIOffice", "UIParcel", "UIParcelButton", "UIParcelHistoryItem", "UIPopupBase", "UIQuestInfo", "UIQuestIntro", "UIQuestMenu", "UIScore", "UIScore_croprotation", "UISpeciesSelItem", "UISpeciesSelPopup", "UITop", "constants", "LanguageData", "LocalizedLabel", "LocalizedSprite", "SpriteFrameSet", "polyglot.min" ]);
+}, {}, [ "ApiClient", "Farm", "Game", "GamePhase", "MapCtrl", "Parcel", "ParcelSetup", "Plant", "RscPreload", "Startup", "LocalizedLabelExt", "UIBottom", "UICheat", "UIDebug", "UIEnv", "UIMessage", "UIOffice", "UIOutputInfoItem", "UIParcel", "UIParcelButton", "UIParcelHistoryItem", "UIPopupBase", "UIQuestInfo", "UIQuestIntro", "UIQuestMenu", "UIScore", "UIScore_croprotation", "UISpeciesInfosItem", "UISpeciesInfosPopup", "UISpeciesSelItem", "UISpeciesSelPopup", "UITop", "UsableItem", "constants", "LanguageData", "LocalizedLabel", "LocalizedSprite", "SpriteFrameSet", "polyglot.min" ]);

@@ -33421,6 +33421,7 @@
         sys.OS_WINDOWS = "Windows";
         sys.OS_MARMALADE = "Marmalade";
         sys.OS_LINUX = "Linux";
+        sys.OS_UNIX = "Unix";
         sys.OS_BADA = "Bada";
         sys.OS_BLACKBERRY = "Blackberry";
         sys.OS_OSX = "OS X";
@@ -33492,7 +33493,7 @@
             osMainVersion = 0;
         }
         var osName = sys.OS_UNKNOWN;
-        -1 !== nav.appVersion.indexOf("Win") ? osName = sys.OS_WINDOWS : iOS ? osName = sys.OS_IOS : -1 !== nav.appVersion.indexOf("Mac") ? osName = sys.OS_OSX : -1 !== nav.appVersion.indexOf("X11") && -1 === nav.appVersion.indexOf("Linux") ? osName = sys.OS_UNIX : isAndroid ? osName = sys.OS_ANDROID : -1 === nav.appVersion.indexOf("Linux") && -1 === ua.indexOf("ubuntu") || (osName = sys.OS_LINUX);
+        -1 !== nav.appVersion.indexOf("Win") ? osName = sys.OS_WINDOWS : iOS ? osName = sys.OS_IOS : -1 !== nav.appVersion.indexOf("Mac") ? osName = sys.OS_OSX : isAndroid ? osName = sys.OS_ANDROID : -1 !== nav.appVersion.indexOf("Linux") || -1 !== ua.indexOf("ubuntu") ? osName = sys.OS_LINUX : -1 !== nav.appVersion.indexOf("X11") && -1 === nav.appVersion.indexOf("Linux") && (osName = sys.OS_UNIX);
         sys.os = osName;
         sys.osVersion = osVersion;
         sys.osMainVersion = osMainVersion;
@@ -41761,7 +41762,7 @@
             return this._get() || new Image();
         };
         misc.imagePool._smallImg = "data:image/gif;base64,R0lGODlhAQABAAAAACwAAAAAAQABAAA=";
-        sys.os !== sys.OS_WINDOWS && sys.os !== sys.OS_LINUX || sys.browser === sys.BROWSER_TYPE_CHROME || misc.imagePool.resize(0);
+        misc.imagePool.resize(0);
         misc.isBuiltinClassId = function(id) {
             return id.startsWith("cc.") || id.startsWith("dragonBones.") || id.startsWith("sp.") || id.startsWith("ccsg.");
         };
